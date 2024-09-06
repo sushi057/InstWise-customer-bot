@@ -54,4 +54,3 @@ def run_chatbot(messages):
 tool = TavilySearchResults(max_results=2)
 tools = [tool]
 print(tool.invoke("Whats a tool in langgraph"))
-

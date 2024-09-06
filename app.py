@@ -5,7 +5,7 @@ from langgraph.graph import StateGraph, START, END
 from langgraph.prebuilt import tools_condition
 from langchain_core.messages import BaseMessage
 
-from states import State
+from states.state import State
 from models.openai_model import get_openai_model
 from tools.tools import (
     fetch_customer_info,
@@ -84,10 +84,11 @@ config = {
 
 while True:
     user_input = input("User: ")
+
     if user_input.lower() in ["quit", "exit", "q"]:
         print("Goodbye!")
         break
     for event in graph.stream({"messages": [("user", user_input)]}, config):
         for value in event.values():
             if isinstance(value["messages"], BaseMessage):
-                print("Assistant:", value["messages"].content)
+                print("Assistant:", value["messages"].content + "\n")
