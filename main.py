@@ -1,4 +1,3 @@
-import os
 from typing import Annotated
 from typing import TypedDict
 from langchain_openai import ChatOpenAI
@@ -56,5 +55,3 @@ tool = TavilySearchResults(max_results=2)
 tools = [tool]
 print(tool.invoke("Whats a tool in langgraph"))
 
-
-### Function calls
