@@ -1,56 +1,115 @@
-from typing import Annotated
-from typing import TypedDict
-from langchain_openai import ChatOpenAI
-
+import uuid
+from langchain_core.runnables import Runnable, RunnableConfig
+from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import StateGraph, START, END
-from langgraph.graph.message import add_messages
+from langgraph.prebuilt import tools_condition
+from langchain_core.messages import BaseMessage
 
-from langchain_openai import ChatOpenAI
-from langchain_anthropic import ChatAnthropic
+from states.state import State
+from models.openai_model import get_openai_model
+from tools.tools import (
+    fetch_customer_info,
+    lookup_activity,
+    clarify_issue,
+    investigate_issue,
+    provide_solution,
+    personalized_follow_up,
+    offer_additional_support,
+    log_activity,
+    create_tool_node_with_fallback,
+    handle_tool_error,
+    _print_event,
+)
+from prompts.prompts import primary_assistant_prompt
 
-from langchain_community.tools.tavily_search import TavilySearchResults
+from fastapi import FastAPI
 
-
-class State(TypedDict):
-    messages: Annotated[list, add_messages]
-
-
-graph_builder = StateGraph(State)
-
-# llm = ChatOpenAI(model="gpt-4o", temperature=0.5)
-llm = ChatAnthropic(model="claude-3-haiku-20240307")
-
-
-def chatbot(state: State):
-    return {"messages": llm.invoke(state["messages"])}
-
-
-graph_builder.add_node("chatbot", chatbot)
-
-graph_builder.add_edge(START, "chatbot")
-graph_builder.add_edge("chatbot", END)
-
-graph = graph_builder.compile()
-
-# visualize_graph(graph_builder)
+app = FastAPI()
 
 
-def run_chatbot(messages):
-    while True:
-        user_input = input("User: ")
-        if user_input in ["quit", "exit", "q"]:
-            print("Goodbye")
-            break
+class Assistant:
+    def __init__(self, runnable: Runnable):
+        self.runnable = runnable
 
-        for event in graph.stream({"messages": ("user", user_input)}):
-            for value in event.values():
-                print("Assistant", value["messages"].content)
+    def __call__(self, state: State, config: RunnableConfig):
+        while True:
+            configuration = config.get("configuration", {})
+            thread_id = configuration.get("thread_id")
+            state = {**state, "user_info": thread_id}
+            result = self.runnable.invoke(state)
+
+            if not result.tool_calls and (
+                not result.content
+                or isinstance(result.content, list)
+                and not result.content[0].get("text")
+            ):
+                messages = state["messages"] + [("user", "Respond with a real output")]
+                state = {**state, "messages": messages}
+            else:
+                break
+
+        return {"messages": result}
 
 
-### Adding tools
+llm = get_openai_model()
 
-# Tavily Search
+tools = [
+    fetch_customer_info,
+    lookup_activity,
+    clarify_issue,
+    investigate_issue,
+    provide_solution,
+    personalized_follow_up,
+    offer_additional_support,
+    log_activity,
+]
 
-tool = TavilySearchResults(max_results=2)
-tools = [tool]
-print(tool.invoke("Whats a tool in langgraph"))
+assistant_runnable = primary_assistant_prompt | llm.bind_tools(tools)
+
+builder = StateGraph(State)
+
+builder.add_node("assistant", Assistant(assistant_runnable))
+builder.add_node("tools", create_tool_node_with_fallback(tools))
+
+builder.add_edge(START, "assistant")
+builder.add_conditional_edges("assistant", tools_condition)
+builder.add_edge("tools", "assistant")
+
+memory = MemorySaver()
+graph = builder.compile(checkpointer=memory)
+
+# thread_id = str(uuid.uuid4())
+thread_id = "1234"
+
+config = {
+    "configurable": {
+        "thread_id": thread_id,
+    }
+}
+
+# while True:
+#     user_input = input("User: ")
+
+#     if user_input.lower() in ["quit", "exit", "q"]:
+#         print("Goodbye!")
+#         break
+#     for event in graph.stream({"messages": [("user", user_input)]}, config):
+#         for value in event.values():
+#             if isinstance(value["messages"], BaseMessage):
+#                 print("Assistant:", value["messages"].content + "\n")
+
+
+@app.get("/")
+async def root():
+    return {"message": "Hello world"}
+
+
+@app.get("/ask")
+async def ask_support(query: str):
+    async for event in graph.astream(
+        {"messages": [("user", query)]}, config, stream_mode="values"
+    ):
+        # for value in event.values():
+        #     if isinstance(value["messages"], BaseMessage):
+        #         return {"message": value["messages"].content}
+        return {"message": event["messages"][-1].pretty_print()}

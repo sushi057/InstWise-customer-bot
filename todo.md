@@ -1,7 +1,7 @@
 # TODO
 
 - [x] Setup environment and MOCK APIS
-- [ ] Create folders for scripts
+- [x]Create folders for scripts
 - [x] Setup langgraph and API keys
 - [ ] Langgraph Nodes
   1. Greeting Node w/ Hubspot

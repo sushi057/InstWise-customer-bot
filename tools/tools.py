@@ -1,3 +1,4 @@
+import os
 import requests
 from langchain_core.tools import tool
 from langchain_core.messages.ai import AIMessage
@@ -6,8 +7,11 @@ from langchain_core.runnables import RunnableLambda
 from langgraph.prebuilt import ToolNode
 
 
-mock_url = "http://localhost:3000"
-
+# mock_url = "http://localhost:3000/"
+mock_url = "https://api.hubapi.com/crm/v3/objects"
+headers = {
+    "Authorization": f"Bearer {os.getenv("HUBSPOT_ACCESS_TOKEN")}"
+}
 
 @tool
 def fetch_customer_info(customer_name: str = None):
@@ -20,7 +24,8 @@ def fetch_customer_info(customer_name: str = None):
       A response object with customer data
 
     """
-    response = requests.get(mock_url + "hubspot")
+    # response = requests.get(mock_url + "hubspot")
+    response = requests.get(mock_url + "/contacts", headers=headers)
     return response.json()
 
 

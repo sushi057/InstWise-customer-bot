@@ -3,3 +3,5 @@ langgraph
 langchain-community
 langchain-openai
 uuid
+fastapi
+uvicorn
