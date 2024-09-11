@@ -1,4 +1,5 @@
 import uuid
+import os
 from langchain_core.runnables import Runnable, RunnableConfig
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import StateGraph, START, END
@@ -23,6 +24,8 @@ from tools.tools import (
 from prompts.prompts import primary_assistant_prompt
 
 from fastapi import FastAPI
+
+os.environ["OPENAI_API_KEY"] = "sk-1234"
 
 app = FastAPI()
 

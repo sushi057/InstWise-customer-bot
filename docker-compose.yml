@@ -1,0 +1,6 @@
+services:
+  app:
+    image: instwise-customer-support
+    build: .
+    ports:
+      - 8000:8000
