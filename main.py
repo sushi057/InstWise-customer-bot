@@ -104,12 +104,23 @@ async def root():
     return {"message": "Hello world"}
 
 
+# @app.get("/ask")
+# async def ask_support(query: str):
+#     async for event in graph.stream({"messages": [("user", query)]}, config):
+#         for value in await event.values():
+#             if isinstance(value["messages"], BaseMessage):
+#                 return {"message": value["messages"].content}
+#         # event["messages"][-1].pretty_print()
+#         # return {"message": event["messages"][-1].content}
+
+
 @app.get("/ask")
 async def ask_support(query: str):
+    messages = []
     async for event in graph.astream(
         {"messages": [("user", query)]}, config, stream_mode="values"
     ):
-        # for value in event.values():
-        #     if isinstance(value["messages"], BaseMessage):
-        #         return {"message": value["messages"].content}
-        return {"message": event["messages"][-1].pretty_print()}
+        event["messages"][-1].pretty_print()
+        messages.append(event["messages"][-1].content)
+        # return {"message": event["messages"][-1].content}
+    return {"message": messages[-1]}

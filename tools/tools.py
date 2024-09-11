@@ -7,10 +7,11 @@ from langchain_core.runnables import RunnableLambda
 from langgraph.prebuilt import ToolNode
 
 
-# mock_url = "http://localhost:3000/"
-mock_url = "https://api.hubapi.com/crm/v3/objects"
+mock_url = "http://localhost:3000/"
+hubspot_api = "https://api.hubapi.com/crm/v3/objects"
 headers = {
-    "Authorization": f"Bearer {os.getenv("HUBSPOT_ACCESS_TOKEN")}"
+    "Authorization": f"Bearer {os.getenv("HUBSPOT_BEARER_TOKEN")}",
+    "Content-Type": "application/json",
 }
 
 @tool
@@ -25,7 +26,7 @@ def fetch_customer_info(customer_name: str = None):
 
     """
     # response = requests.get(mock_url + "hubspot")
-    response = requests.get(mock_url + "/contacts", headers=headers)
+    response = requests.get(hubspot_api + "/contacts/?properties=firstname, lastname, company", headers=headers)
     return response.json()
 
 
