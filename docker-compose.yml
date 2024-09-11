@@ -1,6 +1,9 @@
 services:
   app:
+    restart: on-failure
     image: instwise-customer-support
+    env_file:
+      - .env
     build: .
     ports:
-      - 8000:8000
+      - "8000:8000"
