@@ -26,7 +26,6 @@ This project implements a chatbot using the Langgraph library. The chatbot inter
 
 4. **Set up environment variables**:
    - Create a [`.env`] file from [`.env.example`] and add necessary environment variables.
-</br>
 
 5. **Run docker**
 
