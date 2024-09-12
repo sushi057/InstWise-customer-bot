@@ -25,7 +25,8 @@ from prompts.prompts import primary_assistant_prompt
 
 from fastapi import FastAPI
 
-os.environ["OPENAI_API_KEY"] = "sk-1234"
+# os.environ["OPENAI_API_KEY"] = "sk-1234"
+# os.getenv("OPENAI_API_KEY")
 
 app = FastAPI()
 
