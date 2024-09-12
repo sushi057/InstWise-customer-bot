@@ -128,3 +128,8 @@ async def ask_support(query: str):
         messages.append(event["messages"][-1].content)
         # return {"message": event["messages"][-1].content}
     return {"message": messages[-1]}
+
+
+@app.get("/test")
+async def test():
+    return {"message": "Hello world"}
