@@ -7,7 +7,7 @@ from langchain_core.runnables import RunnableLambda
 from langgraph.prebuilt import ToolNode
 
 
-mock_url = "http://localhost:3000/"
+mock_url = "https://e39b-2407-1400-aa18-4910-ff35-30bf-cc4d-5922.ngrok-free.app/"
 hubspot_api = "https://api.hubapi.com/crm/v3/objects"
 headers = {
     "Authorization": f"Bearer {os.getenv("HUBSPOT_BEARER_TOKEN")}",
