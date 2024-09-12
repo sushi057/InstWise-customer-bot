@@ -42,9 +42,11 @@ def lookup_activity(customer_id: str):
       Returns a response object with customer's transactions history
     """
     # response = requests.get(mock_url + "planhat")
+    print("Inside lookup_activity")
     planhat_json_path = os.path.abspath("utils/planhat_mock.json")
     with open(planhat_json_path, "r") as f:
         response = json.load(f)
+        print(response)
     return response
 
 
