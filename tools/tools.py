@@ -9,9 +9,8 @@ from langgraph.prebuilt import ToolNode
 
 
 # mock_url = "https://e39b-2407-1400-aa18-4910-ff35-30bf-cc4d-5922.ngrok-free.app/"
-hubspot_api = "https://api.hubapi.com/crm/v3/objects"
 
-RAG_API_URL = "http://localhost:8000/api/assistant/ask"
+
 
 @tool
 def fetch_customer_info(customer_name: str = None):
@@ -25,6 +24,7 @@ def fetch_customer_info(customer_name: str = None):
 
     """
     # response = requests.get(mock_url + "hubspot")
+    hubspot_api = "https://api.hubapi.com/crm/v3/objects"
     headers = {
     "Authorization": f"Bearer {os.getenv("HUBSPOT_BEARER_TOKEN")}",
     "Content-Type": "application/json",
@@ -96,18 +96,18 @@ def answer_rag(query: str) -> AIMessage:
     Returns:
     - AIMessage: The response from the RAG API as an AIMessage object.
     """
+    RAG_API_URL = "https://chat-backend.instwise.app/api/assistant/ask"
+
     headers = {
         'X-API-KEY': f"{os.getenv('X_API_KEY')}"
     }
+
     params = {
         "query": query,
         "company_id": "66158fe71bfe10b58cb23eea"
     }
     response = requests.get(RAG_API_URL, params=params, headers=headers)
     return AIMessage(response.json()["results"]["answer"])
-
-print(answer_rag(query="how do i create a new booking?"))
-
 
 @tool
 def offer_additional_support() -> AIMessage:
