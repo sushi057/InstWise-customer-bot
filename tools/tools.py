@@ -10,10 +10,8 @@ from langgraph.prebuilt import ToolNode
 
 # mock_url = "https://e39b-2407-1400-aa18-4910-ff35-30bf-cc4d-5922.ngrok-free.app/"
 hubspot_api = "https://api.hubapi.com/crm/v3/objects"
-headers = {
-    "Authorization": f"Bearer {os.getenv("HUBSPOT_BEARER_TOKEN")}",
-    "Content-Type": "application/json",
-}
+
+RAG_API_URL = "http://localhost:8000/api/assistant/ask"
 
 @tool
 def fetch_customer_info(customer_name: str = None):
@@ -27,6 +25,10 @@ def fetch_customer_info(customer_name: str = None):
 
     """
     # response = requests.get(mock_url + "hubspot")
+    headers = {
+    "Authorization": f"Bearer {os.getenv("HUBSPOT_BEARER_TOKEN")}",
+    "Content-Type": "application/json",
+}
     response = requests.get(hubspot_api + "/contacts/?properties=firstname, lastname, company", headers=headers)
     return response.json()
 
@@ -72,16 +74,39 @@ def investigate_issue() -> AIMessage:
     response = "I can see that the issue has had previously occured with you. How were you able to handle it then? Has the previous solution not been working?"
     return AIMessage(content=response)
 
+# @tool
+# def provide_solution() -> AIMessage:
+#     """Provide stepwise solution for the specific issue faced by the customer
 
-@tool
-def provide_solution() -> AIMessage:
-    """Provide stepwise solution for the specific issue faced by the customer
+#     Return:
+#       AIMessage: Stepwise solution for the user's issue
+#     """
+#     response = "Here's a stepwise solution for the issue you're facing:"
+#     return AIMessage(content=response)
 
-    Return:
-      AIMessage: Stepwise solution for the user's issue
+
+# @tool
+def answer_rag(query: str) -> AIMessage:
     """
-    response = "Here's a stepwise solution for the issue you're facing:"
-    return AIMessage(content=response)
+    This function sends a query to the RAG API and returns the answer as an AIMessage.
+
+    Parameters:
+    - query (str): The query to send to the RAG API.
+    
+    Returns:
+    - AIMessage: The response from the RAG API as an AIMessage object.
+    """
+    headers = {
+        'X-API-KEY': f"{os.getenv('X_API_KEY')}"
+    }
+    params = {
+        "query": query,
+        "company_id": "66158fe71bfe10b58cb23eea"
+    }
+    response = requests.get(RAG_API_URL, params=params, headers=headers)
+    return AIMessage(response.json()["results"]["answer"])
+
+print(answer_rag(query="how do i create a new booking?"))
 
 
 @tool

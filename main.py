@@ -13,7 +13,8 @@ from tools.tools import (
     lookup_activity,
     clarify_issue,
     investigate_issue,
-    provide_solution,
+    # provide_solution,
+    answer_rag,
     personalized_follow_up,
     offer_additional_support,
     log_activity,
@@ -62,7 +63,8 @@ tools = [
     lookup_activity,
     clarify_issue,
     investigate_issue,
-    provide_solution,
+    # provide_solution,
+    answer_rag,
     personalized_follow_up,
     offer_additional_support,
     log_activity,
@@ -106,16 +108,6 @@ config = {
 @app.get("/")
 async def root():
     return {"message": "Hello world"}
-
-
-# @app.get("/ask")
-# async def ask_support(query: str):
-#     async for event in graph.stream({"messages": [("user", query)]}, config):
-#         for value in await event.values():
-#             if isinstance(value["messages"], BaseMessage):
-#                 return {"message": value["messages"].content}
-#         # event["messages"][-1].pretty_print()
-#         # return {"message": event["messages"][-1].content}
 
 
 @app.get("/ask")
