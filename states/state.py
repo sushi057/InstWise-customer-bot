@@ -7,6 +7,7 @@ class UserInfo(TypedDict):
     user_name: str
     user_email: str
     company_name: str
+    pending_issues: Optional[bool]
     user_mood: Optional[
         Literal["happy", "unhappy", "neutral"]
     ]  # Useful for sentiment analysis
@@ -15,7 +16,7 @@ class UserInfo(TypedDict):
 class State(TypedDict):
     messages: Annotated[list[AnyMessage], add_messages]
     user_info: UserInfo
-    user_query: str
+    user_query: Annotated[list[AnyMessage], add_messages]
     investigation_response = Annotated[list[AnyMessage], add_messages]
     solution_response = Annotated[list[AnyMessage], add_messages]
-    query_answer: str
+    high_priority: Optional[bool]

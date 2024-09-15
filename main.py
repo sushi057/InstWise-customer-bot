@@ -27,9 +27,6 @@ from prompts.prompts import primary_assistant_prompt
 
 from fastapi import FastAPI
 
-# os.environ["OPENAI_API_KEY"] = "sk-1234"
-# os.getenv("OPENAI_API_KEY")
-
 app = FastAPI()
 
 
@@ -83,7 +80,7 @@ builder.add_conditional_edges("assistant", tools_condition)
 builder.add_edge("tools", "assistant")
 
 memory = MemorySaver()
-graph = builder.compile(checkpointer=memory) 
+graph = builder.compile(checkpointer=memory)
 
 with open("grpah_image.png", "wb") as f:
     f.write(graph.get_graph(xray=True).draw_mermaid_png())
