@@ -8,10 +8,6 @@ from langchain_core.runnables import RunnableLambda
 from langgraph.prebuilt import ToolNode
 
 
-# mock_url = "https://e39b-2407-1400-aa18-4910-ff35-30bf-cc4d-5922.ngrok-free.app/"
-
-
-
 @tool
 def fetch_customer_info(customer_name: str = None):
     """Looks up the current user data in Hubspot
@@ -26,10 +22,13 @@ def fetch_customer_info(customer_name: str = None):
     # response = requests.get(mock_url + "hubspot")
     hubspot_api = "https://api.hubapi.com/crm/v3/objects"
     headers = {
-    "Authorization": f"Bearer {os.getenv("HUBSPOT_BEARER_TOKEN")}",
-    "Content-Type": "application/json",
-}
-    response = requests.get(hubspot_api + "/contacts/?properties=firstname, lastname, company", headers=headers)
+        "Authorization": f'Bearer {os.getenv("HUBSPOT_BEARER_TOKEN")}',
+        "Content-Type": "application/json",
+    }
+    response = requests.get(
+        hubspot_api + "/contacts/?properties=firstname, lastname, company",
+        headers=headers,
+    )
     return response.json()
 
 
@@ -74,6 +73,7 @@ def investigate_issue() -> AIMessage:
     response = "I can see that the issue has had previously occured with you. How were you able to handle it then? Has the previous solution not been working?"
     return AIMessage(content=response)
 
+
 # @tool
 # def provide_solution() -> AIMessage:
 #     """Provide stepwise solution for the specific issue faced by the customer
@@ -92,22 +92,18 @@ def answer_rag(query: str) -> AIMessage:
 
     Parameters:
     - query (str): The query to send to the RAG API.
-    
+
     Returns:
     - AIMessage: The response from the RAG API as an AIMessage object.
     """
     RAG_API_URL = "https://chat-backend.instwise.app/api/assistant/ask"
 
-    headers = {
-        'X-API-KEY': f"{os.getenv('X_API_KEY')}"
-    }
+    headers = {"X-API-KEY": f"{os.getenv('X_API_KEY')}"}
 
-    params = {
-        "query": query,
-        "company_id": "66158fe71bfe10b58cb23eea"
-    }
+    params = {"query": query, "company_id": "66158fe71bfe10b58cb23eea"}
     response = requests.get(RAG_API_URL, params=params, headers=headers)
     return AIMessage(response.json()["results"]["answer"])
+
 
 @tool
 def offer_additional_support() -> AIMessage:
