@@ -1,5 +1,6 @@
 from langchain.prompts import ChatPromptTemplate
 from models.openai_model import get_openai_model
+from tools.tools import personalized_follow_up, upsell_rag_call
 
 upsell_prompt = ChatPromptTemplate.from_messages(
     [
@@ -17,6 +18,6 @@ upsell_prompt = ChatPromptTemplate.from_messages(
 )
 
 llm = get_openai_model()
-upsell_tools = []
+upsell_tools = [upsell_rag_call, personalized_follow_up]
 
 upsell_runnable = upsell_prompt | llm.bind_tools(upsell_tools)

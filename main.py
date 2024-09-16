@@ -81,7 +81,7 @@ builder.add_edge("tools", "assistant")
 memory = MemorySaver()
 graph = builder.compile(checkpointer=memory)
 
-with open("graph_image.png", "wb") as f:
+with open("graph_v0.1.png", "wb") as f:
     f.write(graph.get_graph(xray=True).draw_mermaid_png())
 
 # thread_id = str(uuid.uuid4())

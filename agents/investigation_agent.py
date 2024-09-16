@@ -1,6 +1,6 @@
 from langchain.prompts import ChatPromptTemplate
 from models.openai_model import get_openai_model
-from tools import lookup_activity
+from tools.tools import lookup_activity, fetch_support_status
 
 investigation_prompt = ChatPromptTemplate.from_messages(
     [
@@ -20,5 +20,5 @@ investigation_prompt = ChatPromptTemplate.from_messages(
 
 llm = get_openai_model()
 
-investigation_tools = [lookup_activity]
+investigation_tools = [lookup_activity, fetch_support_status]
 investigation_runnable = investigation_prompt | llm.bind_tools(investigation_tools)

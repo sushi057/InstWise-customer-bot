@@ -1,9 +1,9 @@
 from langchain.prompts import ChatPromptTemplate
 
 from models.openai_model import get_openai_model
-from tools.tools import fetch_customer_info, lookup_activity
+from tools.tools import fetch_user_info, lookup_activity
 
-greetings_prompt = ChatPromptTemplate.from_messages(
+greeting_prompt = ChatPromptTemplate.from_messages(
     [
         (
             "system",
@@ -20,5 +20,5 @@ greetings_prompt = ChatPromptTemplate.from_messages(
 
 llm = get_openai_model(temperature=1)
 
-greetings_tools = [fetch_customer_info]
-greeting_agent_runnable = greetings_prompt | llm.bind_tools(greetings_tools)
+greeting_tools = [fetch_user_info, lookup_activity]
+greeting_agent_runnable = greeting_prompt | llm.bind_tools(greeting_tools)

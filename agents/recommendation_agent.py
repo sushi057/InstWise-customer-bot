@@ -1,5 +1,6 @@
 from langchain.prompts import ChatPromptTemplate
 from models.openai_model import get_openai_model
+from tools.tools import recommendation_rag_call, suggest_workaround
 
 recommendation_prompt = ChatPromptTemplate.from_messages(
     [
@@ -19,6 +20,6 @@ recommendation_prompt = ChatPromptTemplate.from_messages(
 )
 
 llm = get_openai_model()
-recommendation_tools = []
+recommendation_tools = [recommendation_rag_call, suggest_workaround]
 
 recommendation_runnable = recommendation_prompt | llm.bind_tools(recommendation_tools)

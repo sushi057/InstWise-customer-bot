@@ -1,5 +1,6 @@
 from langchain.prompts import ChatPromptTemplate
 from models.openai_model import get_openai_model
+from tools.tools import create_ticket, log_activity
 
 log_prompt = ChatPromptTemplate.from_messages(
     [
@@ -18,6 +19,6 @@ log_prompt = ChatPromptTemplate.from_messages(
 )
 
 llm = get_openai_model()
-log_tools = []
+log_tools = [log_activity, create_ticket]
 
 log_runnable = log_prompt | llm.bind_tools(log_tools)

@@ -1,8 +1,8 @@
 # Notes
 
     - Review Instwise excel sheet for updated work flow
-    - write new tools for all the agents
     - design flow and edges
+    - fix conditional_edges with agent_tools
     - test with multiple case scenarios
     - recommendation low/high usage -> adaption pattern
     - upsell -> retention
