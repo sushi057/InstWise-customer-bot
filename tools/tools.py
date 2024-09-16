@@ -8,8 +8,32 @@ from langchain_core.runnables import RunnableLambda
 from langgraph.prebuilt import ToolNode
 
 
-@tool
-def fetch_customer_info(customer_name: str = None):
+# @tool
+# def fetch_customer_info(customer_name: str = None):
+#     """Looks up the current user data in Hubspot
+
+#     Args:
+#       customer_name: The customer to search for
+
+#     Returns:
+#       A response object with customer data
+
+#     """
+#     # response = requests.get(mock_url + "hubspot")
+#     hubspot_api = "https://api.hubapi.com/crm/v3/objects"
+#     headers = {
+#         "Authorization": f'Bearer {os.getenv("HUBSPOT_BEARER_TOKEN")}',
+#         "Content-Type": "application/json",
+#     }
+#     response = requests.get(
+#         hubspot_api + "/contacts/?properties=firstname, lastname, company",
+#         headers=headers,
+#     )
+#     return response.json()
+
+
+# @tool
+def fetch_customer_info():
     """Looks up the current user data in Hubspot
 
     Args:
@@ -20,16 +44,14 @@ def fetch_customer_info(customer_name: str = None):
 
     """
     # response = requests.get(mock_url + "hubspot")
-    hubspot_api = "https://api.hubapi.com/crm/v3/objects"
-    headers = {
-        "Authorization": f'Bearer {os.getenv("HUBSPOT_BEARER_TOKEN")}',
-        "Content-Type": "application/json",
-    }
-    response = requests.get(
-        hubspot_api + "/contacts/?properties=firstname, lastname, company",
-        headers=headers,
-    )
-    return response.json()
+    hubspot_json_path = os.path.abspath("data/user_info.json")
+    with open(hubspot_json_path, "r") as f:
+        response = json.load(f)
+        print(response)
+    return response
+
+
+fetch_customer_info()
 
 
 @tool
@@ -44,7 +66,7 @@ def lookup_activity(customer_id: str):
     """
     # response = requests.get(mock_url + "planhat")
     print("Inside lookup_activity")
-    planhat_json_path = os.path.abspath("utils/planhat_mock.json")
+    planhat_json_path = os.path.abspath("data/planhat_mock.json")
     with open(planhat_json_path, "r") as f:
         response = json.load(f)
         print(response)

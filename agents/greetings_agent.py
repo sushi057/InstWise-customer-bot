@@ -20,5 +20,5 @@ greetings_prompt = ChatPromptTemplate.from_messages(
 
 llm = get_openai_model()
 
-greetings_tools = [fetch_customer_info, lookup_activity]
+greetings_tools = [fetch_customer_info]
 greeting_agent_runnable = greetings_prompt | llm.bind_tools(greetings_tools)

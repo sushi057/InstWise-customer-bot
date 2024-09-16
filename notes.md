@@ -4,6 +4,8 @@
     - write new tools for all the agents
     - design flow and edges
     - test with multiple case scenarios
+    - recommendation low/high usage -> adaption pattern
+    - upsell -> retention
 
 ## Tools
 
