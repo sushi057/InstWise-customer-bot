@@ -111,7 +111,7 @@ async def root():
 
 
 @app.get("/ask")
-async def ask_support(query: str):
+async def ask_support(query: str, customer_email: str):
     messages = []
     async for event in graph.astream(
         {"messages": [("user", query)]}, config, stream_mode="values"
