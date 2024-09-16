@@ -12,7 +12,8 @@ survey_prompt = ChatPromptTemplate.from_messages(
             "Logging the feedback into the system for analysis."
             "Your goal is to gather actionable insights that will help improve future support interactions."
             "Once the survey is complete, signal the Primary Assistant to continue the conversation with the user.",
-        )
+        ),
+        ("placeholder", "{messages}"),
     ]
 )
 

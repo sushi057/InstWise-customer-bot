@@ -13,7 +13,8 @@ recommendation_prompt = ChatPromptTemplate.from_messages(
             "Provide recommendations for articles, videos, or tutorials related to the user’s context."
             "Your goal is to provide valuable insights that help the user prevent future issues and maximize the benefits of your product."
             "Once the recommendations are provided, signal the Primary Assistant to continue the conversation with the user.",
-        )
+        ),
+        ("placeholder", "{messages}"),
     ]
 )
 

@@ -14,7 +14,8 @@ investigation_prompt = ChatPromptTemplate.from_messages(
             "Determining if the issue has been escalated by a Customer Success Manager (CSM) in Planhat."
             "If any of the above checks return positive, craft a response to inform the user of the status and actions taken so far."
             "Once the investigation is complete, signal the Primary Assistant to continue the conversation with the user.",
-        )
+        ),
+        ("placeholder", "{messages}"),
     ]
 )
 

@@ -12,7 +12,8 @@ log_prompt = ChatPromptTemplate.from_messages(
             "Provide the user with a ticket number for future reference."
             "Your objective is to ensure that all unresolved issues are escalated properly and tracked efficiently."
             "Once the issue is logged and escalated, signal the Primary Assistant to continue the conversation with the user.",
-        )
+        ),
+        ("placeholder", "{messages}"),
     ]
 )
 

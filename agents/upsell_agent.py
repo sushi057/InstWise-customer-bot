@@ -11,7 +11,8 @@ upsell_prompt = ChatPromptTemplate.from_messages(
             "Recommend additional reading materials or tutorials that introduce these upgrades."
             "Your goal is to offer relevant product upgrades that align with the user’s needs and enhance their experience."
             "Once the upsell recommendations are provided, signal the Primary Assistant to continue the conversation with the user.",
-        )
+        ),
+        ("placeholder", "{messages}"),
     ]
 )
 

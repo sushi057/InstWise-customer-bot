@@ -11,11 +11,13 @@ solution_prompt = ChatPromptTemplate.from_messages(
             "Using the RAG (Retrieval-Augmented Generation) model to provide accurate and relevant answers to the user’s query."
             "Checking if there are multiple possible solutions and offering clarification options to help the user specify the issue (e.g., related to different modules or screens)."
             "If you need more information about the user's query, ask the user for further clarification."
+            "If you need even more clarification about the user's query, signal the Investigation Agent to gather more information."
             "Asking the user if the solution provided has resolved their problem."
             "If the problem is not solved, signal the Log Agent to create a ticket for further investigation with appropriate response to the user.",
             "Your goal is to resolve the issue efficiently and ensure clarity for the user."
             "Once the solution is provided, signal the Primary Assistant to continue the conversation with the user.",
-        )
+        ),
+        ("placeholder", "{messages}"),
     ]
 )
 
