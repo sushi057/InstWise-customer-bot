@@ -105,9 +105,14 @@ config = {
 #                 print("Assistant:", value["messages"].content + "\n")
 
 
-@app.get("/")
+@app.get("/", status_code=200)
 async def root():
     return {"message": "Hello world"}
+
+
+@app.get("/test", status_code=200)
+async def test():
+    return {"message": "testing route", "success": "true"}
 
 
 @app.get("/ask")
@@ -120,8 +125,3 @@ async def ask_support(query: str, customer_email: str):
         messages.append(event["messages"][-1].content)
         # return {"message": event["messages"][-1].content}
     return {"message": messages[-1]}
-
-
-@app.get("/test")
-async def test():
-    return {"message": "Hello world"}
