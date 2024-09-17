@@ -10,10 +10,12 @@ from langgraph.prebuilt import ToolNode
 
 from states.state import State
 
+
 # mock_url = "https://e39b-2407-1400-aa18-4910-ff35-30bf-cc4d-5922.ngrok-free.app/"
 
 
-RAG_API_URL = "https://chat-backend.instwise.app/api/assistant/ask"
+# RAG_API_URL = "https://chat-backend.instwise.app/api/assistant/ask"
+RAG_API_URL = "http://localhost:8000/api/assistant/ask"
 headers = {"X-API-KEY": f"{os.getenv('X_API_KEY')}"}
 
 
@@ -125,7 +127,7 @@ def answer_rag(query: str) -> AIMessage:
     return AIMessage(response.json()["results"]["answer"])
 
 
-@tool
+# @tool
 def recommendation_rag_call(query: str) -> AIMessage:
     """
     This function sends a query to the RAG API and returns the answer as an AIMessage.
