@@ -10,14 +10,17 @@ from states.state import State
 from models.openai_model import get_openai_model
 from tools.tools import (
     fetch_customer_info,
+    fetch_pending_issues,
     lookup_activity,
-    clarify_issue,
-    investigate_issue,
-    # provide_solution,
+    fetch_support_status,
     answer_rag,
+    recommendation_rag_call,
+    suggest_workaround,
+    upsell_rag_call,
     personalized_follow_up,
-    offer_additional_support,
     log_activity,
+    create_ticket,
+    survey_tool,
     create_tool_node_with_fallback,
     handle_tool_error,
     _print_event,
@@ -60,14 +63,17 @@ llm = get_openai_model()
 
 tools = [
     fetch_customer_info,
+    fetch_pending_issues,
     lookup_activity,
-    clarify_issue,
-    investigate_issue,
-    # provide_solution,
+    fetch_support_status,
     answer_rag,
+    recommendation_rag_call,
+    suggest_workaround,
+    upsell_rag_call,
     personalized_follow_up,
-    offer_additional_support,
     log_activity,
+    create_ticket,
+    survey_tool,
 ]
 
 assistant_runnable = primary_assistant_prompt | llm.bind_tools(tools)

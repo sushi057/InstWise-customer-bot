@@ -1,0 +1,24 @@
+[
+  {
+    "id": "IN1012",
+    "customer_id": 420,
+    "subject": "Issue with login",
+    "description": "user is unable to book a hotel.",
+    "status": "open",
+    "priority": "high",
+    "created_at": "2024-09-01T12:34:56Z",
+    "updated_at": "2024-09-15T17:54:38Z",
+    "tags": ["login", "urgent"]
+  },
+  {
+    "id": "IN2014",
+    "customer_id": 420,
+    "subject": "Payment processing error",
+    "description": "user is unable to redeem their hotel coupons.",
+    "status": "pending",
+    "priority": "medium",
+    "created_at": "2024-09-05T08:22:33Z",
+    "updated_at": "2024-09-15T17:55:25Z",
+    "tags": ["payment", "error"]
+  }
+]
