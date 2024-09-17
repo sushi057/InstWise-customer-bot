@@ -99,16 +99,18 @@ config = {
     }
 }
 
-# while True:
-#     user_input = input("User: ")
+while True:
+    user_input = input("User: ")
 
-#     if user_input.lower() in ["quit", "exit", "q"]:
-#         print("Goodbye!")
-#         break
-#     for event in graph.stream({"messages": [("user", user_input)]}, config):
-#         for value in event.values():
-#             if isinstance(value["messages"], BaseMessage):
-#                 print("Assistant:", value["messages"].content + "\n")
+    if user_input.lower() in ["quit", "exit", "q"]:
+        print("Goodbye!")
+        break
+    for event in graph.stream(
+        {"messages": [("user", user_input)]}, {**config, "user_email": "sarah@test.com"}
+    ):
+        for value in event.values():
+            if isinstance(value["messages"], BaseMessage):
+                print("Assistant:", value["messages"].content + "\n")
 
 
 @app.get("/")
@@ -116,16 +118,16 @@ async def root():
     return {"message": "Hello world"}
 
 
-@app.get("/ask")
-async def ask_support(query: str, user_email: str):
-    messages = []
-    async for event in graph.astream(
-        {"messages": [("user", query)]}, config, stream_mode="values"
-    ):
-        event["messages"][-1].pretty_print()
-        messages.append(event["messages"][-1].content)
-        # return {"message": event["messages"][-1].content}
-    return {"message": messages[-1]}
+# @app.get("/ask")
+# async def ask_support(query: str, user_email: str):
+#     messages = []
+#     async for event in graph.astream(
+#         {"messages": [("user", query)]}, config, stream_mode="values"
+#     ):
+#         event["messages"][-1].pretty_print()
+#         messages.append(event["messages"][-1].content)
+#         # return {"message": event["messages"][-1].content}
+#     return {"message": messages[-1]}
 
 
 @app.get("/test")

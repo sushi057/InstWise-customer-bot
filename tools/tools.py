@@ -8,6 +8,7 @@ from langchain_core.messages import ToolMessage
 from langchain_core.runnables import RunnableLambda
 from langgraph.prebuilt import ToolNode
 
+from states.state import State
 
 # mock_url = "https://e39b-2407-1400-aa18-4910-ff35-30bf-cc4d-5922.ngrok-free.app/"
 
@@ -41,7 +42,7 @@ headers = {"X-API-KEY": f"{os.getenv('X_API_KEY')}"}
 
 
 @tool
-def fetch_customer_info(user_email: str = None):
+def fetch_customer_info(state: State, user_email: str = None):
     """Looks up the current user data from Hubspot mock data
 
     Args:
@@ -52,15 +53,11 @@ def fetch_customer_info(user_email: str = None):
 
     """
     # response = requests.get(mock_url + "hubspot")
-    try:
-        hubspot_json_path = os.path.abspath("data/user_info.json")
-        with open(hubspot_json_path, "r") as f:
-            response = json.load(f)
-        print(response)
-    except FileNotFoundError:
-        response = {
-            "error": "File not found. Please check the file path and try again."
-        }
+    state["user_email"] = user_email
+    hubspot_json_path = os.path.abspath("data/user_info.json")
+    with open(hubspot_json_path, "r") as f:
+        response = json.load(f)
+    return response
 
 
 @tool
