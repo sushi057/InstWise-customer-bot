@@ -8,6 +8,8 @@ from langchain_core.messages import ToolMessage
 from langchain_core.runnables import RunnableLambda
 from langgraph.prebuilt import ToolNode
 
+from states.state import State
+
 
 RAG_API_URL = "https://chat-backend.instwise.app/api/assistant/ask"
 headers = {"X-API-KEY": f"{os.getenv('X_API_KEY')}"}
@@ -49,15 +51,19 @@ def fetch_user_info(user_email: str = None):
 
     """
     # response = requests.get(mock_url + "hubspot")
-    hubspot_json_path = os.path.abspath("data/user_info.json")
-    with open(hubspot_json_path, "r") as f:
-        response = json.load(f)
+    try:
+        hubspot_json_path = os.path.abspath("data/user_info.json")
+        with open(hubspot_json_path, "r") as f:
+            response = json.load(f)
         print(response)
-    return response
+    except FileNotFoundError:
+        response = {
+            "error": "File not found. Please check the file path and try again."
+        }
 
 
 @tool
-def fetch_pending_issues(issue_tickers: List[str]):
+def fetch_pending_issues(issue_tickets: List[str]):
     """Looks up the current user's pending issues in Zendesk mock api
 
     Returns:
