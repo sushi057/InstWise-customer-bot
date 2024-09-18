@@ -5,7 +5,7 @@ import requests
 from langchain_core.tools import tool
 from langchain_core.messages.ai import AIMessage
 from langchain_core.messages import ToolMessage
-from langchain_core.runnables import RunnableLambda
+from langchain_core.runnables import RunnableLambda, RunnableConfig
 from langgraph.prebuilt import ToolNode
 
 from states.state import State
@@ -40,8 +40,8 @@ headers = {"X-API-KEY": f"{os.getenv('X_API_KEY')}"}
 
 
 @tool
-def fetch_user_info(user_email: str = None):
-    """Looks up the current user data from Hubspot mock data
+def fetch_user_info(user_email: str):
+    """Fetch current user information from Hubspot mock data
 
     Args:
       user_email: The customer to search for
@@ -51,6 +51,7 @@ def fetch_user_info(user_email: str = None):
 
     """
     # response = requests.get(mock_url + "hubspot")
+
     try:
         hubspot_json_path = os.path.abspath("data/user_info.json")
         with open(hubspot_json_path, "r") as f:
@@ -64,7 +65,7 @@ def fetch_user_info(user_email: str = None):
 
 @tool
 def fetch_pending_issues(issue_tickets: List[str]):
-    """Looks up the current user's pending issues in Zendesk mock api
+    """Fetch if any pending issues for the user from Zendesk mock data
 
     Returns:
       A response object with user's pending issues
