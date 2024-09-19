@@ -17,9 +17,6 @@ def load_json():
         return response
 
 
-print(load_json())
-
-
 def create_entry_node(assistant_name: str, new_dialog_state: str) -> Callable:
     def entry_node(state: State) -> dict:
         tool_call_id = state["messages"][-1].tool_calls[0]["id"]

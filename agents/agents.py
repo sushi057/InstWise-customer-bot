@@ -58,44 +58,10 @@ class CompleteOrEscalate(BaseModel):
         }
 
 
-def route_primary_assistant(
-    state: State,
-) -> Literal[
-    "enter_investigation_agent",
-    "enter_solution_agent",
-    "enter_recommendation_agent",
-    "enter_log_agent",
-    "enter_upsell_agent",
-    "enter_survey_agent",
-    "__end__",
-]:
-    route = tools_condition(state)
-    if route == END:
-        return END
-
-    tool_calls = state["messages"][-1].tool_calls
-    if tool_calls:
-        if tool_calls[0]["name"] == ToInvestigationAgent.__name__:
-            return "enter_investigation_agent"
-        elif tool_calls[0]["name"] == ToSolutionAgent.__name__:
-            return "enter_solution_agent"
-        elif tool_calls[0]["name"] == ToRecommendationAgent.__name__:
-            return "enter_recommendation_agent"
-        elif tool_calls[0]["name"] == ToLogAgent.__name__:
-            return "enter_log_agent"
-        elif tool_calls[0]["name"] == ToUpsellAgent.__name__:
-            return "enter_upsell_agent"
-        elif tool_calls[0]["name"] == ToSurveyAgent.__name__:
-            return "enter_survey_agent"
-    return ValueError("Invalid Route")
-
-
 greeting_tools = [fetch_user_info, fetch_pending_issues]
 greeting_agent_runnable = greeting_prompt | llm.bind_tools(
     greeting_tools + [CompleteOrEscalate]
 )
-
-print(greeting_agent_runnable.invoke(State(messages=[("user", "Hello")])))
 
 
 def route_greeting_agent(
@@ -155,7 +121,7 @@ def route_solution_agent(
     return "solution_agent_tools"
 
 
-recommendation_tools = [recommendation_rag_call, suggest_workaround]
+recommendation_tools = [recommendation_rag_call]
 recommendation_runnable = recommendation_prompt | llm.bind_tools(
     recommendation_tools + [CompleteOrEscalate]
 )
@@ -293,9 +259,44 @@ class ToSurveyAgent(BaseModel):
     user_query: str = Field(description="The user's feedback to collect.")
 
 
-primary_assistant_tools = []
+def route_primary_assistant(
+    state: State,
+) -> Literal[
+    "primary_assistant_tools",
+    "enter_investigation_agent",
+    "enter_solution_agent",
+    "enter_recommendation_agent",
+    "enter_log_agent",
+    "enter_upsell_agent",
+    "enter_survey_agent",
+    "__end__",
+]:
+    route = tools_condition(state)
+    if route == END:
+        return END
+
+    tool_calls = state["messages"][-1].tool_calls
+    if tool_calls:
+        if tool_calls[0]["name"] == ToInvestigationAgent.__name__:
+            return "enter_investigation_agent"
+        elif tool_calls[0]["name"] == ToSolutionAgent.__name__:
+            return "enter_solution_agent"
+        elif tool_calls[0]["name"] == ToRecommendationAgent.__name__:
+            return "enter_recommendation_agent"
+        elif tool_calls[0]["name"] == ToLogAgent.__name__:
+            return "enter_log_agent"
+        elif tool_calls[0]["name"] == ToUpsellAgent.__name__:
+            return "enter_upsell_agent"
+        elif tool_calls[0]["name"] == ToSurveyAgent.__name__:
+            return "enter_survey_agent"
+        return "primary_assistant_tools"
+    return ValueError("Invalid Route")
+
+
+primary_assistant_tools = [fetch_user_info, fetch_pending_issues]
 assistant_runnable = primary_assistant_prompt | llm.bind_tools(
-    [
+    primary_assistant_tools
+    + [
         ToInvestigationAgent,
         ToSolutionAgent,
         ToRecommendationAgent,

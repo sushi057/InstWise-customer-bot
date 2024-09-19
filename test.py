@@ -6,6 +6,8 @@ from langgraph.graph import StateGraph, START, END
 from langgraph.prebuilt import tools_condition
 from langchain_core.messages import BaseMessage
 from langchain_core.runnables import Runnable, RunnableConfig
+from langgraph.checkpoint.memory import MemorySaver
+
 
 from agents.agents import (
     greeting_agent_runnable,
@@ -25,6 +27,7 @@ from agents.agents import (
     route_log_agent,
     route_upsell_agent,
     greeting_tools,
+    primary_assistant_tools,
     investigation_tools,
     solution_tools,
     recommendation_tools,
@@ -45,9 +48,11 @@ class Assistant:
         while True:
             configuration = config.get("configurable", {})
             thread_id = configuration.get("thread_id")
+            user_email = configuration.get("user_email")
             state = {
                 **state,
                 "thread_id": thread_id,
+                "user_email": user_email,
             }
             result = self.runnable.invoke(state)
 
@@ -164,6 +169,9 @@ builder.add_edge("survey_agent", END)
 # Primary Assistant
 
 builder.add_node("primary_assistant", Assistant(assistant_runnable))
+builder.add_node(
+    "primary_assistant_tools", create_tool_node_with_fallback(primary_assistant_tools)
+)
 # builder.add_edge(START, "primary_assistant")
 builder.add_conditional_edges(
     "primary_assistant",
@@ -175,6 +183,7 @@ builder.add_conditional_edges(
         "enter_log_agent": "enter_log_agent",
         "enter_upsell_agent": "enter_upsell_agent",
         "enter_survey_agent": "enter_survey_agent",
+        "primary_assistant_tools": "primary_assistant_tools",
         END: END,
     },
 )
@@ -204,13 +213,15 @@ builder.add_node("leave_skill", pop_dialog_state)
 builder.add_edge("leave_skill", "primary_assistant")
 
 
-graph = builder.compile()
+memory = MemorySaver()
+graph = builder.compile(checkpointer=memory)
 
 # Visualize graph
 with open("graph_v0.2.png", "wb") as f:
     f.write(graph.get_graph(xray=True).draw_mermaid_png())
 
 # Conversation
+
 thread_id = str(uuid.uuid4())
 config = {"configurable": {"thread_id": thread_id, "user_email": "sarah@test.com"}}
 
@@ -225,34 +236,3 @@ while True:
         for value in event.values():
             if isinstance(value["messages"], BaseMessage):
                 print("Assistant:", value["messages"].content + "\n")
-
-
-# # Let's create an example conversation a user might have with the assistant
-# tutorial_questions = [
-#     "Hi, I need help with my hotel reservation.",
-#     "Can you check my booking for next week?",
-#     "Is it possible to change my reservation to a different date?",
-#     "I would like to move my reservation to the following week.",
-#     "What room options are available for the new dates?",
-#     "Can you book a deluxe room for my stay?",
-#     "What amenities are included with the deluxe room?",
-#     "Are there any additional charges for using the gym and spa?",
-#     "Can you arrange airport transportation for me?",
-#     "What are the dining options available at the hotel?",
-#     "Can you make a dinner reservation at the hotel restaurant for the first night?",
-#     "Are there any special events happening at the hotel during my stay?",
-#     "Can you provide information on local attractions and tours?",
-#     "Can you book a city tour for me on the second day of my stay?",
-#     "Thank you for your help. That's all for now."
-# ]
-
-# # Update with the backup file so we can restart from the original place in each section
-
-
-# _printed = set()
-# for question in tutorial_questions:
-#     events = graph.stream(
-#         {"messages": ("user", question)}, config, stream_mode="values"
-#     )
-#     for event in events:
-#         _print_event(event, _printed)

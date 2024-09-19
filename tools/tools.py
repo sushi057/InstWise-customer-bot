@@ -60,7 +60,6 @@ def fetch_user_info(config: RunnableConfig):
         hubspot_json_path = os.path.abspath("data/user_info.json")
         with open(hubspot_json_path, "r") as f:
             response = json.load(f)
-        print(response)
 
         for user in response:
             if user["user_email"] == user_email:
