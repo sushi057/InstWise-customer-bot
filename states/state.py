@@ -23,15 +23,14 @@ class UserInfo(TypedDict):
 
 class State(TypedDict):
     messages: Annotated[list[AnyMessage], add_messages]
-    user_info: UserInfo
-    user_query: Annotated[list[AnyMessage], add_messages]
-    investigation_response = Annotated[list[AnyMessage], add_messages]
-    solution_response = Annotated[list[AnyMessage], add_messages]
-    pending_issues: Optional[bool]
+    user_info: str
+    # user_query: Annotated[list[AnyMessage], add_messages]
+    # investigation_response = Annotated[list[AnyMessage], add_messages]
+    # solution_response = Annotated[list[AnyMessage], add_messages]
+    # pending_issues: Optional[bool]
     dialog_state: Annotated[
         list[
             Literal[
-                "greetings_agent",
                 "primary_assistant",
                 "investigation_agent",
                 "solution_agent",

@@ -40,7 +40,7 @@ headers = {"X-API-KEY": f"{os.getenv('X_API_KEY')}"}
 
 
 @tool
-def fetch_user_info(user_email: str):
+def fetch_user_info(config: RunnableConfig):
     """Fetch current user information from Hubspot mock data
 
     Args:
@@ -52,11 +52,19 @@ def fetch_user_info(user_email: str):
     """
     # response = requests.get(mock_url + "hubspot")
 
+    configuration = config.get("configurable", {})
+    user_email = configuration.get("user_email")
+
     try:
         hubspot_json_path = os.path.abspath("data/user_info.json")
         with open(hubspot_json_path, "r") as f:
             response = json.load(f)
         print(response)
+
+        for user in response:
+            if user["user_email"] == user_email:
+                return user
+        return None
     except FileNotFoundError:
         response = {
             "error": "File not found. Please check the file path and try again."
@@ -74,8 +82,12 @@ def fetch_pending_issues(issue_tickets: List[str]):
     zendesk_json_path = os.path.abspath("data/zendesk_mock.json")
     with open(zendesk_json_path, "r") as f:
         response = json.load(f)
-        print(response)
-    return response
+
+    pending_issues = []
+    for item in response:
+        pending_issues.append(item) if item["status"] == "pending" else None
+
+    return pending_issues
 
 
 @tool
@@ -94,12 +106,17 @@ def lookup_activity(user_id: str):
     with open(planhat_json_path, "r") as f:
         response = json.load(f)
         print(response)
-    return response
+
+    for item in response:
+        return item if item["customerId"] == user_id else None
 
 
 @tool
 def fetch_support_status(user_id: str):
     """Looks up the current user's support status
+
+    Args:
+        user_id: Id of customer we're looking for
 
     Returns:
       A response object with user's support status
@@ -108,8 +125,9 @@ def fetch_support_status(user_id: str):
     zendesk_json_path = os.path.abspath("data/support_status.json")
     with open(zendesk_json_path, "r") as f:
         response = json.load(f)
-        print(response)
-    return response
+
+    for item in response:
+        return item if item["id"] == user_id else None
 
 
 @tool

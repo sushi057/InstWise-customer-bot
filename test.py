@@ -33,7 +33,7 @@ from agents.agents import (
 )
 
 from states.state import State
-from tools.tools import create_tool_node_with_fallback, fetch_user_info
+from tools.tools import create_tool_node_with_fallback, fetch_user_info, _print_event
 from utils.utils import create_entry_node, pop_dialog_state
 
 
@@ -43,7 +43,7 @@ class Assistant:
 
     def __call__(self, state: State, config: RunnableConfig):
         while True:
-            configuration = config.get("configuration", {})
+            configuration = config.get("configurable", {})
             thread_id = configuration.get("thread_id")
             state = {
                 **state,
@@ -67,23 +67,26 @@ class Assistant:
 builder = StateGraph(State)
 
 
-def user_info(state: State):
-    return {"user_info": fetch_user_info.invoke({})}
+# def user_info(state: State):
+#     return {"user_info": fetch_user_info.invoke({})}
 
 
-builder.add_node("fetch_user_info", user_info)
-builder.add_edge(START, "fetch_user_info")
+# builder.add_node("fetch_user_info", user_info)
+# builder.add_edge(START, "fetch_user_info")
+
+# Greeting Assistant
+
 # builder.add_edge(START, "greeting_agent")
-
 # builder.add_node("greeting_agent", Assistant(greeting_agent_runnable))
-# builder.add_edge("greeting_agent", "primary_assistant")
 # builder.add_node("greeting_agent_tools", create_tool_node_with_fallback(greeting_tools))
 # builder.add_edge("greeting_agent_tools", "greeting_agent")
 # builder.add_conditional_edges(
 #     "greeting_agent",
 #     route_greeting_agent,
 # )
+# builder.add_edge("greeting_agent", "primary_assistant")
 
+builder.add_edge(START, "primary_assistant")
 
 # Investigation Agent
 
@@ -161,6 +164,7 @@ builder.add_edge("survey_agent", END)
 # Primary Assistant
 
 builder.add_node("primary_assistant", Assistant(assistant_runnable))
+# builder.add_edge(START, "primary_assistant")
 builder.add_conditional_edges(
     "primary_assistant",
     route_primary_assistant,
@@ -176,25 +180,25 @@ builder.add_conditional_edges(
 )
 
 
-def route_to_workflow(
-    state: State,
-) -> Literal[
-    "primary_assistant",
-    "investigation_agent",
-    "solution_agent",
-    "recommendation_agent",
-    "log_agent",
-    "upsell_agent",
-    "survey_agent",
-]:
-    """If we are in a delegated state, route directly to the appropriate assistant."""
-    dialog_state = state.get("dialog_state")
-    if not dialog_state:
-        return "primary_assistant"
-    return dialog_state[-1]
+# def route_to_workflow(
+#     state: State,
+# ) -> Literal[
+#     "primary_assistant",
+#     "investigation_agent",
+#     "solution_agent",
+#     "recommendation_agent",
+#     "log_agent",
+#     "upsell_agent",
+#     "survey_agent",
+# ]:
+#     """If we are in a delegated state, route directly to the appropriate assistant."""
+#     dialog_state = state.get("dialog_state")
+#     if not dialog_state:
+#         return "primary_assistant"
+#     return dialog_state[-1]
 
 
-builder.add_conditional_edges("fetch_user_info", route_to_workflow)
+# builder.add_conditional_edges("fetch_user_info", route_to_workflow)
 
 builder.add_node("leave_skill", pop_dialog_state)
 builder.add_edge("leave_skill", "primary_assistant")
@@ -221,3 +225,34 @@ while True:
         for value in event.values():
             if isinstance(value["messages"], BaseMessage):
                 print("Assistant:", value["messages"].content + "\n")
+
+
+# # Let's create an example conversation a user might have with the assistant
+# tutorial_questions = [
+#     "Hi, I need help with my hotel reservation.",
+#     "Can you check my booking for next week?",
+#     "Is it possible to change my reservation to a different date?",
+#     "I would like to move my reservation to the following week.",
+#     "What room options are available for the new dates?",
+#     "Can you book a deluxe room for my stay?",
+#     "What amenities are included with the deluxe room?",
+#     "Are there any additional charges for using the gym and spa?",
+#     "Can you arrange airport transportation for me?",
+#     "What are the dining options available at the hotel?",
+#     "Can you make a dinner reservation at the hotel restaurant for the first night?",
+#     "Are there any special events happening at the hotel during my stay?",
+#     "Can you provide information on local attractions and tours?",
+#     "Can you book a city tour for me on the second day of my stay?",
+#     "Thank you for your help. That's all for now."
+# ]
+
+# # Update with the backup file so we can restart from the original place in each section
+
+
+# _printed = set()
+# for question in tutorial_questions:
+#     events = graph.stream(
+#         {"messages": ("user", question)}, config, stream_mode="values"
+#     )
+#     for event in events:
+#         _print_event(event, _printed)

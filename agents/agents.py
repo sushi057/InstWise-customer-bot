@@ -95,6 +95,8 @@ greeting_agent_runnable = greeting_prompt | llm.bind_tools(
     greeting_tools + [CompleteOrEscalate]
 )
 
+print(greeting_agent_runnable.invoke(State(messages=[("user", "Hello")])))
+
 
 def route_greeting_agent(
     state: State,
@@ -103,10 +105,12 @@ def route_greeting_agent(
     if route == END:
         return END
 
-    tool_calls = state["messages"][-1].tool_calls
-    tool_names = [t.name for t in tool_calls]
-    if all(tc["name"] in tool_names for tc in tool_calls):
-        return "greeting_agent_tools"
+    # tool_calls = state["messages"][-1].tool_calls
+    # did_cancel = any(tc["name"] == CompleteOrEscalate.__name__ for tc in tool_calls)
+    # if did_cancel:
+    #     return "leave_skill"
+
+    return "greeting_agent_tools"
 
 
 investigation_tools = [lookup_activity, fetch_support_status]
