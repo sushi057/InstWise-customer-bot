@@ -11,7 +11,8 @@ from langgraph.prebuilt import ToolNode
 from states.state import State
 
 
-RAG_API_URL = "https://chat-backend.instwise.app/api/assistant/ask"
+# RAG_API_URL = "https://chat-backend.instwise.app/api/assistant/ask"
+RAG_API_URL = "http://localhost:8000/api/assistant/ask"
 headers = {"X-API-KEY": f"{os.getenv('X_API_KEY')}"}
 
 
@@ -105,7 +106,6 @@ def lookup_activity(user_id: str):
     planhat_json_path = os.path.abspath("data/planhat_mock.json")
     with open(planhat_json_path, "r") as f:
         response = json.load(f)
-        print(response)
 
     for item in response:
         return item if item["customerId"] == user_id else None
