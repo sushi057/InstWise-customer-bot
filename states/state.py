@@ -13,9 +13,7 @@ def update_dialog_stack(left: list[str], right: Optional[str]) -> list[str]:
 
 class UserInfo(TypedDict):
     user_id: str
-    user_name: str
-    user_email: str
-    company_name: str
+    user_info: str
     user_mood: Optional[
         Literal["happy", "unhappy", "neutral"]
     ]  # Useful for sentiment analysis
@@ -23,7 +21,7 @@ class UserInfo(TypedDict):
 
 class State(TypedDict):
     messages: Annotated[list[AnyMessage], add_messages]
-    user_info: str
+    user_info: dict
     # user_query: Annotated[list[AnyMessage], add_messages]
     # investigation_response = Annotated[list[AnyMessage], add_messages]
     # solution_response = Annotated[list[AnyMessage], add_messages]

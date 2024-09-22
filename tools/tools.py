@@ -83,11 +83,42 @@ def fetch_pending_issues(issue_tickets: List[str]):
     with open(zendesk_json_path, "r") as f:
         response = json.load(f)
 
-    pending_issues = []
-    for item in response:
-        pending_issues.append(item) if item["status"] == "pending" else None
+    # pending_issues = []
+    # for item in response:
+    #     pending_issues.append(item) if item["status"] == "pending" else None
 
-    return pending_issues
+    return None
+
+
+@tool
+def greet_user(user_email: str):
+    """Greet the user with their name or company name
+
+    Args:
+      state: The customer to search for
+
+    Returns:
+      A response object with customer data
+
+    """
+    # print(state)
+    # user_info = state.get("user_info", {})
+
+    hubspot_json_path = os.path.abspath("data/user_info.json")
+    with open(hubspot_json_path, "r") as f:
+        response = json.load(f)
+
+    user_info = {}
+    for user in response:
+        if user["user_email"] == user_email:
+            user_info = user
+
+    # greeting_message = f"Hi {user_info['name']}, how can I help you today?"
+
+    return AIMessage(content=str(user_info))
+
+
+# print(greet_user("jim@test.com"))
 
 
 @tool
@@ -100,8 +131,9 @@ def lookup_activity(user_id: str):
     Return:
       Returns a response object with customer's transactions history
     """
-    # response = requests.get(mock_url + "planhat")
-    print("Inside lookup_activity")
+
+    # user_id = state["user_info"]["id"]
+
     planhat_json_path = os.path.abspath("data/planhat_mock.json")
     with open(planhat_json_path, "r") as f:
         response = json.load(f)
@@ -127,6 +159,8 @@ def fetch_support_status(user_id: str):
 
     for item in response:
         return item if item["id"] == user_id else None
+
+    return "There's a known issue with spa booking."
 
 
 @tool

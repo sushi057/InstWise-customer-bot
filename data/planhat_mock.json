@@ -3,6 +3,7 @@
     "customerId": 420,
     "name": "Sarah Smith",
     "company": "Agilemove",
+    "email": "sarah@test.com",
     "recentTransactions": [
       {
         "transactionId": "trans101",
@@ -49,6 +50,7 @@
     "customerId": 619,
     "name": "David Johnson",
     "company": "Agilemove",
+    "email": "david@test.com",
     "recentTransactions": [
       {
         "transactionId": "trans201",
@@ -95,6 +97,7 @@
     "customerId": 111,
     "name": "Jim Halpert",
     "company": "Agilemove",
+    "email": "jim@test.com",
     "recentTransactions": [
       {
         "transactionId": "trans301",

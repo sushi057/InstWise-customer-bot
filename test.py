@@ -48,11 +48,9 @@ class Assistant:
         while True:
             configuration = config.get("configurable", {})
             thread_id = configuration.get("thread_id")
-            user_email = configuration.get("user_email")
             state = {
                 **state,
                 "thread_id": thread_id,
-                "user_email": user_email,
             }
             result = self.runnable.invoke(state)
 
@@ -73,11 +71,14 @@ builder = StateGraph(State)
 
 
 # def user_info(state: State):
-#     return {"user_info": fetch_user_info.invoke({})}
+#     print("State: ", state)
+#     return {**state, "user_info": fetch_user_info.invoke({})}
 
 
 # builder.add_node("fetch_user_info", user_info)
 # builder.add_edge(START, "fetch_user_info")
+
+builder.add_edge(START, "primary_assistant")
 
 # Greeting Assistant
 
@@ -91,7 +92,6 @@ builder = StateGraph(State)
 # )
 # builder.add_edge("greeting_agent", "primary_assistant")
 
-builder.add_edge(START, "primary_assistant")
 
 # Investigation Agent
 
@@ -193,12 +193,12 @@ builder.add_conditional_edges(
 #     state: State,
 # ) -> Literal[
 #     "primary_assistant",
-#     "investigation_agent",
-#     "solution_agent",
-#     "recommendation_agent",
-#     "log_agent",
-#     "upsell_agent",
-#     "survey_agent",
+#     # "investigation_agent",
+#     # "solution_agent",
+#     # "recommendation_agent",
+#     # "log_agent",
+#     # "upsell_agent",
+#     # "survey_agent",
 # ]:
 #     """If we are in a delegated state, route directly to the appropriate assistant."""
 #     dialog_state = state.get("dialog_state")
@@ -208,6 +208,7 @@ builder.add_conditional_edges(
 
 
 # builder.add_conditional_edges("fetch_user_info", route_to_workflow)
+# builder.add_edge("fetch_user_info", "primary_assistant")
 
 builder.add_node("leave_skill", pop_dialog_state)
 builder.add_edge("leave_skill", "primary_assistant")
@@ -223,7 +224,7 @@ with open("graph_v0.2.png", "wb") as f:
 # Conversation
 
 thread_id = str(uuid.uuid4())
-config = {"configurable": {"thread_id": thread_id, "user_email": "sarah@test.com"}}
+config = {"configurable": {"thread_id": thread_id, "user_email": "jim@test.com"}}
 
 while True:
     user_input = input("User: ")
@@ -234,5 +235,7 @@ while True:
 
     for event in graph.stream({"messages": [("user", user_input)]}, config):
         for value in event.values():
-            if isinstance(value["messages"], BaseMessage):
+            if "user_info" in value:  # Need to fix this
+                pass
+            elif isinstance(value["messages"], BaseMessage):
                 print("Assistant:", value["messages"].content + "\n")
