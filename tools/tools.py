@@ -63,7 +63,8 @@ def fetch_user_info(config: RunnableConfig):
 
         for user in response:
             if user["user_email"] == user_email:
-                return user
+                # return str(user)
+                return {"user_info": user}
         return None
     except FileNotFoundError:
         response = {
@@ -91,27 +92,27 @@ def fetch_pending_issues(issue_tickets: List[str]):
 
 
 @tool
-def greet_user(user_email: str):
+def greet_user(state: State):
     """Greet the user with their name or company name
 
     Args:
-      state: The customer to search for
+      user_email: Email of the user to greet
 
     Returns:
       A response object with customer data
 
     """
-    # print(state)
-    # user_info = state.get("user_info", {})
+    print(state)
+    user_info = state.get("user_info", {})
 
-    hubspot_json_path = os.path.abspath("data/user_info.json")
-    with open(hubspot_json_path, "r") as f:
-        response = json.load(f)
+    # hubspot_json_path = os.path.abspath("data/user_info.json")
+    # with open(hubspot_json_path, "r") as f:
+    #     response = json.load(f)
 
-    user_info = {}
-    for user in response:
-        if user["user_email"] == user_email:
-            user_info = user
+    # user_info = {}
+    # for user in response:
+    #     if user["user_email"] == user_email:
+    #         user_info = user
 
     # greeting_message = f"Hi {user_info['name']}, how can I help you today?"
 
@@ -121,7 +122,7 @@ def greet_user(user_email: str):
 # print(greet_user("jim@test.com"))
 
 
-@tool
+@tool()
 def lookup_activity(user_id: str):
     """Look up user transactions activity
 
@@ -158,9 +159,14 @@ def fetch_support_status(user_id: str):
         response = json.load(f)
 
     for item in response:
-        return item if item["id"] == user_id else None
+        if str(item["id"]) == user_id:
+            return item
+    return None
 
-    return "There's a known issue with spa booking."
+    # if user_id in ["111", "619"]:
+    #     return "There's a known issue with {user's issue} at the moment."
+    # else:
+    #     return None
 
 
 @tool
@@ -217,7 +223,9 @@ def suggest_workaround(query: str) -> AIMessage:
     Returns:
     - AIMessage: The response from the RAG API as an AIMessage object.
     """
-    workaround_message = "Based on the issue you're facing, I suggest you try the following workaround: [Workaround details]."
+    workaround_message = (
+        "Based on the issue you're facing, I suggest you try the following workaround:."
+    )
     return AIMessage(content=workaround_message)
 
 

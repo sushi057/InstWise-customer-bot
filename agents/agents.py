@@ -80,7 +80,7 @@ def route_greeting_agent(
     return "greeting_agent_tools"
 
 
-investigation_tools = [lookup_activity, fetch_support_status]
+investigation_tools = [fetch_support_status, suggest_workaround]
 investigation_runnable = investigation_prompt | llm.bind_tools(
     investigation_tools + [CompleteOrEscalate]
 )
@@ -294,7 +294,7 @@ def route_primary_assistant(
     return ValueError("Invalid Route")
 
 
-primary_assistant_tools = [greet_user, fetch_pending_issues]
+primary_assistant_tools = [fetch_user_info, greet_user, fetch_pending_issues]
 assistant_runnable = primary_assistant_prompt | llm.bind_tools(
     primary_assistant_tools
     + [

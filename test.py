@@ -172,7 +172,7 @@ builder.add_node("primary_assistant", Assistant(assistant_runnable))
 builder.add_node(
     "primary_assistant_tools", create_tool_node_with_fallback(primary_assistant_tools)
 )
-# builder.add_edge(START, "primary_assistant")
+builder.add_edge("primary_assistant_tools", "primary_assistant")
 builder.add_conditional_edges(
     "primary_assistant",
     route_primary_assistant,
@@ -224,7 +224,7 @@ with open("graph_v0.2.png", "wb") as f:
 # Conversation
 
 thread_id = str(uuid.uuid4())
-config = {"configurable": {"thread_id": thread_id, "user_email": "jim@test.com"}}
+config = {"configurable": {"thread_id": thread_id, "user_email": "david@test.com"}}
 
 while True:
     user_input = input("User: ")
