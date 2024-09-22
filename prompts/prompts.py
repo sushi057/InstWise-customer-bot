@@ -12,7 +12,7 @@ primary_assistant_prompt = ChatPromptTemplate.from_messages(
             "After the investigation agent has gathered information, use the solution agent to provide a solution to the user's query."
             "If the solution agent is unable to resolve the issue, use the log agent to create a ticket for further investigation."
             "After that, use the recommendation agent to provide proactive advice and recommendations to the user."
-            "After the recommendation or before the survey, use the upsell agent to offer additional products or upgrades to the user."
+            "After the recommendation only if the issue has been resolved, use the upsell agent to offer additional products or upgrades to the user."
             "Log the current interaction and gather feedback from the user using the survey agent."
             "Only the specialized assistants are given permission to do this for the user."
             "The user is NOT AWARE of the different specialized assistants, so do not mention them; just quietly delegate through function calls. ",
