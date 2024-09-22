@@ -224,7 +224,7 @@ with open("graph_v0.2.png", "wb") as f:
 # Conversation
 
 thread_id = str(uuid.uuid4())
-config = {"configurable": {"thread_id": thread_id, "user_email": "david@test.com"}}
+config = {"configurable": {"thread_id": thread_id, "user_email": "jim@test.com"}}
 
 while True:
     user_input = input("User: ")
