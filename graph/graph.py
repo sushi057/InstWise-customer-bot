@@ -67,12 +67,12 @@ def create_graph():
 
     builder = StateGraph(State)
 
-    def user_info(state: State):
-        print("State: ", state)
-        return {**state, "user_info": fetch_user_info.invoke({})}
+    # def user_info(state: State):
+    #     print("State: ", state)
+    #     return {**state, "user_info": fetch_user_info.invoke({})}
 
-    builder.add_node("fetch_user_info", user_info)
-    builder.add_edge(START, "fetch_user_info")
+    # builder.add_node("fetch_user_info", user_info)
+    # builder.add_edge(START, "fetch_user_info")
 
     # Greeting Assistant
 
@@ -199,7 +199,9 @@ def create_graph():
     #     return dialog_state[-1]
 
     # builder.add_conditional_edges("fetch_user_info", route_to_workflow)
-    builder.add_edge("fetch_user_info", "primary_assistant")
+    # builder.add_edge("fetch_user_info", "primary_assistant")
+
+    builder.add_edge(START, "primary_assistant")
 
     builder.add_node("leave_skill", pop_dialog_state)
     builder.add_edge("leave_skill", "primary_assistant")
