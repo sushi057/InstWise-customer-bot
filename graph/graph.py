@@ -68,7 +68,6 @@ def create_graph():
     builder = StateGraph(State)
 
     def user_info(state: State):
-        print("State: ", state)
         return {**state, "user_info": fetch_user_info.invoke({})}
 
     builder.add_node("fetch_user_info", user_info)

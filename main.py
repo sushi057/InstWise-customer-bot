@@ -14,21 +14,21 @@ with open("graph_v0.2.png", "wb") as f:
 # Conversation
 
 thread_id = str(uuid.uuid4())
-config = {"configurable": {"thread_id": thread_id, "user_email": "jim@test.com"}}
+config = {"configurable": {"thread_id": thread_id, "user_email": "david@test.com"}}
 
-while True:
-    user_input = input("User: ")
+# while True:
+#     user_input = input("User: ")
 
-    if user_input.lower() in ["quit", "exit", "q"]:
-        print("Goodbye!")
-        break
+#     if user_input.lower() in ["quit", "exit", "q"]:
+#         print("Goodbye!")
+#         break
 
-    for event in graph.stream({"messages": [("user", user_input)]}, config):
-        for value in event.values():
-            if "user_info" in value:  # Need to fix this
-                pass
-            elif isinstance(value["messages"], BaseMessage):
-                print("Assistant:", value["messages"].content + "\n")
+#     for event in graph.stream({"messages": [("user", user_input)]}, config):
+#         for value in event.values():
+#             if "user_info" in value:  # Need to fix this
+#                 pass
+#             elif isinstance(value["messages"], BaseMessage):
+#                 print("Assistant:", value["messages"].content + "\n")
 
 app = FastAPI()
 
@@ -39,7 +39,8 @@ async def root():
 
 
 @app.get("/ask")
-async def ask_support(query: str, customer_email: str):
+async def ask_support(query: str, user_email: str):
+    config = {"configurable": {"thread_id": thread_id, "user_email": user_email}}
     messages = []
     async for event in graph.astream(
         {"messages": [("user", query)]}, config, stream_mode="values"
