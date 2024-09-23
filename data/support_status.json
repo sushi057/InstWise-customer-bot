@@ -4,15 +4,13 @@
     "known_issue": false,
     "same_issue_raised_before": false,
     "csm_escalated_issue": true,
-    "clarification_ambiguity": false,
     "usage": "low"
   },
   {
     "id": 111,
-    "known_issue": true,
+    "known_issue": false,
     "same_issue_raised_before": false,
     "csm_escalated_issue": false,
-    "clarification_ambiguity": false,
     "usage": "medium"
   },
   {
@@ -20,7 +18,6 @@
     "known_issue": true,
     "same_issue_raised_before": false,
     "csm_escalated_issue": false,
-    "clarification_ambiguity": false,
     "usage": "medium"
   }
 ]

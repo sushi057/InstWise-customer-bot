@@ -1,125 +1,46 @@
 import uuid
-import os
-from langchain_core.runnables import Runnable, RunnableConfig
-from langgraph.checkpoint.memory import MemorySaver
-from langgraph.graph import StateGraph, START, END
-from langgraph.prebuilt import tools_condition
-from langchain_core.messages import BaseMessage
-
-from states.state import State
-from models.openai_model import get_openai_model
-from tools.tools import (
-    fetch_customer_info,
-    fetch_pending_issues,
-    lookup_activity,
-    fetch_support_status,
-    answer_rag,
-    recommendation_rag_call,
-    suggest_workaround,
-    upsell_rag_call,
-    personalized_follow_up,
-    log_activity,
-    create_ticket,
-    survey_tool,
-    create_tool_node_with_fallback,
-    handle_tool_error,
-    _print_event,
-)
-from prompts.prompts import primary_assistant_prompt
-
+from typing import Literal
 from fastapi import FastAPI
 
-# os.environ["OPENAI_API_KEY"] = "sk-1234"
-# os.getenv("OPENAI_API_KEY")
+from langchain_core.messages import BaseMessage
 
-app = FastAPI()
+from graph.graph import create_graph
 
+graph = create_graph()
+# Visualize graph
+with open("graph_v0.2.png", "wb") as f:
+    f.write(graph.get_graph(xray=True).draw_mermaid_png())
 
-class Assistant:
-    def __init__(self, runnable: Runnable):
-        self.runnable = runnable
+# Conversation
 
-    def __call__(self, state: State, config: RunnableConfig):
-        while True:
-            configuration = config.get("configuration", {})
-            thread_id = configuration.get("thread_id")
-            state = {**state, "user_info": thread_id}
-            result = self.runnable.invoke(state)
-
-            if not result.tool_calls and (
-                not result.content
-                or isinstance(result.content, list)
-                and not result.content[0].get("text")
-            ):
-                messages = state["messages"] + [("user", "Respond with a real output")]
-                state = {**state, "messages": messages}
-            else:
-                break
-
-        return {"messages": result}
-
-
-llm = get_openai_model()
-
-tools = [
-    fetch_customer_info,
-    fetch_pending_issues,
-    lookup_activity,
-    fetch_support_status,
-    answer_rag,
-    recommendation_rag_call,
-    suggest_workaround,
-    upsell_rag_call,
-    personalized_follow_up,
-    log_activity,
-    create_ticket,
-    survey_tool,
-]
-
-assistant_runnable = primary_assistant_prompt | llm.bind_tools(tools)
-
-builder = StateGraph(State)
-
-builder.add_node("assistant", Assistant(assistant_runnable))
-builder.add_node("tools", create_tool_node_with_fallback(tools))
-
-builder.add_edge(START, "assistant")
-builder.add_conditional_edges("assistant", tools_condition)
-builder.add_edge("tools", "assistant")
-
-memory = MemorySaver()
-graph = builder.compile(checkpointer=memory)
-
-# thread_id = str(uuid.uuid4())
-thread_id = "1234"
-
-config = {
-    "configurable": {
-        "thread_id": thread_id,
-    }
-}
+thread_id = str(uuid.uuid4())
+config = {"configurable": {"thread_id": thread_id, "user_email": "david@test.com"}}
 
 while True:
     user_input = input("User: ")
 
-    if user_input.lower() in ["quit", "exit", "q"]:
-        print("Goodbye!")
-        break
-    for event in graph.stream(
-        {"messages": [("user", user_input)]}, {**config, "user_email": "sarah@test.com"}
-    ):
-        for value in event.values():
-            if isinstance(value["messages"], BaseMessage):
-                print("Assistant:", value["messages"].content + "\n")
+#     if user_input.lower() in ["quit", "exit", "q"]:
+#         print("Goodbye!")
+#         break
+
+#     for event in graph.stream({"messages": [("user", user_input)]}, config):
+#         for value in event.values():
+#             if "user_info" in value:  # Need to fix this
+#                 pass
+#             elif isinstance(value["messages"], BaseMessage):
+#                 print("Assistant:", value["messages"].content + "\n")
+
+app = FastAPI()
 
 
-@app.get("/")
+@app.get("/", status_code=200)
 async def root():
     return {"message": "Hello world"}
 
 
 @app.get("/ask")
 async def ask_support(query: str, user_email: str):
+    config = {"configurable": {"thread_id": thread_id, "user_email": user_email}}
     messages = []
     async for event in graph.astream(
         {"messages": [("user", query)]}, config, stream_mode="values"
@@ -128,8 +49,3 @@ async def ask_support(query: str, user_email: str):
         messages.append(event["messages"][-1].content)
         # return {"message": event["messages"][-1].content}
     return {"message": messages[-1]}
-
-
-@app.get("/test")
-async def test():
-    return {"message": "Hello world"}
