@@ -201,8 +201,6 @@ def create_graph():
     # builder.add_conditional_edges("fetch_user_info", route_to_workflow)
     builder.add_edge("fetch_user_info", "primary_assistant")
 
-    # builder.add_edge(START, "primary_assistant")
-
     builder.add_node("leave_skill", pop_dialog_state)
     builder.add_edge("leave_skill", "primary_assistant")
 
