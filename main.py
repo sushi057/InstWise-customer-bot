@@ -16,8 +16,8 @@ with open("graph_v0.2.png", "wb") as f:
 thread_id = str(uuid.uuid4())
 config = {"configurable": {"thread_id": thread_id, "user_email": "david@test.com"}}
 
-while True:
-    user_input = input("User: ")
+# while True:
+#     user_input = input("User: ")
 
 #     if user_input.lower() in ["quit", "exit", "q"]:
 #         print("Goodbye!")
