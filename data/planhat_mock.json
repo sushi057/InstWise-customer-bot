@@ -139,5 +139,52 @@
         "status": "Resolved"
       }
     ]
+  },
+  {
+    "customerId": 222,
+    "name": "Sushil Bhattachas",
+    "company": "Agilemove",
+    "email": "bhattachas@hotmail.com",
+    "recentTransactions": [
+      {
+        "transactionId": "trans401",
+        "date": "2024-10-01T10:00:00.000Z",
+        "amount": 3000,
+        "currency": "USD",
+        "description": "Quarterly Subscription Payment",
+        "status": "Completed"
+      },
+      {
+        "transactionId": "trans402",
+        "date": "2024-10-15T15:00:00.000Z",
+        "amount": 500,
+        "currency": "USD",
+        "description": "Office Supplies Purchase",
+        "status": "Completed"
+      }
+    ],
+    "activityLogs": [
+      {
+        "logId": "log401",
+        "date": "2024-10-02T12:00:00.000Z",
+        "type": "email",
+        "details": "Sent invoice email to Pam Beesly",
+        "status": "Sent"
+      },
+      {
+        "logId": "log402",
+        "date": "2024-10-05T14:00:00.000Z",
+        "type": "call",
+        "details": "Phone call with Pam Beesly regarding office supplies",
+        "status": "Completed"
+      },
+      {
+        "logId": "log403",
+        "date": "2024-10-20T11:00:00.000Z",
+        "type": "support_ticket",
+        "details": "Opened support ticket for issue with subscription payment",
+        "status": "Resolved"
+      }
+    ]
   }
 ]
