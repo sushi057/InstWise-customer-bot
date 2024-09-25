@@ -27,7 +27,7 @@ from tools.tools import create_tool_node_with_fallback, fetch_user_info, _print_
 from utils.utils import create_entry_node, pop_dialog_state
 
 
-def create_graph(org_id: str):
+def create_graph(org_id: str, memory):
     class Assistant:
         def __init__(self, runnable: Runnable):
             self.runnable = runnable
@@ -182,7 +182,6 @@ def create_graph(org_id: str):
     builder.add_node("leave_skill", pop_dialog_state)
     builder.add_edge("leave_skill", "primary_assistant")
 
-    memory = MemorySaver()
     graph = builder.compile(checkpointer=memory)
 
     return graph

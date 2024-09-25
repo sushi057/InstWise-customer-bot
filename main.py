@@ -1,7 +1,9 @@
 import os
 import uuid
-from fastapi import Depends, FastAPI, HTTPException
 import requests
+from fastapi import Depends, FastAPI, HTTPException
+from langgraph.checkpoint.memory import MemorySaver
+
 
 from graph.graph import create_graph
 from utils.utils import fetch_organization_details
@@ -33,6 +35,8 @@ thread_id = str(uuid.uuid4())
 
 app = FastAPI()
 
+memory = MemorySaver()
+
 
 @app.get("/", status_code=200)
 async def root():
@@ -46,7 +50,7 @@ async def ask_support(
     org_id: str,
 ):
     config = {"configurable": {"thread_id": thread_id, "user_email": user_email}}
-    graph = create_graph(org_id=org_id)
+    graph = create_graph(org_id=org_id, memory=memory)
     messages = []
 
     async for event in graph.astream(
