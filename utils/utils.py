@@ -2,7 +2,9 @@ import os
 import json
 from typing import Callable
 
+from fastapi import HTTPException
 from langchain_core.messages import ToolMessage
+import requests
 
 from states.state import State
 
@@ -57,3 +59,23 @@ def pop_dialog_state(state: State) -> dict:
         "dialog_state": "pop",
         "messages": messages,
     }
+
+
+#  Fetch prompts for the organization
+def fetch_organization_details(org_id: str):
+    domain = "backend.instwise.app"
+    setting_api_key = os.environ["SETTING_API_KEY"]
+
+    # Replace with organization_id
+    url = f"https://{domain}/organizationDetail/{org_id}/"
+    headers = {"accept": "*/*", "x-api-key-local": setting_api_key}
+
+    try:
+        response = requests.get(url, headers=headers)
+        return response.json()
+    except requests.exceptions.HTTPError as e:
+        # Better error handling
+        raise HTTPException(status_code=response.status_code, detail=str(e))
+    except requests.exceptions.RequestException as e:
+        # Handle other possible exceptions (e.g., network issues, SSL errors)
+        raise HTTPException(status_code=500, detail=str(e))

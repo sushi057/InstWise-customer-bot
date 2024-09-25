@@ -20,19 +20,7 @@ from tools.tools import (
     upsell_rag_call,
     personalized_follow_up,
 )
-from prompts.prompts import (
-    greeting_prompt,
-    primary_assistant_prompt,
-    investigation_prompt,
-    solution_prompt,
-    recommendation_prompt,
-    upsell_prompt,
-    survey_prompt,
-    log_prompt,
-)
-
-
-llm = get_openai_model()
+from prompts.prompts import create_prompts
 
 
 class CompleteOrEscalate(BaseModel):
@@ -59,31 +47,7 @@ class CompleteOrEscalate(BaseModel):
         }
 
 
-greeting_tools = [fetch_user_info, fetch_pending_issues]
-greeting_agent_runnable = greeting_prompt | llm.bind_tools(
-    greeting_tools + [CompleteOrEscalate]
-)
-
-
-def route_greeting_agent(
-    state: State,
-) -> Literal["greeting_agent_tools", "__end__"]:
-    route = tools_condition(state)
-    if route == END:
-        return END
-
-    # tool_calls = state["messages"][-1].tool_calls
-    # did_cancel = any(tc["name"] == CompleteOrEscalate.__name__ for tc in tool_calls)
-    # if did_cancel:
-    #     return "leave_skill"
-
-    return "greeting_agent_tools"
-
-
 investigation_tools = [fetch_support_status, suggest_workaround]
-investigation_runnable = investigation_prompt | llm.bind_tools(
-    investigation_tools + [CompleteOrEscalate]
-)
 
 
 def route_investigation_agent(
@@ -102,9 +66,6 @@ def route_investigation_agent(
 
 
 solution_tools = [rag_call, suggest_workaround]
-solution_runnable = solution_prompt | llm.bind_tools(
-    solution_tools + [CompleteOrEscalate]
-)
 
 
 def route_solution_agent(
@@ -123,9 +84,6 @@ def route_solution_agent(
 
 
 recommendation_tools = [recommendation_rag_call]
-recommendation_runnable = recommendation_prompt | llm.bind_tools(
-    recommendation_tools + [CompleteOrEscalate]
-)
 
 
 def route_recommendation_agent(
@@ -144,7 +102,6 @@ def route_recommendation_agent(
 
 
 upsell_tools = [upsell_rag_call, personalized_follow_up]
-upsell_runnable = upsell_prompt | llm.bind_tools(upsell_tools + [CompleteOrEscalate])
 
 
 def route_upsell_agent(
@@ -163,7 +120,6 @@ def route_upsell_agent(
 
 
 log_tools = [log_activity, create_ticket]
-log_runnable = log_prompt | llm.bind_tools(log_tools + [CompleteOrEscalate])
 
 
 def route_log_agent(
@@ -182,7 +138,6 @@ def route_log_agent(
 
 
 survey_tools = []
-survey_runnable = survey_prompt | llm.bind_tools([CompleteOrEscalate])
 
 
 def route_survey_agent(
@@ -295,14 +250,71 @@ def route_primary_assistant(
 
 
 primary_assistant_tools = [fetch_user_info, greet_user, fetch_pending_issues]
-assistant_runnable = primary_assistant_prompt | llm.bind_tools(
-    primary_assistant_tools
-    + [
-        ToInvestigationAgent,
-        ToSolutionAgent,
-        ToRecommendationAgent,
-        ToLogAgent,
-        ToUpsellAgent,
-        ToSurveyAgent,
-    ]
-)
+
+
+def create_agents(org_id: str):
+    prompts = create_prompts(org_id)
+
+    llm = get_openai_model()
+
+    # greeting_tools = [fetch_user_info, fetch_pending_issues]
+    # greeting_agent_runnable = prompts["greeting_prompt"] | llm.bind_tools(
+    #     greeting_tools + [CompleteOrEscalate]
+    # )
+
+    # def route_greeting_agent(
+    #     state: State,
+    # ) -> Literal["greeting_agent_tools", "__end__"]:
+    #     route = tools_condition(state)
+    #     if route == END:
+    #         return END
+
+    #     # tool_calls = state["messages"][-1].tool_calls
+    #     # did_cancel = any(tc["name"] == CompleteOrEscalate.__name__ for tc in tool_calls)
+    #     # if did_cancel:
+    #     #     return "leave_skill"
+
+    #     return "greeting_agent_tools"
+
+    investigation_runnable = prompts["investigation_prompt"] | llm.bind_tools(
+        investigation_tools + [CompleteOrEscalate]
+    )
+    solution_runnable = prompts["solution_prompt"] | llm.bind_tools(
+        solution_tools + [CompleteOrEscalate]
+    )
+
+    recommendation_runnable = prompts["recommendation_prompt"] | llm.bind_tools(
+        recommendation_tools + [CompleteOrEscalate]
+    )
+
+    upsell_runnable = prompts["upsell_prompt"] | llm.bind_tools(
+        upsell_tools + [CompleteOrEscalate]
+    )
+
+    log_runnable = prompts["log_prompt"] | llm.bind_tools(
+        log_tools + [CompleteOrEscalate]
+    )
+
+    survey_runnable = prompts["survey_prompt"] | llm.bind_tools([CompleteOrEscalate])
+
+    assistant_runnable = prompts["primary_assistant_prompt"] | llm.bind_tools(
+        primary_assistant_tools
+        + [
+            ToInvestigationAgent,
+            ToSolutionAgent,
+            ToRecommendationAgent,
+            ToLogAgent,
+            ToUpsellAgent,
+            ToSurveyAgent,
+        ]
+    )
+
+    return {
+        "assistant_runnable": assistant_runnable,
+        "investigation_runnable": investigation_runnable,
+        "solution_runnable": solution_runnable,
+        "recommendation_runnable": recommendation_runnable,
+        "upsell_runnable": upsell_runnable,
+        "survey_runnable": survey_runnable,
+        "log_runnable": log_runnable,
+    }

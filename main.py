@@ -1,17 +1,21 @@
+import os
 import uuid
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI, HTTPException
+import requests
 
 from graph.graph import create_graph
+from utils.utils import fetch_organization_details
 
-graph = create_graph()
+
 # Visualize graph
-with open("graph_v0.2.png", "wb") as f:
-    f.write(graph.get_graph(xray=True).draw_mermaid_png())
+# with open("graph_v0.2.png", "wb") as f:
+#     f.write(graph.get_graph(xray=True).draw_mermaid_png())
 
 # Conversation
 
 thread_id = str(uuid.uuid4())
-config = {"configurable": {"thread_id": thread_id, "user_email": "david@test.com"}}
+
+# config = {"configurable": {"thread_id": thread_id, "user_email": "david@test.com"}}
 
 # while True:
 #     user_input = input("User: ")
@@ -36,9 +40,15 @@ async def root():
 
 
 @app.get("/ask")
-async def ask_support(query: str, user_email: str):
+async def ask_support(
+    query: str,
+    user_email: str,
+    org_id: str,
+):
     config = {"configurable": {"thread_id": thread_id, "user_email": user_email}}
+    graph = create_graph(org_id=org_id)
     messages = []
+
     async for event in graph.astream(
         {"messages": [("user", query)]}, config, stream_mode="values"
     ):

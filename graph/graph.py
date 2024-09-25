@@ -6,23 +6,14 @@ from langgraph.checkpoint.memory import MemorySaver
 
 
 from agents.agents import (
-    greeting_agent_runnable,
-    assistant_runnable,
-    investigation_runnable,
+    create_agents,
     route_primary_assistant,
-    solution_runnable,
-    recommendation_runnable,
-    log_runnable,
-    upsell_runnable,
-    survey_runnable,
     route_log_agent,
-    route_greeting_agent,
     route_investigation_agent,
     route_solution_agent,
     route_recommendation_agent,
     route_log_agent,
     route_upsell_agent,
-    greeting_tools,
     primary_assistant_tools,
     investigation_tools,
     solution_tools,
@@ -36,7 +27,7 @@ from tools.tools import create_tool_node_with_fallback, fetch_user_info, _print_
 from utils.utils import create_entry_node, pop_dialog_state
 
 
-def create_graph():
+def create_graph(org_id: str):
     class Assistant:
         def __init__(self, runnable: Runnable):
             self.runnable = runnable
@@ -86,13 +77,16 @@ def create_graph():
     # )
     # builder.add_edge("greeting_agent", "primary_assistant")
 
+    # Create agents
+    agents = create_agents(org_id=org_id)
+
     # Investigation Agent
 
     builder.add_node(
         "enter_investigation_agent",
         create_entry_node("Investigation Agent", "investigation_agent"),
     )
-    builder.add_node("investigation_agent", Assistant(investigation_runnable))
+    builder.add_node("investigation_agent", Assistant(agents["investigation_runnable"]))
     builder.add_edge("enter_investigation_agent", "investigation_agent")
     builder.add_node(
         "investigation_agent_tools", create_tool_node_with_fallback(investigation_tools)
@@ -106,7 +100,7 @@ def create_graph():
         "enter_solution_agent", create_entry_node("Solution Agent", "solution_agent")
     )
     builder
-    builder.add_node("solution_agent", Assistant(solution_runnable))
+    builder.add_node("solution_agent", Assistant(agents["solution_runnable"]))
     builder.add_edge("enter_solution_agent", "solution_agent")
     builder.add_node(
         "solution_agent_tools", create_tool_node_with_fallback(solution_tools)
@@ -120,7 +114,9 @@ def create_graph():
         "enter_recommendation_agent",
         create_entry_node("Recommendation Agent", "recommendation_agent"),
     )
-    builder.add_node("recommendation_agent", Assistant(recommendation_runnable))
+    builder.add_node(
+        "recommendation_agent", Assistant(agents["recommendation_runnable"])
+    )
     builder.add_edge("enter_recommendation_agent", "recommendation_agent")
     builder.add_node(
         "recommendation_agent_tools",
@@ -132,7 +128,7 @@ def create_graph():
     # Log Agent
 
     builder.add_node("enter_log_agent", create_entry_node("Log Agent", "log_agent"))
-    builder.add_node("log_agent", Assistant(log_runnable))
+    builder.add_node("log_agent", Assistant(agents["log_runnable"]))
     builder.add_edge("enter_log_agent", "log_agent")
     builder.add_node("log_agent_tools", create_tool_node_with_fallback(log_tools))
     builder.add_edge("log_agent_tools", "log_agent")
@@ -143,7 +139,7 @@ def create_graph():
     builder.add_node(
         "enter_upsell_agent", create_entry_node("Upsell Agent", "upsell_agent")
     )
-    builder.add_node("upsell_agent", Assistant(upsell_runnable))
+    builder.add_node("upsell_agent", Assistant(agents["upsell_runnable"]))
     builder.add_edge("enter_upsell_agent", "upsell_agent")
     builder.add_node("upsell_agent_tools", create_tool_node_with_fallback(upsell_tools))
     builder.add_edge("upsell_agent_tools", "upsell_agent")
@@ -154,13 +150,13 @@ def create_graph():
     builder.add_node(
         "enter_survey_agent", create_entry_node("Survey Agent", "survey_agent")
     )
-    builder.add_node("survey_agent", Assistant(survey_runnable))
+    builder.add_node("survey_agent", Assistant(agents["survey_runnable"]))
     builder.add_edge("enter_survey_agent", "survey_agent")
     builder.add_edge("survey_agent", END)
 
     # Primary Assistant
 
-    builder.add_node("primary_assistant", Assistant(assistant_runnable))
+    builder.add_node("primary_assistant", Assistant(agents["assistant_runnable"]))
     builder.add_node(
         "primary_assistant_tools",
         create_tool_node_with_fallback(primary_assistant_tools),
@@ -180,26 +176,6 @@ def create_graph():
             END: END,
         },
     )
-
-    # def route_to_workflow(
-    #     state: State,
-    # ) -> Literal[
-    #     "primary_assistant",
-    #     # "investigation_agent",
-    #     # "solution_agent",
-    #     # "recommendation_agent",
-    #     # "log_agent",
-    #     # "upsell_agent",
-    #     # "survey_agent",
-    # ]:
-    #     """If we are in a delegated state, route directly to the appropriate assistant."""
-    #     dialog_state = state.get("dialog_state")
-    #     if not dialog_state:
-    #         return "primary_assistant"
-    #     return dialog_state[-1]
-
-    # builder.add_conditional_edges("fetch_user_info", route_to_workflow)
-    # builder.add_edge("fetch_user_info", "primary_assistant")
 
     builder.add_edge(START, "primary_assistant")
 

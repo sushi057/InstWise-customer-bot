@@ -17,6 +17,7 @@
     - log_activity
     - create_ticket_cms
     - upsell_rag_call
-    
-1. always fetch information
-2. prompt engineering
+
+## Flow
+
+main <- graph <- agents <- prompts
