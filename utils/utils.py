@@ -1,10 +1,11 @@
 import os
 import json
 from typing import Callable
+import requests
+import secrets
 
 from fastapi import HTTPException
 from langchain_core.messages import ToolMessage
-import requests
 
 from states.state import State
 
@@ -79,3 +80,7 @@ def fetch_organization_details(org_id: str):
     except requests.exceptions.RequestException as e:
         # Handle other possible exceptions (e.g., network issues, SSL errors)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+def get_session_id():
+    return secrets.token_urlsafe(10)
