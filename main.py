@@ -1,12 +1,12 @@
 import os
+from typing import Optional
 import uuid
 import requests
 from fastapi import Depends, FastAPI, HTTPException
 from langgraph.checkpoint.memory import MemorySaver
 
-
 from graph.graph import create_graph
-from utils.utils import fetch_organization_details
+from utils.utils import fetch_organization_details, get_session_id
 
 
 # Visualize graph
@@ -15,7 +15,7 @@ from utils.utils import fetch_organization_details
 
 # Conversation
 
-thread_id = str(uuid.uuid4())
+# thread_id = str(uuid.uuid4())
 
 # config = {"configurable": {"thread_id": thread_id, "user_email": "david@test.com"}}
 
@@ -37,6 +37,8 @@ app = FastAPI()
 
 memory = MemorySaver()
 
+session_graph_cache = {"session_id": None, "graph": None}
+
 
 @app.get("/", status_code=200)
 async def root():
@@ -45,12 +47,19 @@ async def root():
 
 @app.get("/ask")
 async def ask_support(
-    query: str,
-    user_email: str,
-    org_id: str,
+    query: str, user_email: str, org_id: str, session_id: Optional[str]
 ):
-    config = {"configurable": {"thread_id": thread_id, "user_email": user_email}}
-    graph = create_graph(org_id=org_id, memory=memory)
+
+    if not session_id:
+        session_id = get_session_id()
+
+    if session_graph_cache["session_id"] != session_id:
+        session_graph_cache["session_id"] = session_id
+        new_memory = MemorySaver()
+        session_graph_cache["graph"] = create_graph(org_id=org_id, memory=new_memory)
+
+    graph = session_graph_cache["graph"]
+    config = {"configurable": {"thread_id": session_id, "user_email": user_email}}
     messages = []
 
     async for event in graph.astream(
@@ -59,4 +68,4 @@ async def ask_support(
         event["messages"][-1].pretty_print()
         messages.append(event["messages"][-1].content)
         # return {"message": event["messages"][-1].content}
-    return {"message": messages[-1]}
+    return {"message": messages[-1], "session_id": session_id}
