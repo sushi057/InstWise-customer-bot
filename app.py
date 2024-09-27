@@ -1,8 +1,11 @@
 import uuid
 import chainlit as cl
 from graph.graph import create_graph
+from langgraph.checkpoint.memory import MemorySaver
 
-graph = create_graph()
+memory = MemorySaver()
+
+graph = create_graph(org_id="66158fe71bfe10b58cb23eea", memory=memory)
 
 thread_id = str(uuid.uuid4())
 config = {"configurable": {"thread_id": thread_id, "user_email": "david@test.com"}}
