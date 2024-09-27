@@ -249,7 +249,7 @@ def route_primary_assistant(
     return ValueError("Invalid Route")
 
 
-primary_assistant_tools = [fetch_user_info, greet_user, fetch_pending_issues]
+primary_assistant_tools = [fetch_user_info, fetch_pending_issues]
 
 
 def create_agents(org_id: str):
