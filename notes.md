@@ -1,11 +1,15 @@
 # Notes
 
-    - Review Instwise excel sheet for updated work flow
-    - design flow and edges
-    - fix conditional_edges with agent_tools
-    - test with multiple case scenarios
     - recommendation low/high usage -> adaption pattern
     - upsell -> retention
+
+## Flow
+
+main <- graph <- agents <- prompts
+
+## TODO
+
+    - Add session client side
 
 ## Tools
 
@@ -18,6 +22,9 @@
     - create_ticket_cms
     - upsell_rag_call
 
-## Flow
+## Bugs
 
-main <- graph <- agents <- prompts
+    - Global memory for all chats
+    - Prompts not working properly
+    - Investigation agent keeps giving workarounds 
+    
