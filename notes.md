@@ -27,4 +27,8 @@ main <- graph <- agents <- prompts
     - Global memory for all chats
     - Prompts not working properly
     - Investigation agent keeps giving workarounds 
-    
+
+
+## URL
+    - Instwise Customer: http://3.145.183.97/mainapp/chat
+    - Server: http://18.188.31.176:8000/
