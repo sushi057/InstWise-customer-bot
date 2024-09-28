@@ -42,7 +42,7 @@ session_graph_cache = {"session_id": None, "graph": None}
 
 @app.get("/", status_code=200)
 async def root():
-    return {"message": "Hello world"}
+    return {"message": "Instwise Customer Support"}
 
 
 @app.get("/ask")
