@@ -47,7 +47,7 @@ async def root():
 
 @app.get("/ask")
 async def ask_support(
-    query: str, user_email: str, org_id: str, session_id: Optional[str]
+    query: str, user_email: str, org_id: str, session_id: Optional[str] = None
 ):
 
     if not session_id:
@@ -61,11 +61,14 @@ async def ask_support(
     graph = session_graph_cache["graph"]
     config = {"configurable": {"thread_id": session_id, "user_email": user_email}}
     messages = []
-
-    async for event in graph.astream(
-        {"messages": [("user", query)]}, config, stream_mode="values"
-    ):
-        event["messages"][-1].pretty_print()
-        messages.append(event["messages"][-1].content)
-        # return {"message": event["messages"][-1].content}
+    try:
+        async for event in graph.astream(
+            {"messages": [("user", query)]}, config, stream_mode="values"
+        ):
+            event["messages"][-1].pretty_print()
+            messages.append(event["messages"][-1].content)
+            # return {"message": event["messages"][-1].content}
+    except Exception as e:
+        return {"error": str(e), "session_id": session_id}
+    
     return {"message": messages[-1], "session_id": session_id}
