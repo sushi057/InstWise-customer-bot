@@ -10,7 +10,6 @@ from tools.tools import (
     fetch_user_info,
     fetch_pending_issues,
     fetch_support_status,
-    greet_user,
     lookup_activity,
     rag_call,
     recommendation_rag_call,
