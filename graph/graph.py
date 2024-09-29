@@ -58,25 +58,6 @@ def create_graph(org_id: str, memory):
 
     builder = StateGraph(State)
 
-    # def user_info(state: State):
-    #     print("State: ", state)
-    #     return {**state, "user_info": fetch_user_info.invoke({})}
-
-    # builder.add_node("fetch_user_info", user_info)
-    # builder.add_edge(START, "fetch_user_info")
-
-    # Greeting Assistant
-
-    # builder.add_edge(START, "greeting_agent")
-    # builder.add_node("greeting_agent", Assistant(greeting_agent_runnable))
-    # builder.add_node("greeting_agent_tools", create_tool_node_with_fallback(greeting_tools))
-    # builder.add_edge("greeting_agent_tools", "greeting_agent")
-    # builder.add_conditional_edges(
-    #     "greeting_agent",
-    #     route_greeting_agent,
-    # )
-    # builder.add_edge("greeting_agent", "primary_assistant")
-
     # Create agents
     agents = create_agents(org_id=org_id)
 
