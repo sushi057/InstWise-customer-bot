@@ -9,7 +9,6 @@ from langchain_core.messages import ToolMessage
 from langchain_core.runnables import RunnableLambda, RunnableConfig
 from langgraph.prebuilt import ToolNode
 
-from states.state import State
 
 from states.state import State
 
@@ -18,37 +17,19 @@ from states.state import State
 RAG_API_URL = "https://chat-backend.instwise.app/api/assistant/ask"
 headers = {"X-API-KEY": f"{os.getenv('X_API_KEY')}"}
 
-
-# @tool
-# def fetch_customer_info(customer_name: str = None):
-#     """Looks up the current user data in Hubspot
-
-#     Args:
-#       customer_name: The customer to search for
-
-#     Returns:
-#       A response object with customer data
-
-#     """
-#     # response = requests.get(mock_url + "hubspot")
-#     hubspot_api = "https://api.hubapi.com/crm/v3/objects"
-#     headers = {
-#         "Authorization": f'Bearer {os.getenv("HUBSPOT_BEARER_TOKEN")}',
-#         "Content-Type": "application/json",
-#     }
-#     response = requests.get(
-#         hubspot_api + "/contacts/?properties=firstname, lastname, company",
-#         headers=headers,
-#     )
-#     return response.json()
+hubspot_api = "https://api.hubapi.com/crm/v3/objects"
+headers = {
+    "Authorization": f'Bearer {os.getenv("HUBSPOT_BEARER_TOKEN")}',
+    "Content-Type": "application/json",
+}
 
 
 @tool
 def fetch_user_info(config: RunnableConfig):
-    """Fetch current user information from Hubspot mock data
+    """Looks up the current user data in Hubspot
 
     Args:
-      user_email: The customer to search for
+     user_email: the customer to search for
 
     Returns:
       A response object with customer data
@@ -56,73 +37,80 @@ def fetch_user_info(config: RunnableConfig):
     """
     # response = requests.get(mock_url + "hubspot")
 
-    configuration = config.get("configurable", {})
-    user_email = configuration.get("user_email")
+    response = requests.get(
+        hubspot_api
+        + "/contacts/?properties=firstname, lastname, company, email, pending_issues",
+        headers=headers,
+    ).json()
+
+    configurable = config.get("configurable", {})
+    user_email = configurable.get("user_email")
 
     try:
-        hubspot_json_path = os.path.abspath("data/user_info.json")
-        with open(hubspot_json_path, "r") as f:
-            response = json.load(f)
-
-        for user in response:
-            if user["user_email"] == user_email:
-                # return str(user)
-                return {"user_info": user}
+        for user in response["results"]:
+            if user["properties"]["email"] == user_email:
+                return user
         return None
-    except FileNotFoundError:
-        response = {
-            "error": "File not found. Please check the file path and try again."
+    except Exception as e:
+        return {
+            "message": "An error occurred while fetching user info",
+            "error": str(e),
         }
 
 
-@tool
+# @tool
+# def fetch_user_info(config: RunnableConfig):
+#     """Fetch current user information from Hubspot mock data
+
+#     Args:
+#       user_email: The customer to search for
+
+#     Returns:
+#       A response object with customer data
+
+#     """
+#     # response = requests.get(mock_url + "hubspot")
+
+#     configuration = config.get("configurable", {})
+#     user_email = configuration.get("user_email")
+
+#     try:
+#         hubspot_json_path = os.path.abspath("data/user_info.json")
+#         with open(hubspot_json_path, "r") as f:
+#             response = json.load(f)
+
+#         for user in response:
+#             if user["user_email"] == user_email:
+#                 # return str(user)
+#                 return {"user_info": user}
+#         return None
+#     except FileNotFoundError:
+#         response = {
+#             "error": "File not found. Please check the file path and try again."
+#         }
+
+
+# @tool
 def fetch_pending_issues(issue_tickets: List[str]):
     """Fetch if any pending issues for the user from Zendesk mock data
 
     Returns:
       A response object with user's pending issues
     """
-    # response = requests.get(mock_url + "zendesk")
-    zendesk_json_path = os.path.abspath("data/zendesk_mock.json")
-    with open(zendesk_json_path, "r") as f:
-        response = json.load(f)
+    try:
+        response = requests.get(hubspot_api + "/tickets", headers=headers).json()
+        pending_tickets = []
 
-    # pending_issues = []
-    # for item in response:
-    #     pending_issues.append(item) if item["status"] == "pending" else None
+        for ticket in response["results"]:
+            if ticket["properties"]["subject"] in issue_tickets:
+                pending_tickets.append(ticket)
 
-    return None
-
-
-@tool
-def greet_user(state: State):
-    """Greet the user with their name or company name
-
-    Args:
-      user_email: Email of the user to greet
-
-    Returns:
-      A response object with customer data
-
-    """
-    print(state)
-    user_info = state.get("user_info", {})
-
-    # hubspot_json_path = os.path.abspath("data/user_info.json")
-    # with open(hubspot_json_path, "r") as f:
-    #     response = json.load(f)
-
-    # user_info = {}
-    # for user in response:
-    #     if user["user_email"] == user_email:
-    #         user_info = user
-
-    # greeting_message = f"Hi {user_info['name']}, how can I help you today?"
-
-    return AIMessage(content=str(user_info))
-
-
-# print(greet_user("jim@test.com"))
+        return pending_tickets
+    except Exception as e:
+        return {
+            "message": "An error occurred while fetching pending issues",
+            "error": str(e),
+        }
 
 
 @tool()
@@ -141,9 +129,16 @@ def lookup_activity(user_id: str):
     planhat_json_path = os.path.abspath("data/planhat_mock.json")
     with open(planhat_json_path, "r") as f:
         response = json.load(f)
-
-    for item in response:
-        return item if item["customerId"] == user_id else None
+    try:
+        for item in response:
+            if str(item["customerId"]) == user_id:
+                return item
+        return None
+    except Exception as e:
+        return {
+            "message": "An error occurred while fetching user activity",
+            "error": str(e),
+        }
 
 
 @tool
@@ -164,7 +159,7 @@ def fetch_support_status(user_id: str):
     for item in response:
         if str(item["id"]) == user_id:
             return item
-    return None
+    return AIMessage(content="No support status found for this user.")
 
     # if user_id in ["111", "619"]:
     #     return "There's a known issue with {user's issue} at the moment."
