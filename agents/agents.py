@@ -46,9 +46,6 @@ class CompleteOrEscalate(BaseModel):
         }
 
 
-investigation_tools = [fetch_support_status, suggest_workaround]
-
-
 def route_investigation_agent(
     state: State,
 ) -> Literal["investigation_agent_tools", "leave_skill", "__end__"]:
@@ -62,9 +59,6 @@ def route_investigation_agent(
         return "leave_skill"
 
     return "investigation_agent_tools"
-
-
-solution_tools = [rag_call, suggest_workaround]
 
 
 def route_solution_agent(
@@ -82,9 +76,6 @@ def route_solution_agent(
     return "solution_agent_tools"
 
 
-recommendation_tools = [recommendation_rag_call]
-
-
 def route_recommendation_agent(
     state: State,
 ) -> Literal["recommendation_agent_tools", "leave_skill", "__end__"]:
@@ -98,9 +89,6 @@ def route_recommendation_agent(
         return "leave_skill"
 
     return "recommendation_agent_tools"
-
-
-upsell_tools = [upsell_rag_call, personalized_follow_up]
 
 
 def route_upsell_agent(
@@ -118,9 +106,6 @@ def route_upsell_agent(
     return "upsell_agent_tools"
 
 
-log_tools = [log_activity, create_ticket]
-
-
 def route_log_agent(
     state: State,
 ) -> Literal["log_agent_tools", "leave_skill", "__end__"]:
@@ -136,9 +121,6 @@ def route_log_agent(
     return "log_agent_tools"
 
 
-survey_tools = []
-
-
 def route_survey_agent(
     state: State,
 ) -> Literal["survey_agent_tools", "leave_skill", "__end__"]:
@@ -152,10 +134,6 @@ def route_survey_agent(
         return "leave_skill"
 
     return "survey_agent_tools"
-
-
-# Primary Assistant
-# Investigation, Solution, Recommendation, Log, Upsell, Survey
 
 
 class ToInvestigationAgent(BaseModel):
@@ -248,6 +226,12 @@ def route_primary_assistant(
     return ValueError("Invalid Route")
 
 
+investigation_tools = [fetch_support_status, suggest_workaround]
+solution_tools = [rag_call, suggest_workaround]
+recommendation_tools = [recommendation_rag_call]
+upsell_tools = [upsell_rag_call, personalized_follow_up]
+log_tools = [log_activity, create_ticket]
+survey_tools = []
 primary_assistant_tools = [fetch_user_info, fetch_pending_issues]
 
 
@@ -256,28 +240,10 @@ def create_agents(org_id: str):
 
     llm = get_openai_model()
 
-    # greeting_tools = [fetch_user_info, fetch_pending_issues]
-    # greeting_agent_runnable = prompts["greeting_prompt"] | llm.bind_tools(
-    #     greeting_tools + [CompleteOrEscalate]
-    # )
-
-    # def route_greeting_agent(
-    #     state: State,
-    # ) -> Literal["greeting_agent_tools", "__end__"]:
-    #     route = tools_condition(state)
-    #     if route == END:
-    #         return END
-
-    #     # tool_calls = state["messages"][-1].tool_calls
-    #     # did_cancel = any(tc["name"] == CompleteOrEscalate.__name__ for tc in tool_calls)
-    #     # if did_cancel:
-    #     #     return "leave_skill"
-
-    #     return "greeting_agent_tools"
-
     investigation_runnable = prompts["investigation_prompt"] | llm.bind_tools(
         investigation_tools + [CompleteOrEscalate]
     )
+
     solution_runnable = prompts["solution_prompt"] | llm.bind_tools(
         solution_tools + [CompleteOrEscalate]
     )
