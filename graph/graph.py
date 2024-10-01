@@ -27,36 +27,37 @@ from tools.tools import create_tool_node_with_fallback, fetch_user_info, _print_
 from utils.utils import create_entry_node, pop_dialog_state
 
 
+class Assistant:
+    def __init__(self, runnable: Runnable):
+        self.runnable = runnable
+
+    def __call__(self, state: State, config: RunnableConfig):
+        while True:
+            configuration = config.get("configurable", {})
+            thread_id = configuration.get("thread_id")
+            state = {
+                **state,
+                "thread_id": thread_id,
+            }
+            result = self.runnable.invoke(state)
+
+            if not result.tool_calls and (
+                not result.content
+                or isinstance(result.content, list)
+                and not result.content[0].get("text")
+            ):
+                messages = state["messages"] + [("user", "Respond with a real output")]
+                state = {**state, "messages": messages}
+            else:
+                break
+
+        return {"messages": result}
+
+
+builder = StateGraph(State)
+
+
 def create_graph(org_id: str, memory):
-    class Assistant:
-        def __init__(self, runnable: Runnable):
-            self.runnable = runnable
-
-        def __call__(self, state: State, config: RunnableConfig):
-            while True:
-                configuration = config.get("configurable", {})
-                thread_id = configuration.get("thread_id")
-                state = {
-                    **state,
-                    "thread_id": thread_id,
-                }
-                result = self.runnable.invoke(state)
-
-                if not result.tool_calls and (
-                    not result.content
-                    or isinstance(result.content, list)
-                    and not result.content[0].get("text")
-                ):
-                    messages = state["messages"] + [
-                        ("user", "Respond with a real output")
-                    ]
-                    state = {**state, "messages": messages}
-                else:
-                    break
-
-            return {"messages": result}
-
-    builder = StateGraph(State)
 
     # Create agents
     agents = create_agents(org_id=org_id)
