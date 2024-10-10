@@ -22,6 +22,7 @@ from agents.agents import (
     upsell_tools,
 )
 
+from server.database import retrieve_customer_by_email
 from states.state import State
 from tools.tools import create_tool_node_with_fallback, fetch_user_info, _print_event
 from utils.utils import create_entry_node, pop_dialog_state
@@ -54,10 +55,42 @@ class Assistant:
         return {"messages": result}
 
 
-builder = StateGraph(State)
+async def get_user_info(state: State, config: RunnableConfig):
+    configurable = config.get("configurable", {})
+    user_email = configurable.get("user_email")
+    customer_id = configurable.get("customer_id")
+    user_info = fetch_user_info("sarah@test.com")
+    # customer = await retrieve_customer_by_email(user_email)
+    return {
+        **state,
+        "user_info": {
+            "user_id": customer_id,
+            "user_email": user_email,
+            "name": f'{user_info["properties"]["firstname"]} {user_info["properties"]["lastname"]}',
+            "pending_issues": user_info["properties"]["pending_issues"],
+            "company": user_info["properties"]["company"],
+        },
+    }
+
+
+def route_entry_point(state: State):
+    if "user_info" in state:
+        return "primary_assistant"
+    return "get_user_info"
 
 
 def create_graph(org_id: str, memory):
+    builder = StateGraph(State)
+    builder.add_node("get_user_info", get_user_info)
+
+    builder.set_conditional_entry_point(
+        route_entry_point,
+        {
+            "get_user_info": "get_user_info",
+            "primary_assistant": "primary_assistant",
+        },
+    )
+    builder.add_edge("get_user_info", "primary_assistant")
 
     # Create agents
     agents = create_agents(org_id=org_id)
@@ -159,7 +192,7 @@ def create_graph(org_id: str, memory):
         },
     )
 
-    builder.add_edge(START, "primary_assistant")
+    # builder.add_edge(START, "primary_assistant")
 
     builder.add_node("leave_skill", pop_dialog_state)
     builder.add_edge("leave_skill", "primary_assistant")

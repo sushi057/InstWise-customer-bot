@@ -11,7 +11,10 @@ def create_prompts(org_id: str):
 
     primary_assistant_prompt = ChatPromptTemplate.from_messages(
         [
-            ("system", organization_detail["org"]["primary_assistant_prompt"]),
+            (
+                "system",
+                organization_detail["org"]["primary_assistant_prompt"] + "{user_info}",
+            ),
             ("placeholder", "{messages}"),
         ]
     )

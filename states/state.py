@@ -1,5 +1,6 @@
 from typing import TypedDict, Annotated, Literal, Optional
 from langgraph.graph.message import AnyMessage, add_messages
+from openai import BaseModel
 
 
 def update_dialog_stack(left: list[str], right: Optional[str]) -> list[str]:
@@ -11,17 +12,16 @@ def update_dialog_stack(left: list[str], right: Optional[str]) -> list[str]:
     return left + [right]
 
 
-class UserInfo(TypedDict):
+class UserInfo(BaseModel):
     user_id: str
-    user_info: str
-    user_mood: Optional[
-        Literal["happy", "unhappy", "neutral"]
-    ]  # Useful for sentiment analysis
-
+    user_email: str
+    name: str
+    pending_issues: str | None
+    company: str
 
 class State(TypedDict):
     messages: Annotated[list[AnyMessage], add_messages]
-    user_info: dict
+    user_info: UserInfo
     # user_query: Annotated[list[AnyMessage], add_messages]
     # investigation_response = Annotated[list[AnyMessage], add_messages]
     # solution_response = Annotated[list[AnyMessage], add_messages]
