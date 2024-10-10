@@ -12,6 +12,9 @@ from langgraph.prebuilt import ToolNode
 from states.state import State
 
 
+from server.database import add_feedback
+
+
 # RAG_API_URL = "https://chat-backend.instwise.app/api/assistant/ask"
 RAG_API_URL = "https://chat-backend.instwise.app/api/assistant/ask"
 headers = {"X-API-KEY": f"{os.getenv('X_API_KEY')}"}
@@ -32,8 +35,7 @@ zendesk_headers = {
 }
 
 
-@tool
-def fetch_user_info(config: RunnableConfig):
+def fetch_user_info(user_email: str):
     """Looks up the current user info in Hubspot
 
     Args:
@@ -51,8 +53,8 @@ def fetch_user_info(config: RunnableConfig):
         headers=hubspot_headers,
     ).json()
 
-    configurable = config.get("configurable", {})
-    user_email = configurable.get("user_email")
+    # configurable = config.get("configurable", {})
+    # user_email = configurable.get("user_email")
 
     try:
         for user in response["results"]:
@@ -290,6 +292,24 @@ def personalized_follow_up() -> AIMessage:
     """
     follow_up_message = "Thank you for your time. I will follow up with you shortly to provide more information on the topic we discussed."
     return AIMessage(content=follow_up_message)
+
+
+@tool
+def collect_feedback(feedback: str, rating: int, customer_id: str) -> AIMessage:
+    """
+    Record's user's feedback to the database.
+
+    Args:
+        user_feedback (dict): The user's feedback to collect.
+        user_id (str): The user's id.
+
+    Returns:
+        AIMessage: A message confirming the feedback has been collected.
+    """
+    feedback_data = {"feedback": feedback, "rating": rating, "customer_id": customer_id}
+    add_feedback(feedback_data)
+
+    return AIMessage("Thank you for your feedback.")
 
 
 # utility functions

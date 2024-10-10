@@ -18,6 +18,7 @@ from tools.tools import (
     create_ticket,
     upsell_rag_call,
     personalized_follow_up,
+    collect_feedback,
 )
 from prompts.prompts import create_prompts
 
@@ -231,8 +232,8 @@ solution_tools = [rag_call, suggest_workaround]
 recommendation_tools = [recommendation_rag_call]
 upsell_tools = [upsell_rag_call, personalized_follow_up]
 log_tools = [log_activity, create_ticket]
-survey_tools = []
-primary_assistant_tools = [fetch_user_info, fetch_pending_issues]
+survey_tools = [collect_feedback]
+primary_assistant_tools = [fetch_pending_issues]
 
 
 def create_agents(org_id: str):
