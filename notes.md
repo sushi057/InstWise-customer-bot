@@ -9,7 +9,8 @@ main <- graph <- agents <- prompts
 
 ## TODO
 
-    - Add session client side
+    - Add customer_id in sesison.
+    - If org, which customer after asking email from user.
 
 ## Tools
 

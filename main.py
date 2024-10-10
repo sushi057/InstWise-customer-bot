@@ -7,37 +7,27 @@ from langgraph.checkpoint.memory import MemorySaver
 
 from graph.graph import create_graph
 from utils.utils import fetch_organization_details, get_session_id
-
+from server.database import (
+    retrieve_customers,
+    retrieve_customer,
+    retrieve_customer_by_email,
+)
 
 # Visualize graph
+
 # with open("graph_v0.2.png", "wb") as f:
 #     f.write(graph.get_graph(xray=True).draw_mermaid_png())
-
-# Conversation
-
-# thread_id = str(uuid.uuid4())
-
-# config = {"configurable": {"thread_id": thread_id, "user_email": "david@test.com"}}
-
-# while True:
-#     user_input = input("User: ")
-
-#     if user_input.lower() in ["quit", "exit", "q"]:
-#         print("Goodbye!")
-#         break
-
-#     for event in graph.stream({"messages": [("user", user_input)]}, config):
-#         for value in event.values():
-#             if "user_info" in value:  # Need to fix this
-#                 pass
-#             elif isinstance(value["messages"], BaseMessage):
-#                 print("Assistant:", value["messages"].content + "\n")
 
 app = FastAPI()
 
 memory = MemorySaver()
 
-session_graph_cache = {"session_id": None, "graph": None}
+session_graph_cache = {"session_id": None, "graph": None, "customer_id": None}
+
+session_object = {
+    "session_id": None,
+    "customer_id": None,
+}
 
 
 @app.get("/", status_code=200)
@@ -49,6 +39,10 @@ async def root():
 async def ask_support(
     query: str, user_email: str, org_id: str, session_id: Optional[str] = None
 ):
+    # Get customer_id
+    if not session_graph_cache["customer_id"]:
+        customer = await retrieve_customer_by_email(user_email)
+        session_graph_cache["customer_id"] = customer["id"]
 
     if not session_id:
         session_id = get_session_id()
@@ -59,7 +53,18 @@ async def ask_support(
         session_graph_cache["graph"] = create_graph(org_id=org_id, memory=new_memory)
 
     graph = session_graph_cache["graph"]
-    config = {"configurable": {"thread_id": session_id, "user_email": user_email}}
+
+    with open("graph_v0.2.png", "wb") as f:
+        f.write(graph.get_graph(xray=True).draw_mermaid_png())
+
+    config = {
+        "configurable": {
+            "thread_id": session_id,
+            "user_email": user_email,
+            "customer_id": session_graph_cache["customer_id"],
+        }
+    }
+
     messages = []
     try:
         async for event in graph.astream(
@@ -70,5 +75,9 @@ async def ask_support(
             # return {"message": event["messages"][-1].content}
     except Exception as e:
         return {"error": str(e), "session_id": session_id}
-    
-    return {"message": messages[-1], "session_id": session_id}
+
+    return {
+        "message": messages[-1],
+        "session_id": session_id,
+        "customer_id": session_graph_cache["customer_id"],
+    }
