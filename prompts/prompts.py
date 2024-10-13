@@ -68,7 +68,11 @@ def create_prompts(org_id: str):
 
     survey_prompt = ChatPromptTemplate.from_messages(
         [
-            ("system", organization_detail["org"]["survey_prompt"]),
+            (
+                "system",
+                organization_detail["org"]["survey_prompt"]
+                + "When user gives you the feedback, use the collect_feedback tool to collect feedback.",
+            ),
             ("placeholder", "{messages}"),
         ]
     )
