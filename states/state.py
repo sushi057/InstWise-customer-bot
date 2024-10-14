@@ -13,19 +13,27 @@ def update_dialog_stack(left: list[str], right: Optional[str]) -> list[str]:
 
 
 class UserInfo(BaseModel):
+    """
+    User information
+
+    Args:
+        user_id (str): User ID
+        user_email (str): User email
+        name (str): User name
+        pending_issues (str | None): Pending issues
+        company (str): Company name
+    """
+
     user_id: str
     user_email: str
     name: str
     pending_issues: str | None
     company: str
 
+
 class State(TypedDict):
     messages: Annotated[list[AnyMessage], add_messages]
     user_info: UserInfo
-    # user_query: Annotated[list[AnyMessage], add_messages]
-    # investigation_response = Annotated[list[AnyMessage], add_messages]
-    # solution_response = Annotated[list[AnyMessage], add_messages]
-    # pending_issues: Optional[bool]
     dialog_state: Annotated[
         list[
             Literal[
