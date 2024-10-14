@@ -2,6 +2,7 @@
 
     - Test collect_feedback tool, add tool_args_schema.
     - If public chat, ask for email to indentify user.
+    - If customer_id is 0000, assume organization.
     - Design Hubspot Contacts API.
     - Organize development / production environment.
 
