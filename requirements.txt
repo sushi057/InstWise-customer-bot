@@ -6,4 +6,4 @@ uuid
 fastapi
 uvicorn
 chainlit
-"motor[srv]"
+motor[srv]
