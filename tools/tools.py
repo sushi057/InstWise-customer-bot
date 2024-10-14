@@ -8,10 +8,8 @@ from langchain_core.messages import ToolMessage
 from langchain_core.runnables import RunnableLambda, RunnableConfig
 from langgraph.prebuilt import ToolNode
 
-
+from config import set_customer_id, get_customer_id
 from states.state import State
-
-
 from server.database import add_feedback
 
 
@@ -49,7 +47,7 @@ def fetch_user_info(user_email: str):
 
     response = requests.get(
         hubspot_api
-        + "/contacts/?properties=firstname, lastname, company, email, pending_issues",
+        + "/contacts/?properties=firstname, lastname, company, email, pending_issues, customer_id",
         headers=hubspot_headers,
     ).json()
 
@@ -59,6 +57,9 @@ def fetch_user_info(user_email: str):
     try:
         for user in response["results"]:
             if user["properties"]["email"] == user_email:
+                # Set customer_id
+                if "customer_id" in user["properties"] and get_customer_id() is None:
+                    set_customer_id(user["properties"]["customer_id"])
                 return user
         return None
     except Exception as e:

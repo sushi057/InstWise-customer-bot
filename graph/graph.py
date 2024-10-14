@@ -60,7 +60,7 @@ async def get_user_info(state: State, config: RunnableConfig):
     user_email = configurable.get("user_email")
     customer_id = configurable.get("customer_id")
 
-    # Assume user is organization when 00000
+    # Assume user is organization when 0000
     if customer_id == "0000":
         return {
             **state,

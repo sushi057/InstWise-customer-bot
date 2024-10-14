@@ -5,6 +5,7 @@ import requests
 from fastapi import Depends, FastAPI, HTTPException
 from langgraph.checkpoint.memory import MemorySaver
 
+from config import get_customer_id
 from graph.graph import create_graph
 from utils.utils import fetch_organization_details, get_session_id
 from server.database import (
@@ -78,5 +79,5 @@ async def ask_support(
     return {
         "message": messages[-1],
         "session_id": session_id,
-        "customer_id": session_graph_cache["customer_id"],
+        "customer_id": get_customer_id(),
     }
