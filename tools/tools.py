@@ -295,19 +295,32 @@ def personalized_follow_up() -> AIMessage:
 
 
 @tool
-def collect_feedback(feedback: str, rating: int, customer_id: str) -> AIMessage:
+def collect_feedback(
+    query: str, rating: int, user_email: str, organization_id: str, customer_id: str
+) -> AIMessage:
     """
     Record's user's feedback to the database.
 
     Args:
-        user_feedback (dict): The user's feedback to collect.
-        user_id (str): The user's id.
+        query (str): The query for the feedback.
+        rating (int): The user's rating.
+        feedback (str): The user's feedback.
+        user_email (str): The user's email.
+        organization_id (str): The organization id.
+        customer_id (str): The customer id
 
     Returns:
         AIMessage: A message confirming the feedback has been collected.
     """
-    feedback_data = {"feedback": feedback, "rating": rating, "customer_id": customer_id}
-    add_feedback(feedback_data)
+    feedback_data = {
+        "query": query,
+        "rating": rating,
+        "customer_id": customer_id,
+        "organization_id": organization_id,
+        "user_email": user_email,
+    }
+
+    # API call to add feedback to the database
 
     return AIMessage("Thank you for your feedback.")
 
