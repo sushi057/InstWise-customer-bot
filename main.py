@@ -8,8 +8,6 @@ from langgraph.checkpoint.memory import MemorySaver
 from graph.graph import create_graph
 from utils.utils import fetch_organization_details, get_session_id
 from server.database import (
-    retrieve_customers,
-    retrieve_customer,
     retrieve_customer_by_email,
 )
 
@@ -37,12 +35,12 @@ async def root():
 
 @app.get("/ask")
 async def ask_support(
-    query: str, user_email: str, org_id: str, session_id: Optional[str] = None
+    query: str,
+    user_email: str,
+    org_id: str,
+    session_id: Optional[str] = None,
+    customer_id: Optional[str] = None,
 ):
-    # Get customer_id
-    if not session_graph_cache["customer_id"]:
-        customer = await retrieve_customer_by_email(user_email)
-        session_graph_cache["customer_id"] = customer["id"]
 
     if not session_id:
         session_id = get_session_id()
@@ -51,6 +49,7 @@ async def ask_support(
         session_graph_cache["session_id"] = session_id
         new_memory = MemorySaver()
         session_graph_cache["graph"] = create_graph(org_id=org_id, memory=new_memory)
+        # Add user_info state here
 
     graph = session_graph_cache["graph"]
 
@@ -61,7 +60,7 @@ async def ask_support(
         "configurable": {
             "thread_id": session_id,
             "user_email": user_email,
-            "customer_id": session_graph_cache["customer_id"],
+            "customer_id": customer_id,
         }
     }
 
