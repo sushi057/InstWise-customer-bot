@@ -4,16 +4,17 @@ from fastapi import HTTPException
 from langchain.prompts import ChatPromptTemplate
 
 from utils.utils import fetch_organization_details
+from . import prompts_local
 
 
 def create_prompts(org_id: str):
-    organization_detail = fetch_organization_details(org_id)
-
+    # organization_detail = fetch_organization_details(org_id)
+    organization_detail = prompts_local.organization_details
     primary_assistant_prompt = ChatPromptTemplate.from_messages(
         [
             (
                 "system",
-                organization_detail["org"]["primary_assistant_prompt"] + "{user_info}",
+                organization_detail["org"]["primary_assistant_prompt"],
             ),
             ("placeholder", "{messages}"),
         ]
@@ -68,11 +69,7 @@ def create_prompts(org_id: str):
 
     survey_prompt = ChatPromptTemplate.from_messages(
         [
-            (
-                "system",
-                organization_detail["org"]["survey_prompt"]
-                + "When user gives you the feedback, use the collect_feedback tool to collect feedback.",
-            ),
+            ("system", organization_detail["org"]["survey_prompt"]),
             ("placeholder", "{messages}"),
         ]
     )
