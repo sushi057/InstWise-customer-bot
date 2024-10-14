@@ -59,8 +59,16 @@ async def get_user_info(state: State, config: RunnableConfig):
     configurable = config.get("configurable", {})
     user_email = configurable.get("user_email")
     customer_id = configurable.get("customer_id")
-    user_info = fetch_user_info("sarah@test.com")
-    # customer = await retrieve_customer_by_email(user_email)
+
+    # Assume user is organization when 00000
+    if customer_id == 00000:
+        return {
+            **state,
+            "user_info": {"user_id": customer_id, "user_email": user_email},
+        }
+
+    user_info = fetch_user_info(user_email)
+
     return {
         **state,
         "user_info": {
