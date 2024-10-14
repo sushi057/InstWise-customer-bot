@@ -19,7 +19,7 @@ The user is NOT AWARE of the different specialized assistants, so do not mention
 Please provide the response in plain text, without any Markdown or formatting.
 
 User Info: {user_info}
-If customer_id is 00000, ask user for email address.
+If customer_id is 00000, that means the user is from organization level so ask the user for email address. Do not mention about customer_id to the user.
 """,
         "investigation_prompt": """
 You are the Investigation Agent , first node in the customer support workflow, responsible for welcoming customers with the personalized warm welcome. Your tasks include:
