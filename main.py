@@ -1,130 +1,82 @@
-import uuid
 import os
-from langchain_core.runnables import Runnable, RunnableConfig
+from typing import Optional
+import uuid
+import requests
+from fastapi import Depends, FastAPI, HTTPException
 from langgraph.checkpoint.memory import MemorySaver
-from langgraph.graph import StateGraph, START, END
-from langgraph.prebuilt import tools_condition
-from langchain_core.messages import BaseMessage
 
-from states.state import State
-from models.openai_model import get_openai_model
-from tools.tools import (
-    fetch_customer_info,
-    lookup_activity,
-    clarify_issue,
-    investigate_issue,
-    provide_solution,
-    personalized_follow_up,
-    offer_additional_support,
-    log_activity,
-    create_tool_node_with_fallback,
-    handle_tool_error,
-    _print_event,
+from graph.graph import create_graph
+from utils.utils import fetch_organization_details, get_session_id
+from server.database import (
+    retrieve_customer_by_email,
 )
-from prompts.prompts import primary_assistant_prompt
 
-from fastapi import FastAPI
+# Visualize graph
 
-# os.environ["OPENAI_API_KEY"] = "sk-1234"
-# os.getenv("OPENAI_API_KEY")
+# with open("graph_v0.2.png", "wb") as f:
+#     f.write(graph.get_graph(xray=True).draw_mermaid_png())
 
 app = FastAPI()
 
-
-class Assistant:
-    def __init__(self, runnable: Runnable):
-        self.runnable = runnable
-
-    def __call__(self, state: State, config: RunnableConfig):
-        while True:
-            configuration = config.get("configuration", {})
-            thread_id = configuration.get("thread_id")
-            state = {**state, "user_info": thread_id}
-            result = self.runnable.invoke(state)
-
-            if not result.tool_calls and (
-                not result.content
-                or isinstance(result.content, list)
-                and not result.content[0].get("text")
-            ):
-                messages = state["messages"] + [("user", "Respond with a real output")]
-                state = {**state, "messages": messages}
-            else:
-                break
-
-        return {"messages": result}
-
-
-llm = get_openai_model()
-
-tools = [
-    fetch_customer_info,
-    lookup_activity,
-    clarify_issue,
-    investigate_issue,
-    provide_solution,
-    personalized_follow_up,
-    offer_additional_support,
-    log_activity,
-]
-
-assistant_runnable = primary_assistant_prompt | llm.bind_tools(tools)
-
-builder = StateGraph(State)
-
-builder.add_node("assistant", Assistant(assistant_runnable))
-builder.add_node("tools", create_tool_node_with_fallback(tools))
-
-builder.add_edge(START, "assistant")
-builder.add_conditional_edges("assistant", tools_condition)
-builder.add_edge("tools", "assistant")
-
 memory = MemorySaver()
-graph = builder.compile(checkpointer=memory)
 
-# thread_id = str(uuid.uuid4())
-thread_id = "1234"
+session_graph_cache = {"session_id": None, "graph": None, "customer_id": None}
 
-config = {
-    "configurable": {
-        "thread_id": thread_id,
-    }
+session_object = {
+    "session_id": None,
+    "customer_id": None,
 }
 
-# while True:
-#     user_input = input("User: ")
 
-#     if user_input.lower() in ["quit", "exit", "q"]:
-#         print("Goodbye!")
-#         break
-#     for event in graph.stream({"messages": [("user", user_input)]}, config):
-#         for value in event.values():
-#             if isinstance(value["messages"], BaseMessage):
-#                 print("Assistant:", value["messages"].content + "\n")
-
-
-@app.get("/")
+@app.get("/", status_code=200)
 async def root():
-    return {"message": "Hello world"}
-
-
-# @app.get("/ask")
-# async def ask_support(query: str):
-#     async for event in graph.stream({"messages": [("user", query)]}, config):
-#         for value in await event.values():
-#             if isinstance(value["messages"], BaseMessage):
-#                 return {"message": value["messages"].content}
-#         # event["messages"][-1].pretty_print()
-#         # return {"message": event["messages"][-1].content}
+    return {"message": "Instwise Customer Support"}
 
 
 @app.get("/ask")
-async def ask_support(query: str):
+async def ask_support(
+    query: str,
+    user_email: str,
+    org_id: str,
+    session_id: Optional[str] = None,
+    customer_id: Optional[str] = None,
+):
+
+    if not session_id:
+        session_id = get_session_id()
+
+    if session_graph_cache["session_id"] != session_id:
+        session_graph_cache["session_id"] = session_id
+        new_memory = MemorySaver()
+        session_graph_cache["graph"] = create_graph(org_id=org_id, memory=new_memory)
+        # Add user_info state here
+
+    graph = session_graph_cache["graph"]
+
+    with open("graph_v0.2.png", "wb") as f:
+        f.write(graph.get_graph(xray=True).draw_mermaid_png())
+
+    config = {
+        "configurable": {
+            "thread_id": session_id,
+            "user_email": user_email,
+            "customer_id": customer_id,
+        }
+    }
+
     messages = []
-    async for event in graph.astream(
-        {"messages": [("user", query)]}, config, stream_mode="values"
-    ):
-        event["messages"][-1].pretty_print()
-        messages.append(event["messages"][-1].content)
-        # return {"message": event["messages"][-1].content}
-    return {"message": messages[-1]}
+    try:
+        async for event in graph.astream(
+            {"messages": [("user", query)]}, config, stream_mode="values"
+        ):
+            event["messages"][-1].pretty_print()
+            messages.append(event["messages"][-1].content)
+            # return {"message": event["messages"][-1].content}
+    except Exception as e:
+        return {"error": str(e), "session_id": session_id}
+
+    return {
+        "message": messages[-1],
+        "session_id": session_id,
+        "customer_id": session_graph_cache["customer_id"],
+    }

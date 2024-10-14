@@ -1,115 +1,281 @@
 import os
+import base64
 import json
 import requests
 from langchain_core.tools import tool
 from langchain_core.messages.ai import AIMessage
 from langchain_core.messages import ToolMessage
-from langchain_core.runnables import RunnableLambda
+from langchain_core.runnables import RunnableLambda, RunnableConfig
 from langgraph.prebuilt import ToolNode
 
 
-# mock_url = "https://e39b-2407-1400-aa18-4910-ff35-30bf-cc4d-5922.ngrok-free.app/"
+from states.state import State
+
+
+from server.database import add_feedback
+
+
+# RAG_API_URL = "https://chat-backend.instwise.app/api/assistant/ask"
+RAG_API_URL = "https://chat-backend.instwise.app/api/assistant/ask"
+headers = {"X-API-KEY": f"{os.getenv('X_API_KEY')}"}
+
 hubspot_api = "https://api.hubapi.com/crm/v3/objects"
-headers = {
-    "Authorization": f"Bearer {os.getenv("HUBSPOT_BEARER_TOKEN")}",
+hubspot_headers = {
+    "Authorization": f'Bearer {os.getenv("HUBSPOT_BEARER_TOKEN")}',
     "Content-Type": "application/json",
 }
 
-@tool
-def fetch_customer_info(customer_name: str = None):
-    """Looks up the current user data in Hubspot
+zendesk_api = "https://instwisehelp.zendesk.com/api/v2"
+encoded_credentials = base64.b64encode(
+    (f'{os.getenv("ZENDESK_EMAIL")}/token:{os.getenv("ZENDESK_TOKEN")}').encode("utf-8")
+).decode("utf-8")
+zendesk_headers = {
+    "Authorization": f"Basic {encoded_credentials}",
+    "Content-Type": "application/json",
+}
+
+
+def fetch_user_info(user_email: str):
+    """Looks up the current user info in Hubspot
 
     Args:
-      customer_name: The customer to search for
+     user_email: the customer to search for
 
     Returns:
       A response object with customer data
 
     """
     # response = requests.get(mock_url + "hubspot")
-    response = requests.get(hubspot_api + "/contacts/?properties=firstname, lastname, company", headers=headers)
-    return response.json()
+
+    response = requests.get(
+        hubspot_api
+        + "/contacts/?properties=firstname, lastname, company, email, pending_issues",
+        headers=hubspot_headers,
+    ).json()
+
+    # configurable = config.get("configurable", {})
+    # user_email = configurable.get("user_email")
+
+    try:
+        for user in response["results"]:
+            if user["properties"]["email"] == user_email:
+                return user
+        return None
+    except Exception as e:
+        return {
+            "message": "An error occurred while fetching user info",
+            "error": str(e),
+        }
 
 
-@tool
-def lookup_activity(customer_id: str):
+# @tool
+def fetch_pending_issues(issue_tickets: list[str]):
+    """Fetch if any pending issues for the user from Zendesk
+
+    Returns:
+      A response object with user's pending issues
+    """
+    response = requests.get(zendesk_api + "/tickets", headers=zendesk_headers).json()
+    pending_issues = []
+    try:
+        for ticket in response["tickets"]:
+            if str(ticket["id"]) in issue_tickets:
+                pending_issues.append(ticket)
+        return pending_issues
+    except Exception as e:
+        return {
+            "message": "An error occurred while fetching support status",
+            "error": str(e),
+        }
+
+
+@tool()
+def lookup_activity(user_id: str):
     """Look up user transactions activity
 
     Args:
-      customer_id: Id of customer we're looking for
+      user_id: Id of customer we're looking for
 
     Return:
       Returns a response object with customer's transactions history
     """
-    # response = requests.get(mock_url + "planhat")
-    planhat_json_path = os.path.abspath("utils/planhat_mock.json")
+
+    # user_id = state["user_info"]["id"]
+
+    planhat_json_path = os.path.abspath("data/planhat_mock.json")
     with open(planhat_json_path, "r") as f:
         response = json.load(f)
-    return response
+    try:
+        for item in response:
+            if str(item["customerId"]) == user_id:
+                return item
+        return None
+    except Exception as e:
+        return {
+            "message": "An error occurred while fetching user activity",
+            "error": str(e),
+        }
 
 
 @tool
-def clarify_issue() -> AIMessage:
-    """Clarify the issue customer is facing. Check in what issue might it be occuring?
-
-    Return:
-      AIMessage: Relevant context in which the issue might be occuring
-    """
-    response = "I see that youre facing an issue with inventory transactions for the new product."
-    return AIMessage(content=response)
-
-
-@tool
-def investigate_issue() -> AIMessage:
-    """Investigate wether the issue previously occured either with the current
-        cutomer or other customers
-
-    Return:
-      AIMessage: Relevant information regarding the issue
-    """
-    response = "I can see that the issue has had previously occured with you. How were you able to handle it then? Has the previous solution not been working?"
-    return AIMessage(content=response)
-
-
-@tool
-def provide_solution() -> AIMessage:
-    """Provide stepwise solution for the specific issue faced by the customer
-
-    Return:
-      AIMessage: Stepwise solution for the user's issue
-    """
-    response = "Here's a stepwise solution for the issue you're facing:"
-    return AIMessage(content=response)
-
-
-@tool
-def offer_additional_support() -> AIMessage:
-    """
-    Offers additional support and relevant resources to prevent future issues.
+def fetch_support_status(user_id: str):
+    """Looks up the current user's support status
 
     Args:
-        guide_available (bool): Whether the relevant guide is available to send.
+        user_id: Id of customer we're looking for
 
     Returns:
-        AIMessage: A message offering additional resources.
+      A response object with user's support status
     """
-    response = "If this is something that happens occasionally, I can recommend setting up a review step before finalizing transactions. We have a quick guide on that—would you like me to send it to you?"
-    return AIMessage(content=response)
+
+
+# @tool
+# def fetch_support_status(user_id: str):
+#     """Looks up the current user's support status
+
+#     Args:
+#         user_id: Id of customer we're looking for
+
+#     Returns:
+#       A response object with user's support status
+#     """
+#     # response = requests.get(mock_url + "zendesk")
+#     zendesk_json_path = os.path.abspath("data/support_status.json")
+#     with open(zendesk_json_path, "r") as f:
+#         response = json.load(f)
+
+#     for item in response:
+#         if str(item["id"]) == user_id:
+#             return item
+#     return AIMessage(content="No support status found for this user.")
 
 
 @tool
-def upsell_recommendation() -> AIMessage:
+def rag_call(query: str) -> AIMessage:
     """
-    Introduces relevant add-ons based on the customer's usage data.
+    This function sends a query to the RAG API and returns the answer as an AIMessage.
 
-    Args:
-        usage_data (dict): Data on the customer's usage of the inventory management system.
+    Parameters:
+    - query (str): The query to send to the RAG API.
 
     Returns:
-        AIMessage: A message suggesting an advanced inventory management module.
+    - AIMessage: The response from the RAG API as an AIMessage object.
     """
-    response = "Since you’re handling inventory regularly, have you considered our advanced inventory management module? It includes features like automated transaction reviews and error detection, which could save you time and reduce the risk of mistakes."
-    return AIMessage(content=response)
+    response = requests.get(
+        RAG_API_URL,
+        params={"query": query, "company_id": "66158fe71bfe10b58cb23eea"},
+        headers=headers,
+    )
+    return AIMessage(response.json()["results"]["answer"])
+
+
+@tool
+def recommendation_rag_call(query: str) -> AIMessage:
+    """
+    This function sends a query to the RAG API and returns the answer as an AIMessage.
+
+    Parameters:
+    - query (str): The query to send to the RAG API.
+
+    Returns:
+    - AIMessage: The response from the RAG API as an AIMessage object.
+    """
+
+    response = requests.get(
+        RAG_API_URL,
+        params={
+            "query": query,
+            "company_id": "66158fe71bfe10b58cb23eea",
+            "call_type": "recommendation",
+        },
+        headers=headers,
+    )
+    return AIMessage(response.json()["results"]["answer"])
+
+
+@tool
+def suggest_workaround(query: str) -> AIMessage:
+    """
+    This function searches for a workaround solution to user's current issue..
+
+    Parameters:
+    - query (str): The query to send to the RAG API.
+
+    Returns:
+    - AIMessage: The response from the RAG API as an AIMessage object.
+    """
+    workaround_message = (
+        "Based on the issue you're facing, I suggest you try the following workaround:."
+    )
+    return AIMessage(content=workaround_message)
+
+
+@tool
+def log_activity(session_info: dict):
+    """
+    Captures and log the interaction details from session_info into Planhat.
+
+    Args:
+        interaction_details (dict): The details of the interaction to be recorded.
+
+    Returns:
+        AIMessage: A confirmation message that the interaction has been recorded.
+    """
+    # Record the interaction details in both systems.
+    planhat_log_data = {
+        "session_id": f'{session_info["id"]}',
+        "customer_id": f'{session_info["customer_id"]}',
+        "details": {
+            "subject": f'{session_info["subject"]}',
+            "description": f'{session_info["description"]}',
+            "status": f'{session_info["status"]}',
+            "priority": f'{session_info["priority"]}',
+            "created_at": f'{session_info["created_at"]}',
+            "assigned_to": f'{session_info["assigned_to"]}',
+        },
+    }
+    with open("data/planhat_log.json", "w") as f:
+        json.dump(planhat_log_data, f, indent=4)
+
+
+@tool
+def create_ticket() -> AIMessage:
+    """
+    Creates a ticket for further investigation with appropriate response to the user.
+
+    Args:
+        ticket_details (dict): The details of the ticket to be created.
+
+    Returns:
+        AIMessage: A confirmation message that the ticket has been created.
+    """
+    # Create a ticket in Zendesk.
+    confirmation_message = "A ticket has been created for further investigation. You will receive an email confirmation shortly."
+    return AIMessage(content=confirmation_message)
+
+
+@tool
+def upsell_rag_call(query: str) -> AIMessage:
+    """
+    This function sends a query to the RAG API and returns the answer as an AIMessage.
+
+    Parameters:
+    - query (str): The query to send to the RAG API.
+
+    Returns:
+    - AIMessage: The response from the RAG API as an AIMessage object.
+    """
+
+    response = requests.get(
+        RAG_API_URL,
+        params={
+            "query": query,
+            "company_id": "66158fe71bfe10b58cb23eea",
+            "call_type": "upsell",
+        },
+        headers=headers,
+    )
+    return AIMessage(response.json()["results"]["answer"])
 
 
 @tool
@@ -124,24 +290,39 @@ def personalized_follow_up() -> AIMessage:
     Returns:
         AIMessage: A message confirming the follow-up.
     """
-    follow_up_message = f"I’ll send over the guide right now and follow up in a few days to see if you need any more help. And if you’re interested, I can arrange a demo for the advanced module."
+    follow_up_message = "Thank you for your time. I will follow up with you shortly to provide more information on the topic we discussed."
     return AIMessage(content=follow_up_message)
 
 
 @tool
-def log_activity() -> AIMessage:
+def collect_feedback(
+    query: str, rating: int, user_email: str, organization_id: str, customer_id: str
+) -> AIMessage:
     """
-    Captures and log the interaction details into Planhat.
+    Record's user's feedback to the database.
 
     Args:
-        interaction_details (dict): The details of the interaction to be recorded.
+        query (str): The query for the feedback.
+        rating (int): The user's rating.
+        feedback (str): The user's feedback.
+        user_email (str): The user's email.
+        organization_id (str): The organization id.
+        customer_id (str): The customer id
 
     Returns:
-        AIMessage: A confirmation message that the interaction has been recorded.
+        AIMessage: A message confirming the feedback has been collected.
     """
-    # Record the interaction details in both systems.
-    confirmation_message = "The interaction has been recorded successfully in Planhat."
-    return AIMessage(content=confirmation_message)
+    feedback_data = {
+        "query": query,
+        "rating": rating,
+        "customer_id": customer_id,
+        "organization_id": organization_id,
+        "user_email": user_email,
+    }
+
+    # API call to add feedback to the database
+
+    return AIMessage("Thank you for your feedback.")
 
 
 # utility functions

@@ -2,3 +2,5 @@
 .env
 .venv
 .vscode
+.chainlit
+notes.md
