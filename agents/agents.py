@@ -233,7 +233,7 @@ recommendation_tools = [recommendation_rag_call]
 upsell_tools = [upsell_rag_call, personalized_follow_up]
 log_tools = [log_activity, create_ticket]
 survey_tools = [collect_feedback]
-primary_assistant_tools = [fetch_pending_issues]
+primary_assistant_tools = [fetch_user_info, fetch_pending_issues]
 
 
 def create_agents(org_id: str):
