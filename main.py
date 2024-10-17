@@ -5,17 +5,12 @@ import requests
 from fastapi import Depends, FastAPI, HTTPException
 from langgraph.checkpoint.memory import MemorySaver
 
-from config import get_customer_id
-from graph.graph import create_graph
-from utils.utils import fetch_organization_details, get_session_id
+from config.config import get_customer_id
+from customer_support.graph.graph import create_graph
+from customer_support.utils.utils import fetch_organization_details, get_session_id
 from server.database import (
     retrieve_customer_by_email,
 )
-
-# Visualize graph
-
-# with open("graph_v0.2.png", "wb") as f:
-#     f.write(graph.get_graph(xray=True).draw_mermaid_png())
 
 app = FastAPI()
 

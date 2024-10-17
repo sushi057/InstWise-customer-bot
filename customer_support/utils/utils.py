@@ -7,7 +7,7 @@ import secrets
 from fastapi import HTTPException
 from langchain_core.messages import ToolMessage
 
-from states.state import State
+from customer_support.states.state import State
 
 planhat_mock_api_path = os.path.abspath("data/planhat_mock.json")
 # planhat_mock_api_path = "planhat_mock.json"

@@ -1,7 +1,9 @@
 import os
+from dotenv import load_dotenv
 from bson.objectid import ObjectId
 from motor import motor_asyncio
 
+load_dotenv()
 
 client = motor_asyncio.AsyncIOMotorClient(os.environ["MONGODB_URI"])
 database = client.AIChatbot
@@ -67,4 +69,3 @@ async def add_feedback(feedback_data: dict) -> dict:
     feedback = await feedback_collection.insert_one(feedback_data)
     new_feedback = await feedback_collection.find_one({"_id": feedback.inserted_id})
     return feedback_helper(new_feedback)
-        

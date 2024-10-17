@@ -10,7 +10,7 @@ from langchain_core.messages import ToolMessage
 from langchain_core.runnables import RunnableLambda
 from langgraph.prebuilt import ToolNode
 
-from config import set_customer_id, get_customer_id
+from config.config import set_customer_id, get_customer_id
 
 
 # Base Classes

@@ -4,8 +4,8 @@ from langgraph.prebuilt import tools_condition
 from pydantic import BaseModel, Field
 
 from models.openai_model import get_openai_model
-from states.state import State
-from tools.tools import (
+from customer_support.states.state import State
+from customer_support.tools.tools import (
     fetch_user_info,
     fetch_pending_issues,
     fetch_support_status,
@@ -18,7 +18,7 @@ from tools.tools import (
     personalized_follow_up,
     collect_feedback,
 )
-from prompts.prompts import create_prompts
+from customer_support.prompts.prompts import create_prompts
 
 
 class CompleteOrEscalate(BaseModel):

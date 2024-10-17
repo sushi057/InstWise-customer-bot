@@ -5,7 +5,7 @@ from langchain_core.runnables import Runnable, RunnableConfig
 from langgraph.checkpoint.memory import MemorySaver
 
 
-from agents.agents import (
+from customer_support.agents.agents import (
     create_agents,
     route_primary_assistant,
     route_log_agent,
@@ -25,9 +25,12 @@ from agents.agents import (
 )
 
 from server.database import retrieve_customer_by_email
-from states.state import State
-from tools.tools import create_tool_node_with_fallback, fetch_user_info, _print_event
-from utils.utils import create_entry_node, pop_dialog_state
+from customer_support.states.state import State
+from customer_support.tools.tools import (
+    create_tool_node_with_fallback,
+    fetch_user_info,
+)
+from customer_support.utils.utils import create_entry_node, pop_dialog_state
 
 
 class Assistant:

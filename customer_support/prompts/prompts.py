@@ -3,7 +3,7 @@ import requests
 from fastapi import HTTPException
 from langchain.prompts import ChatPromptTemplate
 
-from utils.utils import fetch_organization_details
+from customer_support.utils.utils import fetch_organization_details
 from . import prompts_local
 
 
