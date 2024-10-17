@@ -1,5 +1,4 @@
 from typing import Literal
-from langchain.prompts import ChatPromptTemplate
 from langgraph.graph import END
 from langgraph.prebuilt import tools_condition
 from pydantic import BaseModel, Field
@@ -10,7 +9,6 @@ from tools.tools import (
     fetch_user_info,
     fetch_pending_issues,
     fetch_support_status,
-    lookup_activity,
     rag_call,
     recommendation_rag_call,
     suggest_workaround,
