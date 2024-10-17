@@ -4,8 +4,8 @@ from langgraph.graph import StateGraph, START, END
 from langgraph.checkpoint.memory import MemorySaver
 
 
-from state import AgentStateGraph
-from agents import (
+from customer_insights.state import AgentStateGraph
+from customer_insights.agents import (
     fetch_user_info,
     query_agent,
     crm_agent,
@@ -15,7 +15,7 @@ from agents import (
     chatdata_agent,
     insights_agent,
 )
-from utils import create_tool_node_with_fallback
+from customer_insights.utils import create_tool_node_with_fallback
 
 
 def route_entry_point(state: AgentStateGraph):
@@ -48,7 +48,7 @@ def route_crm_agent(
     return "crm_agent_tools"
 
 
-def create_graph():
+def create_insights_graph(memory):
     graph_builder = StateGraph(AgentStateGraph)
 
     graph_builder.add_node("fetch_user_info", fetch_user_info)
@@ -92,7 +92,6 @@ def create_graph():
     graph_builder.add_edge("chatdata_agent", "insights_agent")
     graph_builder.add_edge("insights_agent", END)
 
-    memory = MemorySaver()
     graph = graph_builder.compile(checkpointer=memory)
 
     return graph

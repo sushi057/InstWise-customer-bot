@@ -1,8 +1,9 @@
 from langchain_openai import ChatOpenAI
 from langchain_core.runnables.config import RunnableConfig
 from langchain_core.messages import ToolMessage
-from state import AgentStateGraph
-from tools import (
+
+from customer_insights.state import AgentStateGraph
+from customer_insights.tools import (
     ToCRMAgent,
     ToChatDataAgent,
     ToCSMAgent,
@@ -10,7 +11,7 @@ from tools import (
     fetch_hubspot_contacts,
     fetch_hubspot_deals,
 )
-from prompts import (
+from customer_insights.prompts import (
     query_agent_prompt_template,
     crm_agent_prompt_template,
     csm_agent_prompt_template,
