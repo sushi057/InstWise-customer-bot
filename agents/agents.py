@@ -161,24 +161,8 @@ class ToLogAgent(BaseModel):
     """Transfer work to the log agent to handle the activity logging and ticket creation."""
 
     session_info: dict = Field(
-        description="The details of the interaction to be recorded."
+        ..., description="The details of the interaction to be recorded."
     )
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "session_info": {
-                    "id": "123",
-                    "customer_id": "456",
-                    "subject": "Issue with the product",
-                    "description": "The user is facing an issue with the product.",
-                    "status": "open",
-                    "priority": "high",
-                    "created_at": "2022-01-01T12:00:00",
-                    "assigned_to": "",
-                }
-            }
-        }
 
 
 class ToUpsellAgent(BaseModel):
@@ -190,7 +174,8 @@ class ToUpsellAgent(BaseModel):
 class ToSurveyAgent(BaseModel):
     """Transfer work to the survey agent to handle the user feedback collection."""
 
-    user_query: str = Field(description="The user's feedback to collect.")
+    # user_query: str = Field(description="The user's feedback to collect.")
+    pass
 
 
 def route_primary_assistant(
@@ -231,7 +216,7 @@ investigation_tools = [fetch_support_status, suggest_workaround]
 solution_tools = [rag_call, suggest_workaround]
 recommendation_tools = [recommendation_rag_call]
 upsell_tools = [upsell_rag_call, personalized_follow_up]
-log_tools = [log_activity, create_ticket]
+log_tools = [create_ticket]
 survey_tools = [collect_feedback]
 primary_assistant_tools = [fetch_user_info, fetch_pending_issues]
 
@@ -261,7 +246,9 @@ def create_agents(org_id: str):
         log_tools + [CompleteOrEscalate]
     )
 
-    survey_runnable = prompts["survey_prompt"] | llm.bind_tools([CompleteOrEscalate])
+    survey_runnable = prompts["survey_prompt"] | llm.bind_tools(
+        survey_tools + [CompleteOrEscalate]
+    )
 
     assistant_runnable = prompts["primary_assistant_prompt"] | llm.bind_tools(
         primary_assistant_tools

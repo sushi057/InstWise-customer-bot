@@ -14,12 +14,14 @@ from agents.agents import (
     route_recommendation_agent,
     route_log_agent,
     route_upsell_agent,
+    route_survey_agent,
     primary_assistant_tools,
     investigation_tools,
     solution_tools,
     recommendation_tools,
     log_tools,
     upsell_tools,
+    survey_tools,
 )
 
 from server.database import retrieve_customer_by_email
@@ -175,7 +177,10 @@ def create_graph(org_id: str, memory):
     )
     builder.add_node("survey_agent", Assistant(agents["survey_runnable"]))
     builder.add_edge("enter_survey_agent", "survey_agent")
-    builder.add_edge("survey_agent", END)
+    builder.add_node("survey_agent_tools", create_tool_node_with_fallback(survey_tools))
+    builder.add_edge("survey_agent_tools", "survey_agent")
+    builder.add_conditional_edges("survey_agent", route_survey_agent)
+    # builder.add_edge("survey_agent", END)
 
     # Primary Assistant
 
