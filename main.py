@@ -2,25 +2,25 @@ import os
 from typing import Optional
 import uuid
 import requests
+from typing import Literal
+
 from fastapi import Depends, FastAPI, HTTPException
 from langgraph.checkpoint.memory import MemorySaver
 
 from config.config import get_customer_id
 from customer_support.graph.graph import create_graph
 from customer_support.utils.utils import fetch_organization_details, get_session_id
-from server.database import (
-    retrieve_customer_by_email,
-)
+from customer_insights.graph import create_insights_graph
 
 app = FastAPI()
 
-memory = MemorySaver()
 
 session_graph_cache = {"session_id": None, "graph": None, "customer_id": None}
 
 session_object = {
     "session_id": None,
     "customer_id": None,
+    "organization_id": None,
 }
 
 
@@ -36,6 +36,7 @@ async def ask_support(
     org_id: str,
     session_id: Optional[str] = None,
     customer_id: Optional[str] = None,
+    api_type: str = Literal["insights", "support"],
 ):
 
     if not session_id:
@@ -44,7 +45,14 @@ async def ask_support(
     if session_graph_cache["session_id"] != session_id:
         session_graph_cache["session_id"] = session_id
         new_memory = MemorySaver()
-        session_graph_cache["graph"] = create_graph(org_id=org_id, memory=new_memory)
+
+        # Check API type
+        if api_type == "support":
+            session_graph_cache["graph"] = create_graph(
+                org_id=org_id, memory=new_memory
+            )
+        elif api_type == "insights":
+            session_graph_cache["graph"] = create_insights_graph(memory=new_memory)
         # Add user_info state here
 
     graph = session_graph_cache["graph"]
@@ -67,7 +75,6 @@ async def ask_support(
         ):
             event["messages"][-1].pretty_print()
             messages.append(event["messages"][-1].content)
-            # return {"message": event["messages"][-1].content}
     except Exception as e:
         return {"error": str(e), "session_id": session_id}
 
