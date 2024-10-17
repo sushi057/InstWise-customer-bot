@@ -2,16 +2,29 @@ import os
 import base64
 import json
 import requests
+from pydantic import BaseModel, Field
+
 from langchain_core.tools import tool
 from langchain_core.messages.ai import AIMessage
 from langchain_core.messages import ToolMessage
-from langchain_core.runnables import RunnableLambda, RunnableConfig
+from langchain_core.runnables import RunnableLambda
 from langgraph.prebuilt import ToolNode
 
 from config import set_customer_id, get_customer_id
-from states.state import State
-from server.database import add_feedback
 
+
+# Base Classes
+
+
+class FeedbackInput(BaseModel):
+    query: str = Field(..., title="The query for the feedback")
+    rating: int = Field(..., title="The user's rating")
+    feedback: str = Field(..., title="The user's feedback")
+    organization_id: str = Field(..., title="The organization id")
+    user_email: str = Field(..., title="The user's email")
+
+
+# Headers
 
 # RAG_API_URL = "https://chat-backend.instwise.app/api/assistant/ask"
 RAG_API_URL = "https://chat-backend.instwise.app/api/assistant/ask"
@@ -297,7 +310,11 @@ def personalized_follow_up() -> AIMessage:
 
 @tool
 def collect_feedback(
-    query: str, rating: int, user_email: str, organization_id: str, customer_id: str
+    query: str,
+    rating: int,
+    feedback: str,
+    organization_id: str,
+    user_email: str,
 ) -> AIMessage:
     """
     Record's user's feedback to the database.
@@ -308,7 +325,6 @@ def collect_feedback(
         feedback (str): The user's feedback.
         user_email (str): The user's email.
         organization_id (str): The organization id.
-        customer_id (str): The customer id
 
     Returns:
         AIMessage: A message confirming the feedback has been collected.
@@ -316,17 +332,23 @@ def collect_feedback(
     feedback_data = {
         "query": query,
         "rating": rating,
-        "customer_id": customer_id,
+        "feedback": feedback,
         "organization_id": organization_id,
         "user_email": user_email,
     }
 
     # API call to add feedback to the database
+    try:
+        response = requests.post(
+            "https://api-assistant.instwise.app/api/v1/feedback/survey",
+            json=feedback_data,
+        )
+        response.raise_for_status()
+        print(response.json())
+        return AIMessage("Your feedback has been recorded.")
+    except requests.exceptions.RequestException as e:
+        return AIMessage(f"An error occurred while recording your feedback: {e}")
 
-    return AIMessage("Thank you for your feedback.")
-
-
-# utility functions
 
 
 def handle_tool_error(state) -> dict:
