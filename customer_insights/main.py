@@ -1,9 +1,12 @@
 import uuid
+from langgraph.checkpoint.memory import MemorySaver
 
-from graph import create_graph
+from graph import create_insights_graph
 from utils import visualize_graph
 
-graph = create_graph()
+memory = MemorySaver()
+
+graph = create_insights_graph(memory=memory)
 
 
 # Visualize Graph
@@ -17,7 +20,7 @@ while True:
     user_input = input("User: ")
 
     if user_input in ["q", "quit", "exit"]:
-        print("goodbye")    
+        print("goodbye")
         break
 
     for event in graph.stream(
