@@ -12,6 +12,7 @@ from customer_insights.agents import (
     crm_agent_tools,
     csm_agent,
     helpdesk_agent,
+    helpdesk_agent_tools,
     chatdata_agent,
     insights_agent,
 )
@@ -48,6 +49,15 @@ def route_crm_agent(
     return "crm_agent_tools"
 
 
+def route_helpdesk_agent(
+    state: AgentStateGraph,
+) -> Literal["helpdesk_agent_tools", "insights_agent"]:
+    tool_calls = state["messages"][-1].tool_calls
+    if not tool_calls:
+        return "insights_agent"
+    return "helpdesk_agent_tools"
+
+
 def create_insights_graph(memory):
     graph_builder = StateGraph(AgentStateGraph)
 
@@ -59,11 +69,12 @@ def create_insights_graph(memory):
     )
     graph_builder.add_node("csm_agent", csm_agent)
     graph_builder.add_node("helpdesk_agent", helpdesk_agent)
+    graph_builder.add_node(
+        "helpdesk_agent_tools", create_tool_node_with_fallback(helpdesk_agent_tools)
+    )
     graph_builder.add_node("chatdata_agent", chatdata_agent)
     graph_builder.add_node("insights_agent", insights_agent)
 
-    # graph_builder.add_edge(START, "fetch_user_info")
-    # graph_builder.set_entry_point("query_agent")
     graph_builder.set_conditional_entry_point(
         route_entry_point,
         {"fetch_user_info": "fetch_user_info", "query_agent": "query_agent"},
@@ -80,15 +91,25 @@ def create_insights_graph(memory):
             "__end__": END,
         },
     )
-    # graph_builder.add_edge("crm_agent", "insights_agent")
+
     graph_builder.add_conditional_edges(
         "crm_agent",
         route_crm_agent,
         {"crm_agent_tools": "crm_agent_tools", "insights_agent": "insights_agent"},
     )
     graph_builder.add_edge("crm_agent_tools", "crm_agent")
+
+    graph_builder.add_conditional_edges(
+        "helpdesk_agent",
+        route_helpdesk_agent,
+        {
+            "helpdesk_agent_tools": "helpdesk_agent_tools",
+            "insights_agent": "insights_agent",
+        },
+    )
+    graph_builder.add_edge("helpdesk_agent_tools", "helpdesk_agent")
+
     graph_builder.add_edge("csm_agent", "insights_agent")
-    graph_builder.add_edge("helpdesk_agent", "insights_agent")
     graph_builder.add_edge("chatdata_agent", "insights_agent")
     graph_builder.add_edge("insights_agent", END)
 

@@ -80,7 +80,22 @@ def fetch_hubspot_contacts():
         return f"Error fetching HubSpot contacts: {e}"
 
 
-# print(fetch_hubspot_contacts())
+@tool
+def fetch_hubspot_companies():
+    """
+    Fetch HubSpot companies for the given HubSpot ID.
+
+    Returns:
+        str: The response message.
+    """
+    try:
+        response = requests.get(
+            f"{hubspot_api}/companies",
+            headers=hubspot_headers,
+        )
+        return response.json()
+    except Exception as e:
+        return f"Error fetching HubSpot companies: {e}"
 
 
 @tool()
@@ -105,19 +120,19 @@ def fetch_hubspot_deals(hubspot_id: str):
         return f"Error fetching HubSpot deals: {e}"
 
 
-@tool("zendesk tickets")
-def fetch_zendesk_tickets(zendesk_id: str):
+@tool
+def fetch_zendesk_tickets():
     """
-    Fetch Zendesk tickets for the given Zendesk ID.
-
-    Args:
-        zendesk_id (str): The Zendesk ID of the customer.
+    Fetch Zendesk tickets.
 
     Returns:
         str: The response message.
     """
     try:
-        response = requests.get(zendesk_api, headers=zendesk_headers)
+        response = requests.get(zendesk_api + "/tickets", headers=zendesk_headers)
         return response.json()
     except Exception as e:
         return f"Error fetching Zendesk tickets: {e}"
+
+
+# print(fetch_zendesk_tickets())

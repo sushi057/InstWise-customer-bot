@@ -9,7 +9,9 @@ from customer_insights.tools import (
     ToCSMAgent,
     ToHelpDeskAgent,
     fetch_hubspot_contacts,
+    fetch_hubspot_companies,
     fetch_hubspot_deals,
+    fetch_zendesk_tickets,
 )
 from customer_insights.prompts import (
     query_agent_prompt_template,
@@ -55,11 +57,11 @@ def query_agent(state: AgentStateGraph):
 
 # CRM Agent
 
-crm_agent_tools = [fetch_hubspot_contacts, fetch_hubspot_deals]
+crm_agent_tools = [fetch_hubspot_contacts, fetch_hubspot_companies, fetch_hubspot_deals]
 
 
 def crm_agent(state: AgentStateGraph):
-    # Append a tool message to the last route from query agent if toll_calls exists
+    # Append a tool message for the ToCRMAgent from query agent
     if (
         not isinstance(state["messages"][-1], ToolMessage)
         and state["messages"][-1].tool_calls
@@ -96,17 +98,25 @@ def csm_agent(state: AgentStateGraph):
     return {**state, "messages": response, "csm_agent_response": response}
 
 
-def helpdesk_agent(state: AgentStateGraph):
-    # Append a tool message to the last route from query agent
-    last_tool_call_id = state["messages"][-1].tool_calls[0]["id"]
-    query_route_tool_message = ToolMessage(
-        tool_call_id=last_tool_call_id,
-        content="The Help Desk Agent will now look for necessary information",
-    )
-    state["messages"].append(query_route_tool_message)
+# HelpDesk Agent
 
-    # helpdesk_agent_tools = []
-    helpdesk_llm_with_tools = llm
+helpdesk_agent_tools = [fetch_zendesk_tickets]
+
+
+def helpdesk_agent(state: AgentStateGraph):
+    # Append a tool message for the ToHelpDeskAgent from query agent
+    if (
+        not isinstance(state["messages"][-1], ToolMessage)
+        and state["messages"][-1].tool_calls
+    ):
+        last_tool_call_id = state["messages"][-1].tool_calls[0]["id"]
+        query_route_tool_message = ToolMessage(
+            tool_call_id=last_tool_call_id,
+            content="The Help Desk Agent will now look for necessary information",
+        )
+        state["messages"].append(query_route_tool_message)
+
+    helpdesk_llm_with_tools = llm.bind_tools(helpdesk_agent_tools)
     helpdesk_agent_runnable = helpdesk_agent_prompt_template | helpdesk_llm_with_tools
     response = helpdesk_agent_runnable.invoke(state)
 
