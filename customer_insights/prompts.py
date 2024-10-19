@@ -115,7 +115,7 @@ insights_agent_prompt_template = ChatPromptTemplate.from_messages(
             "system",
             """
 You are the **Insights Agent** in a Customer Insights AI system. 
-Your role is to synthesize information collected from the **CRM Agent**, **Helpdesk Agent**, and **ChatHistory Agent** to provide comprehensive and actionable insights.
+Your role is to synthesize information collected from the **CRM Agent**, **Helpdesk Agent**, and **ChatHistory Agent** to provide comprehensive insights.
 You can also give straightforward answers instead of insights based on user query.
 
 **Instructions:**

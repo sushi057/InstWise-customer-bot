@@ -13,7 +13,7 @@ hubspot_headers = {
 }
 
 # Zendesk API
-zendesk_api = "https://instwisehelp.zendesk.com/api/v2"
+zendesk_api = "https://agile2024.zendesk.com/api/v2"
 encoded_credentials = base64.b64encode(
     (f'{os.getenv("ZENDESK_EMAIL")}/token:{os.getenv("ZENDESK_TOKEN")}').encode("utf-8")
 ).decode("utf-8")
@@ -167,4 +167,50 @@ def fetch_zendesk_tickets():
         return f"Error fetching Zendesk tickets: {e}"
 
 
-# print(fetch_zendesk_tickets())
+@tool
+def fetch_zendesk_organizations():
+    """
+    Fetch Zendesk organizations.
+
+    Returns:
+        str: The response message.
+    """
+    try:
+        response = requests.get(f"{zendesk_api}/organizations", headers=zendesk_headers)
+        return response.json()
+    except Exception as e:
+        return f"Error fetching Zendesk organizations: {e}"
+
+
+@tool
+def fetch_tickets_of_organization(organization_id: str):
+    """
+    Fetch Zendesk tickets for the given organization.
+
+    Args:
+       organization_id (str): The organization ID of the customer.
+
+    Returns:
+        str: The response message.
+    """
+    try:
+        # Fetch associated tickets of the organization
+        response = requests.get(
+            f"{zendesk_api}/organizations/{organization_id}/tickets",
+            headers=zendesk_headers,
+        )
+        response.raise_for_status()
+        response = response.json()
+
+        associated_tickets = []
+        for ticket in response["tickets"]:
+            ticket_id = ticket["id"]
+            ticket_response = requests.get(
+                f"{zendesk_api}/tickets/{ticket_id}",
+                headers=zendesk_headers,
+            ).json()
+            associated_tickets.append(ticket_response)
+
+        return associated_tickets
+    except Exception as e:
+        return f"Error fetching Zendesk tickets: {e}"

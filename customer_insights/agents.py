@@ -13,6 +13,8 @@ from customer_insights.tools import (
     fetch_contacts_of_company,
     fetch_hubspot_deals,
     fetch_zendesk_tickets,
+    fetch_zendesk_organizations,
+    fetch_tickets_of_organization,
 )
 from customer_insights.prompts import (
     query_agent_prompt_template,
@@ -106,7 +108,11 @@ def csm_agent(state: AgentStateGraph):
 
 # HelpDesk Agent
 
-helpdesk_agent_tools = [fetch_zendesk_tickets]
+helpdesk_agent_tools = [
+    fetch_zendesk_tickets,
+    fetch_zendesk_organizations,
+    fetch_tickets_of_organization,
+]
 
 
 def helpdesk_agent(state: AgentStateGraph):
