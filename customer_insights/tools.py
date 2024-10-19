@@ -6,7 +6,7 @@ from langchain_core.tools import tool
 
 
 # HubSpot API
-hubspot_api = "https://api.hubapi.com/crm/v3/objects"
+hubspot_api = "https://api.hubapi.com/crm/v3"
 hubspot_headers = {
     "Authorization": f'Bearer {os.environ["HUBSPOT_BEARER_TOKEN"]}',
     "Content-Type": "application/json",
@@ -71,7 +71,7 @@ def fetch_hubspot_contacts():
     # Fetch HubSpot contacts
     try:
         response = requests.get(
-            f"{hubspot_api}/contacts",
+            f"{hubspot_api}/objects/contacts",
             headers=hubspot_headers,
         )
         print(response.json())
@@ -90,12 +90,44 @@ def fetch_hubspot_companies():
     """
     try:
         response = requests.get(
-            f"{hubspot_api}/companies",
+            f"{hubspot_api}/objects/companies?limit=25",
             headers=hubspot_headers,
         )
         return response.json()
     except Exception as e:
         return f"Error fetching HubSpot companies: {e}"
+
+
+@tool
+def fetch_contacts_of_company(company_id: str):
+    """
+    Fetch HubSpot contacts for the given company.
+
+    Args:
+       company_id (str): The company ID of the customer.
+
+    Returns:
+        str: The response message.
+    """
+    try:
+        # Fetch associated contacts of the company
+        response = requests.get(
+            f"{hubspot_api}/objects/companies/{company_id}/?associations=contacts",
+            headers=hubspot_headers,
+        ).json()
+
+        associated_contacts = []
+        for contact in response["associations"]["contacts"]["results"]:
+            contact_id = contact["id"]
+            contact_response = requests.get(
+                f"{hubspot_api}/objects/contacts/{contact_id}",
+                headers=hubspot_headers,
+            ).json()
+            associated_contacts.append(contact_response)
+
+        return associated_contacts
+    except Exception as e:
+        return f"Error fetching HubSpot contacts: {e}"
 
 
 @tool()
@@ -112,7 +144,7 @@ def fetch_hubspot_deals(hubspot_id: str):
     try:
         # Fetch HubSpot deals
         response = requests.get(
-            f"{hubspot_api}/deals",
+            f"{hubspot_api}/objects/deals",
             headers=hubspot_headers,
         )
         return response.json()
@@ -129,7 +161,7 @@ def fetch_zendesk_tickets():
         str: The response message.
     """
     try:
-        response = requests.get(zendesk_api + "/tickets", headers=zendesk_headers)
+        response = requests.get(f"{zendesk_api}/tickets", headers=zendesk_headers)
         return response.json()
     except Exception as e:
         return f"Error fetching Zendesk tickets: {e}"

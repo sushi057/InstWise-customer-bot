@@ -10,6 +10,7 @@ from customer_insights.tools import (
     ToHelpDeskAgent,
     fetch_hubspot_contacts,
     fetch_hubspot_companies,
+    fetch_contacts_of_company,
     fetch_hubspot_deals,
     fetch_zendesk_tickets,
 )
@@ -57,7 +58,12 @@ def query_agent(state: AgentStateGraph):
 
 # CRM Agent
 
-crm_agent_tools = [fetch_hubspot_contacts, fetch_hubspot_companies, fetch_hubspot_deals]
+crm_agent_tools = [
+    fetch_hubspot_contacts,
+    fetch_hubspot_companies,
+    fetch_contacts_of_company,
+    fetch_hubspot_deals,
+]
 
 
 def crm_agent(state: AgentStateGraph):
