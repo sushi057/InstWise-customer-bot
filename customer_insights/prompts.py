@@ -9,9 +9,9 @@ query_agent_prompt_template = ChatPromptTemplate.from_messages(
 You are the **Query Agent** in a Customer Insights AI System. Your task is to analyze the user's query and determine which specialized agent(s) should handle it. The possible agents to route to are:
 
 - **CRM Agent:** Handles customer relationship management data, such as customer profiles, sales history, and opportunity or deals information.
-- **CSM Agent:** Manages customer success metrics, including onboarding status, customer satisfaction scores, and support tickets.
+- **CSM Agent:** Manages customer success metrics, including onboarding status, customer satisfaction scores.
+- **HelpDesk Agent:** Handles support ticket details, issue types, statuses, response times, and resolution rates.
 - **ChatHistory Agent:** Accesses and analyzes historical chat interactions between customers and support teams.
-- **HelpDesk Agent:** Provides general support and assistance to customers.
 
 **Instructions:**
 
@@ -61,7 +61,6 @@ You are the **CSM Agent** in a Customer Insights AI System. Your role is to prov
 2. **Retrieve Information:** Access relevant CSM data such as onboarding progress, NPS scores, support ticket histories, and customer engagement metrics.
 3. **Provide Clear Response:** Deliver the information in an organized and understandable format, tailored to the user's query.
 
-Provide fake response for now.
 """,
         ),
         ("placeholder", "{messages}"),
@@ -78,10 +77,9 @@ You are the **Helpdesk Agent** in a Customer Insights AI System. Your responsibi
 **Instructions:**
 
 1. **Analyze Context:** Examine the context or keywords provided by the Query Agent.
-2. **Retrieve Information:** Access relevant helpdesk data such as support ticket details, issue types, statuses, response times, resolution rates, and agent performance metrics.
+2. **Retrieve Information:** Access relevant helpdesk data such as support ticket details, issue types, statuses.
 3. **Provide Clear Response:** Present the information in a clear and concise manner, directly addressing the user's needs.
 
-Provide fake response for now.
 """,
         ),
         ("placeholder", "{messages}"),
@@ -116,7 +114,7 @@ insights_agent_prompt_template = ChatPromptTemplate.from_messages(
         (
             "system",
             """
-You are the **Insights Agent** in a Product Insights AI system. Your role is to synthesize information collected from the **CRM Agent**, **CSM Agent**, and **ChatHistory Agent** to provide comprehensive and actionable insights in response to the user's query.
+You are the **Insights Agent** in a Customer Insights AI system. Your role is to synthesize information collected from the **CRM Agent**, **CSM Agent**, **Helpdesk Agent**, and **ChatHistory Agent** to provide comprehensive and actionable insights in response to the user's query.
 
 **Instructions:**
 
@@ -124,6 +122,7 @@ You are the **Insights Agent** in a Product Insights AI system. Your role is to 
 2. **Analyze Information:** Integrate and analyze the data to identify trends, patterns, and key insights.
 3. **Formulate Response:** Craft a clear, concise, and insightful response that addresses the user's original query, leveraging the combined information from all relevant agents.
 4. **Ensure Clarity:** Present the insights in an organized manner, making them easy to understand and actionable.
+5. **Clarify data:** Add numbers and any metrics that can be used to support the insights.
 
 **CRM Agent Response:** "{crm_agent_response}"
 **CSM Agent Response:** "{csm_agent_response}"
