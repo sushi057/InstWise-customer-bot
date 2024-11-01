@@ -80,22 +80,65 @@ def fetch_hubspot_contacts():
         return f"Error fetching HubSpot contacts: {e}"
 
 
+@tool()
+def fetch_id_of_company(company_name: str):
+    """
+    Fetch id of company for the given company name.
+
+    Args:
+        company_name (str): The name of the company.
+
+    Returns:
+        int: The company ID.
+    """
+    try:
+        response = requests.post(
+            f"{hubspot_api}/objects/companies/search",
+            headers=hubspot_headers,
+            json={
+                "filterGroups": [
+                    {
+                        "filters": [
+                            {
+                                "propertyName": "name",
+                                "operator": "EQ",
+                                "value": company_name,
+                            }
+                        ]
+                    }
+                ]
+            },
+        ).json()
+        return response["results"][0]["id"]
+    except Exception as e:
+        return f"Error fetching HubSpot contacts: {e}"
+
+
+# print(fetch_id_of_company("Hilton"))
+
+
 @tool
-def fetch_hubspot_companies():
+def fetch_company(company_id: str):
     """
     Fetch HubSpot companies for the given HubSpot ID.
+
+    Args:
+        company_id (str): The HubSpot ID of the customer.
 
     Returns:
         str: The response message.
     """
     try:
         response = requests.get(
-            f"{hubspot_api}/objects/companies?limit=25",
+            f"{hubspot_api}/objects/companies/{company_id}",
             headers=hubspot_headers,
         )
         return response.json()
     except Exception as e:
         return f"Error fetching HubSpot companies: {e}"
+
+
+# print(fetch_hubspot_companies("23951489207"))
 
 
 @tool
@@ -131,25 +174,38 @@ def fetch_contacts_of_company(company_id: str):
 
 
 @tool()
-def fetch_hubspot_deals(hubspot_id: str):
+def fetch_deals_of_company(company_id: str):
     """
     Fetch HubSpot deals for the given HubSpot ID.
 
     Args:
-        hubspot_id (str): The HubSpot ID of the customer.
+        company_id (str): The HubSpot ID of the customer.
 
     Returns:
         str: The response message.
     """
     try:
-        # Fetch HubSpot deals
+        # Fetch assosciated deals of a company
         response = requests.get(
-            f"{hubspot_api}/objects/deals",
+            f"{hubspot_api}/objects/companies/{company_id}/?associations=deals",
             headers=hubspot_headers,
-        )
-        return response.json()
+        ).json()
+
+        associated_deals = []
+        for deal in response["associations"]["deals"]["results"]:
+            deal_id = deal["id"]
+            deal_response = requests.get(
+                f"{hubspot_api}/objects/deals/{deal_id}",
+                headers=hubspot_headers,
+            ).json()
+            associated_deals.append(deal_response)
+
+        return associated_deals
     except Exception as e:
         return f"Error fetching HubSpot deals: {e}"
+
+
+# print(fetch_deals_of_company("23951489207"))
 
 
 @tool
