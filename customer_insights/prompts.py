@@ -41,8 +41,7 @@ You are the **CRM Agent** in a Customer Insights AI System. Your responsibility 
 2. **Retrieve Information:** Access relevant CRM data such as customer profiles,company id,  sales history, contact information, and related metrics from Hubspot. Retrieve data only relevant for the user's query.
 3. **Provide Clear Response:** Present the information in a clear and concise manner, directly addressing the user's needs.
 
-Provide fake response for now.
-        """,
+""",
         ),
         ("placeholder", "{messages}"),
     ]
@@ -99,10 +98,6 @@ You are the **Chat Data Agent** in a Customer Insights AI System. Your duty is t
 1. **Analyze Context:** Review the context or keywords provided by the Query Agent.
 2. **Retrieve Information:** Access relevant chat history data, including conversation transcripts, sentiment analysis, and issue categorization.
 3. **Provide Clear Response:** Summarize the findings in a coherent and concise manner, addressing the user's specific interests.
-
-Provide fake response for now.
-
-
 """,
         ),
         ("placeholder", "{messages}"),
