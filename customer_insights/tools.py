@@ -205,10 +205,10 @@ def fetch_deals_of_company(company_id: str):
         return f"Error fetching HubSpot deals: {e}"
 
 
-# print(fetch_deals_of_company("23951489207"))
+# Helpdesk Agent Tools
 
 
-@tool
+# @tool
 def fetch_zendesk_tickets():
     """
     Fetch Zendesk tickets.
@@ -221,6 +221,9 @@ def fetch_zendesk_tickets():
         return response.json()
     except Exception as e:
         return f"Error fetching Zendesk tickets: {e}"
+
+
+print(fetch_zendesk_tickets())
 
 
 @tool
