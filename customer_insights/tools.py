@@ -13,7 +13,7 @@ hubspot_headers = {
 }
 
 # Zendesk API
-zendesk_api = "https://inst9141.zendesk.com/api/v2"
+zendesk_api = f'https://{os.getenv("ZENDESK_SUBDOMAN")}.zendesk.com/api/v2'
 encoded_credentials = base64.b64encode(
     (f'{os.getenv("ZENDESK_EMAIL")}/token:{os.getenv("ZENDESK_TOKEN")}').encode("utf-8")
 ).decode("utf-8")
@@ -21,6 +21,8 @@ zendesk_headers = {
     "Authorization": f"Basic {encoded_credentials}",
     "Content-Type": "application/json",
 }
+
+# Query Agent Tools
 
 
 class ToCRMAgent(BaseModel):
@@ -60,6 +62,8 @@ class ToChatDataAgent(BaseModel):
 
 
 # CRM Agent Tools
+
+
 @tool()
 def fetch_hubspot_contacts():
     """
