@@ -13,7 +13,7 @@ hubspot_headers = {
 }
 
 # Zendesk API
-zendesk_api = "https://agile2024.zendesk.com/api/v2"
+zendesk_api = "https://inst9141.zendesk.com/api/v2"
 encoded_credentials = base64.b64encode(
     (f'{os.getenv("ZENDESK_EMAIL")}/token:{os.getenv("ZENDESK_TOKEN")}').encode("utf-8")
 ).decode("utf-8")
@@ -208,7 +208,7 @@ def fetch_deals_of_company(company_id: str):
 # Helpdesk Agent Tools
 
 
-# @tool
+@tool
 def fetch_zendesk_tickets():
     """
     Fetch Zendesk tickets.
@@ -221,9 +221,6 @@ def fetch_zendesk_tickets():
         return response.json()
     except Exception as e:
         return f"Error fetching Zendesk tickets: {e}"
-
-
-print(fetch_zendesk_tickets())
 
 
 @tool
@@ -239,6 +236,9 @@ def fetch_zendesk_organizations():
         return response.json()
     except Exception as e:
         return f"Error fetching Zendesk organizations: {e}"
+
+
+# print(fetch_zendesk_organizations())
 
 
 @tool
