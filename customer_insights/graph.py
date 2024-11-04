@@ -19,13 +19,6 @@ from customer_insights.agents import (
 from customer_insights.utils import create_tool_node_with_fallback
 
 
-def route_entry_point(state: AgentStateGraph):
-    if "user_info" in state:
-        return "query_agent"
-    else:
-        return "fetch_user_info"
-
-
 def route_query_agent(state: AgentStateGraph):
     last_message = state["messages"][-1]
     if not last_message.tool_calls:
@@ -42,19 +35,19 @@ def route_query_agent(state: AgentStateGraph):
 
 def route_crm_agent(
     state: AgentStateGraph,
-) -> Literal["crm_agent_tools", "insights_agent"]:
+) -> Literal["crm_agent_tools", "__end__"]:
     tool_calls = state["messages"][-1].tool_calls
     if not tool_calls:
-        return "insights_agent"
+        return "__end__"
     return "crm_agent_tools"
 
 
 def route_helpdesk_agent(
     state: AgentStateGraph,
-) -> Literal["helpdesk_agent_tools", "insights_agent"]:
+) -> Literal["helpdesk_agent_tools", "__end__"]:
     tool_calls = state["messages"][-1].tool_calls
     if not tool_calls:
-        return "insights_agent"
+        return "__end__"
     return "helpdesk_agent_tools"
 
 
@@ -75,10 +68,7 @@ def create_insights_graph(memory):
     graph_builder.add_node("chatdata_agent", chatdata_agent)
     graph_builder.add_node("insights_agent", insights_agent)
 
-    graph_builder.set_conditional_entry_point(
-        route_entry_point,
-        {"fetch_user_info": "fetch_user_info", "query_agent": "query_agent"},
-    )
+    graph_builder.add_edge(START, "fetch_user_info")
     graph_builder.add_edge("fetch_user_info", "query_agent")
     graph_builder.add_conditional_edges(
         "query_agent",
@@ -95,7 +85,7 @@ def create_insights_graph(memory):
     graph_builder.add_conditional_edges(
         "crm_agent",
         route_crm_agent,
-        {"crm_agent_tools": "crm_agent_tools", "insights_agent": "insights_agent"},
+        {"crm_agent_tools": "crm_agent_tools", "__end__": "__end__"},
     )
     graph_builder.add_edge("crm_agent_tools", "crm_agent")
 
@@ -104,7 +94,7 @@ def create_insights_graph(memory):
         route_helpdesk_agent,
         {
             "helpdesk_agent_tools": "helpdesk_agent_tools",
-            "insights_agent": "insights_agent",
+            "__end__": "__end__",
         },
     )
     graph_builder.add_edge("helpdesk_agent_tools", "helpdesk_agent")
