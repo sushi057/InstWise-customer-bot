@@ -1,19 +1,22 @@
 import os
 import base64
 import requests
+from dotenv import load_dotenv
+
 from pydantic import BaseModel, Field
 from langchain_core.tools import tool
 
+load_dotenv()
 
 # HubSpot API
 hubspot_api = "https://api.hubapi.com/crm/v3"
 hubspot_headers = {
-    "Authorization": f'Bearer {os.environ["HUBSPOT_BEARER_TOKEN"]}',
+    "Authorization": f'Bearer {os.getenv("HUBSPOT_BEARER_TOKEN")}',
     "Content-Type": "application/json",
 }
 
 # Zendesk API
-zendesk_api = f'https://{os.getenv("ZENDESK_SUBDOMAN")}.zendesk.com/api/v2'
+zendesk_api = f'https://{os.getenv("ZENDESK_SUBDOMAIN")}.zendesk.com/api/v2'
 encoded_credentials = base64.b64encode(
     (f'{os.getenv("ZENDESK_EMAIL")}/token:{os.getenv("ZENDESK_TOKEN")}').encode("utf-8")
 ).decode("utf-8")
@@ -116,9 +119,6 @@ def fetch_id_of_company(company_name: str):
         return response["results"][0]["id"]
     except Exception as e:
         return f"Error fetching HubSpot contacts: {e}"
-
-
-# print(fetch_id_of_company("Hilton"))
 
 
 @tool
@@ -242,7 +242,25 @@ def fetch_zendesk_organizations():
         return f"Error fetching Zendesk organizations: {e}"
 
 
-# print(fetch_zendesk_organizations())
+@tool
+def fetch_organization_by_name(organization_name: str):
+    """
+    Fetch Zendesk organization for the given organization name.
+
+    Args:
+        organization_name (str): The name of the organization.
+
+    Returns:
+        str: The response message.
+    """
+    try:
+        response = requests.get(
+            f"{zendesk_api}/organizations/search.json?query=type:organization name:{organization_name}",
+            headers=zendesk_headers,
+        )
+        return response.json()
+    except Exception as e:
+        return f"Error fetching Zendesk organization: {e}"
 
 
 @tool

@@ -15,6 +15,7 @@ from customer_insights.tools import (
     fetch_id_of_company,
     fetch_zendesk_tickets,
     fetch_zendesk_organizations,
+    fetch_organization_by_name,
     fetch_tickets_of_organization,
 )
 from customer_insights.prompts import (
@@ -113,6 +114,7 @@ def csm_agent(state: AgentStateGraph):
 helpdesk_agent_tools = [
     fetch_zendesk_tickets,
     fetch_zendesk_organizations,
+    fetch_organization_by_name,
     fetch_tickets_of_organization,
 ]
 
