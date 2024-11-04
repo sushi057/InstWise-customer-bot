@@ -4,19 +4,9 @@ from langchain_core.messages import ToolMessage
 
 from customer_insights.state import AgentStateGraph
 from customer_insights.tools import (
-    ToCRMAgent,
-    ToChatDataAgent,
-    ToCSMAgent,
-    ToHelpDeskAgent,
-    fetch_hubspot_contacts,
-    fetch_company,
-    fetch_contacts_of_company,
-    fetch_deals_of_company,
-    fetch_id_of_company,
-    fetch_zendesk_tickets,
-    fetch_zendesk_organizations,
-    fetch_organization_by_name,
-    fetch_tickets_of_organization,
+    query_agent_tools,
+    crm_agent_tools,
+    helpdesk_agent_tools,
 )
 from customer_insights.prompts import (
     query_agent_prompt_template,
@@ -30,6 +20,7 @@ from customer_insights.prompts import (
 llm = ChatOpenAI(model="gpt-4o")
 
 
+# Redundant node, can be removed
 def fetch_user_info(state: AgentStateGraph, config: RunnableConfig):
     # configurable = config.get("configurable")
     # user_id = configurable["user_id"]
@@ -48,7 +39,7 @@ def fetch_user_info(state: AgentStateGraph, config: RunnableConfig):
 
 
 def query_agent(state: AgentStateGraph):
-    query_agent_tools = [ToCRMAgent, ToCSMAgent, ToChatDataAgent, ToHelpDeskAgent]
+
     query_llm_with_tools = llm.bind_tools(query_agent_tools)
 
     query_agent_runnable = query_agent_prompt_template | query_llm_with_tools
@@ -61,14 +52,6 @@ def query_agent(state: AgentStateGraph):
 
 
 # CRM Agent
-
-crm_agent_tools = [
-    fetch_hubspot_contacts,
-    fetch_company,
-    fetch_contacts_of_company,
-    fetch_deals_of_company,
-    fetch_id_of_company,
-]
 
 
 def crm_agent(state: AgentStateGraph):
@@ -110,13 +93,6 @@ def csm_agent(state: AgentStateGraph):
 
 
 # HelpDesk Agent
-
-helpdesk_agent_tools = [
-    fetch_zendesk_tickets,
-    fetch_zendesk_organizations,
-    fetch_organization_by_name,
-    fetch_tickets_of_organization,
-]
 
 
 def helpdesk_agent(state: AgentStateGraph):

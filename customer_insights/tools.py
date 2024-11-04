@@ -33,9 +33,7 @@ class ToCRMAgent(BaseModel):
     Escalate to this agent to inquire about customer data
     """
 
-    hubspot_id: str = Field(
-        ..., description="hubspot id of the customer to fetch CRM Data"
-    )
+    pass
 
 
 class ToCSMAgent(BaseModel):
@@ -43,9 +41,7 @@ class ToCSMAgent(BaseModel):
     Escalate to this agent to inquire about customer data
     """
 
-    zendesk_id: str = Field(
-        ..., description="zendesk id of the customer to fetch CSM Data"
-    )
+    pass
 
 
 class ToHelpDeskAgent(BaseModel):
@@ -61,7 +57,10 @@ class ToChatDataAgent(BaseModel):
     Escalate to this agent to inquire about customer support chat history
     """
 
-    user_id: str = Field(..., description="user id of the customer to fetch Chat Data")
+    pass
+
+
+query_agent_tools = [ToCRMAgent, ToCSMAgent, ToChatDataAgent, ToHelpDeskAgent]
 
 
 # CRM Agent Tools
@@ -209,6 +208,15 @@ def fetch_deals_of_company(company_id: str):
         return f"Error fetching HubSpot deals: {e}"
 
 
+crm_agent_tools = [
+    fetch_hubspot_contacts,
+    fetch_company,
+    fetch_contacts_of_company,
+    fetch_deals_of_company,
+    fetch_id_of_company,
+]
+
+
 # Helpdesk Agent Tools
 
 
@@ -255,9 +263,10 @@ def fetch_organization_by_name(organization_name: str):
     """
     try:
         response = requests.get(
-            f"{zendesk_api}/organizations/search.json?query=type:organization name:{organization_name}",
+            f'{zendesk_api}/search.json?query=type:organization name:"{organization_name}"',
             headers=zendesk_headers,
         )
+        print(zendesk_api, organization_name)
         return response.json()
     except Exception as e:
         return f"Error fetching Zendesk organization: {e}"
@@ -295,3 +304,11 @@ def fetch_tickets_of_organization(organization_id: str):
         return associated_tickets
     except Exception as e:
         return f"Error fetching Zendesk tickets: {e}"
+
+
+helpdesk_agent_tools = [
+    fetch_zendesk_tickets,
+    fetch_zendesk_organizations,
+    fetch_organization_by_name,
+    fetch_tickets_of_organization,
+]
