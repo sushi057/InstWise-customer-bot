@@ -6,6 +6,7 @@ from customer_insights.state import AgentStateGraph
 from customer_insights.tools import (
     query_agent_tools,
     crm_agent_tools,
+    csm_agent_tools,
     helpdesk_agent_tools,
 )
 from customer_insights.prompts import (
@@ -20,33 +21,12 @@ from customer_insights.prompts import (
 llm = ChatOpenAI(model="gpt-4o")
 
 
-# Redundant node, can be removed
-def fetch_user_info(state: AgentStateGraph, config: RunnableConfig):
-    # configurable = config.get("configurable")
-    # user_id = configurable["user_id"]
-
-    # fetch user_info for user_id
-    user_info = {
-        "user_id": "123",
-        "organization_id": "123",
-        "zendesk_id": "123",
-        "hubspot_id": "123",
-        "churnzero_id": "123",
-        "salesforce_id": "123",
-    }
-
-    return {"user_info": user_info}
-
-
 def query_agent(state: AgentStateGraph):
 
     query_llm_with_tools = llm.bind_tools(query_agent_tools)
-
     query_agent_runnable = query_agent_prompt_template | query_llm_with_tools
 
-    response = query_agent_runnable.invoke(
-        {"messages": state["messages"], "user_info": state["user_info"]}
-    )
+    response = query_agent_runnable.invoke({"messages": state["messages"]})
 
     return {**state, "messages": response}
 
@@ -77,15 +57,18 @@ def crm_agent(state: AgentStateGraph):
 
 def csm_agent(state: AgentStateGraph):
     # Append a tool message for the last route from query agent
-    last_tool_call_id = state["messages"][-1].tool_calls[0]["id"]
-    query_route_tool_message = ToolMessage(
-        tool_call_id=last_tool_call_id,
-        content="The CSM agent will now look for necessary information.",
-    )
-    state["messages"].append(query_route_tool_message)
+    if (
+        not isinstance(state["messages"][-1], ToolMessage)
+        and state["messages"][-1].tool_calls
+    ):
+        last_tool_call_id = state["messages"][-1].tool_calls[0]["id"]
+        query_route_tool_message = ToolMessage(
+            tool_call_id=last_tool_call_id,
+            content="The CSM agent will now look for necessary information.",
+        )
+        state["messages"].append(query_route_tool_message)
 
-    # csm_agent_tools = []
-    csm_llm_with_tools = llm
+    csm_llm_with_tools = llm.bind_tools(csm_agent_tools)
     csm_agent_runnable = csm_agent_prompt_template | csm_llm_with_tools
     response = csm_agent_runnable.invoke(state)
 
