@@ -312,3 +312,114 @@ helpdesk_agent_tools = [
     fetch_organization_by_name,
     fetch_tickets_of_organization,
 ]
+
+# CSM Agent Tools
+
+
+@tool
+def get_all_customers():
+    """
+    Get list of all the customers.
+
+    Returns:
+        customer_information_list(dict): List of customer information.
+    """
+    try:
+        response = requests.get(
+            "https://api-assistant.instwise.app/api/v1/customer/details"
+        ).json()
+        return response
+    except Exception as e:
+        return f"Error fetching all customers: {e}"
+
+
+@tool
+def get_customer_information_by_name(company_name: str):
+    """
+    Get the customer_information for the given company name.
+
+    Args:
+        company_name(str): The name of the company.
+
+    Returns:
+        customer_information(dict): The response message.
+    """
+    try:
+        response = requests.get(
+            f"https://api-assistant.instwise.app/api/v1/customers?customer_name={company_name}"
+        ).json()
+        return response
+    except Exception as e:
+        return f"Error fetching CRM ID: {e}"
+
+
+@tool
+def get_customer_by_organization_id(organization_id: str):
+    """
+    Get customer information by organization id.
+
+    Args:
+        organization_id (str): The organization id.
+
+    Returns:
+        customer_information(dict): The response message.
+    """
+    try:
+        response = requests.get(
+            f"https://api-assistant.instwise.app/api/v1/customer/details?customer_id={organization_id}"
+        ).json()
+        return response
+    except Exception as e:
+        return f"Error fetching customer information: {e}"
+
+
+@tool
+def get_survey_data_by_organization_id(organization_id: str):
+    """
+    Get survey data by organization id.
+
+    Args:
+        organization_id (str): The organization id.
+
+    Returns:
+        survey_data(dict): The response message.
+    """
+    try:
+        response = requests.get(
+            f"https://api-assistant.instwise.app/api/v1/feedback/survey?organization_id={organization_id}"
+        ).json()
+        return response
+    except Exception as e:
+        return f"Error fetching survey data: {e}"
+
+
+@tool
+def get_login_detail_by_organization_id(organization_id: str):
+    """
+    Get login/feature list by organization id.
+
+    Args:
+        organization_id (str): The organization id.
+
+    Returns:
+        login_detail(dict): The response message.
+    """
+    try:
+        response = requests.get(
+            f"https://api-assistant.instwise.app/api/v1/customer/details?customer_id={organization_id}"
+        ).json()
+        return response
+    except Exception as e:
+        return f"Error fetching login details: {e}"
+
+
+csm_agent_tools = [
+    get_all_customers,
+    get_customer_information_by_name,
+    get_customer_by_organization_id,
+    get_survey_data_by_organization_id,
+    get_login_detail_by_organization_id,
+]
+
+
+# Chatdata agent tools
