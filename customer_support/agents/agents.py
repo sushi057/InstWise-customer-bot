@@ -12,7 +12,6 @@ from customer_support.tools.tools import (
     rag_call,
     recommendation_rag_call,
     suggest_workaround,
-    log_activity,
     create_ticket,
     upsell_rag_call,
     personalized_follow_up,
