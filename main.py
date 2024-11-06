@@ -1,15 +1,12 @@
-import os
 from typing import Optional
-import uuid
-import requests
 from typing import Literal
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import FastAPI
 from langgraph.checkpoint.memory import MemorySaver
 
 from config.config import get_customer_id
 from customer_support.graph.graph import create_graph
-from customer_support.utils.utils import fetch_organization_details, get_session_id
+from customer_support.utils.utils import get_session_id
 from customer_insights.graph import create_insights_graph
 
 app = FastAPI()
@@ -56,9 +53,6 @@ async def ask_support(
         # Add user_info state here
 
     graph = session_graph_cache["graph"]
-
-    with open("graph_v0.2.png", "wb") as f:
-        f.write(graph.get_graph(xray=True).draw_mermaid_png())
 
     config = {
         "configurable": {
