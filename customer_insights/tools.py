@@ -60,7 +60,12 @@ class ToChatDataAgent(BaseModel):
     pass
 
 
-query_agent_tools = [ToCRMAgent, ToCSMAgent, ToChatDataAgent, ToHelpDeskAgent]
+query_agent_tools = [
+    ToCRMAgent,
+    ToCSMAgent,
+    ToChatDataAgent,
+    ToHelpDeskAgent,
+]
 
 
 # CRM Agent Tools
@@ -354,7 +359,7 @@ def get_customer_information_by_name(company_name: str):
 
 
 @tool
-def get_customer_by_organization_id(organization_id: str):
+def get_customer_information_by_organization_id(organization_id: str):
     """
     Get customer information by organization id.
 
@@ -371,26 +376,6 @@ def get_customer_by_organization_id(organization_id: str):
         return response
     except Exception as e:
         return f"Error fetching customer information: {e}"
-
-
-@tool
-def get_survey_data_by_organization_id(organization_id: str):
-    """
-    Get survey data by organization id.
-
-    Args:
-        organization_id (str): The organization id.
-
-    Returns:
-        survey_data(dict): The response message.
-    """
-    try:
-        response = requests.get(
-            f"https://api-assistant.instwise.app/api/v1/feedback/survey?organization_id={organization_id}"
-        ).json()
-        return response
-    except Exception as e:
-        return f"Error fetching survey data: {e}"
 
 
 @tool
@@ -416,10 +401,54 @@ def get_login_detail_by_organization_id(organization_id: str):
 csm_agent_tools = [
     get_all_customers,
     get_customer_information_by_name,
-    get_customer_by_organization_id,
-    get_survey_data_by_organization_id,
+    get_customer_information_by_organization_id,
     get_login_detail_by_organization_id,
 ]
 
 
 # Chatdata agent tools
+@tool
+def get_conversation_by_customer_id(customer_id: str):
+    """
+    Get conversation by customer id.
+
+    Args:
+        customer_id (str): The customer id.
+
+    Returns:
+        conversation_data(dict): The response message.
+    """
+    try:
+        response = requests.get(
+            f"https://api-assistant.instwise.app/api/v1/conversations?customer_id={customer_id}"
+        ).json()
+        return response
+    except Exception as e:
+        return f"Error fetching conversation data: {e}"
+
+
+@tool
+def get_survey_data_by_organization_id(organization_id: str):
+    """
+    Get survey data by organization id.
+
+    Args:
+        organization_id (str): The organization id.
+
+    Returns:
+        survey_data(dict): The response message.
+    """
+    try:
+        response = requests.get(
+            f"https://api-assistant.instwise.app/api/v1/feedback/survey?organization_id={organization_id}"
+        ).json()
+        return response
+    except Exception as e:
+        return f"Error fetching survey data: {e}"
+
+
+chatdata_agent_tools = [
+    get_customer_information_by_name,
+    get_conversation_by_customer_id,
+    get_survey_data_by_organization_id,
+]

@@ -1,8 +1,7 @@
 from typing import Literal
 
 from langgraph.graph import StateGraph, START, END
-from langgraph.checkpoint.memory import MemorySaver
-from langchain_core.messages import ToolMessage
+from langgraph.prebuilt import tools_condition
 
 from customer_insights.state import AgentStateGraph
 from customer_insights.agents import (
@@ -14,6 +13,7 @@ from customer_insights.agents import (
     helpdesk_agent,
     helpdesk_agent_tools,
     chatdata_agent,
+    chatdata_agent_tools,
     insights_agent,
 )
 from customer_insights.utils import create_tool_node_with_fallback
@@ -60,6 +60,16 @@ def route_helpdesk_agent(
     return "helpdesk_agent_tools"
 
 
+def route_chatdata_agent(
+    state: AgentStateGraph,
+) -> Literal["chatdata_agent_tools", "__end__"]:
+    # use tools_condition for routing
+    route = tools_condition(state["messages"])
+    if route == "tools":
+        return "chatdata_agent_tools"
+    return "__end__"
+
+
 def create_insights_graph(memory):
 
     graph_builder = StateGraph(AgentStateGraph)
@@ -79,7 +89,10 @@ def create_insights_graph(memory):
         "helpdesk_agent_tools", create_tool_node_with_fallback(helpdesk_agent_tools)
     )
     graph_builder.add_node("chatdata_agent", chatdata_agent)
-    graph_builder.add_node("insights_agent", insights_agent)
+    graph_builder.add_node(
+        "chatdata_agent_tools", create_tool_node_with_fallback(chatdata_agent_tools)
+    )
+    # graph_builder.add_node("insights_agent", insights_agent)
 
     # Define edges
     graph_builder.add_edge(START, "query_agent")
@@ -118,9 +131,17 @@ def create_insights_graph(memory):
         },
     )
     graph_builder.add_edge("helpdesk_agent_tools", "helpdesk_agent")
-
-    graph_builder.add_edge("chatdata_agent", "insights_agent")
-    graph_builder.add_edge("insights_agent", END)
+    graph_builder.add_conditional_edges(
+        "chatdata_agent",
+        route_chatdata_agent,
+        {
+            "chatdata_agent_tools": "chatdata_agent_tools",
+            "__end__": "__end__",
+        },
+    )
+    graph_builder.add_edge("chatdata_agent_tools", "chatdata_agent")
+    # graph_builder.add_edge("chatdata_agent", "insights_agent")
+    # graph_builder.add_edge("insights_agent", END)
 
     graph = graph_builder.compile(checkpointer=memory)
 
