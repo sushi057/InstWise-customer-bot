@@ -10,7 +10,7 @@ query_agent_prompt_template = ChatPromptTemplate.from_messages(
 You are the Query Agent in a Customer Insights AI System. Your role is to analyze each user query and route it to the appropriate specialized agent. The available agents are:
 
 - **CRM Agent:** Manages customer profiles, sales history, opportunities, and statuses in Hubspot.
-- **CSM Agent:** Handles customer health scores, churn risk, usage details, onboarding status, and NPS scores.
+- **CSM Agent:** Handles customer health information, churn risk, usage details, login details and feature list.
 - **HelpDesk Agent:** Manages support tickets, including issue types, statuses, and resolution metrics.
 - **Chat Data Agent:** Oversees chat history, surveys, feedback, and customer sentiment.
 
@@ -111,6 +111,9 @@ You are the **Chat Data Agent** in a Customer Insights AI System. Your duty is t
 1. **Analyze Context:** Review the context or keywords provided by the Query Agent.
 2. **Retrieve Information:** Access relevant chat history data, including conversation transcripts, sentiment analysis, and issue categorization.
 3. **Provide Clear Response:** Summarize the findings in a coherent and concise manner, addressing the user's specific interests.
+
+Additional Information: 
+- **Use _id (organization_id) from customer information to fetch necessary information.**
 """,
         ),
         ("placeholder", "{messages}"),
