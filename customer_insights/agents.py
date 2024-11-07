@@ -1,5 +1,4 @@
 from langchain_openai import ChatOpenAI
-from langchain_core.runnables.config import RunnableConfig
 from langchain_core.messages import ToolMessage
 
 from customer_insights.state import AgentStateGraph

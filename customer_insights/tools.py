@@ -3,8 +3,9 @@ import base64
 import requests
 from dotenv import load_dotenv
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from langchain_core.tools import tool
+from langchain_core.runnables.config import RunnableConfig
 
 load_dotenv()
 
@@ -408,7 +409,7 @@ csm_agent_tools = [
 
 # Chatdata agent tools
 @tool
-def get_conversation_by_customer_id(customer_id: str):
+def get_conversation_by_customer_id(customer_id: str, config: RunnableConfig):
     """
     Get conversation by customer id.
 
@@ -418,9 +419,10 @@ def get_conversation_by_customer_id(customer_id: str):
     Returns:
         conversation_data(dict): The response message.
     """
+    token = config.get("configurable", {}).get("token")
     try:
         response = requests.get(
-            f"https://api-assistant.instwise.app/api/v1/conversations?customer_id={customer_id}"
+            f"https://api-assistant.instwise.app/api/v1/conversations?customer_id={customer_id}&token={token}"
         ).json()
         return response
     except Exception as e:

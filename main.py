@@ -59,6 +59,7 @@ async def ask_support(
             "thread_id": session_id,
             "user_email": user_email,
             "customer_id": customer_id,
+            "token": session_id + "_" + org_id,
         }
     }
 
