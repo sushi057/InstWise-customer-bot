@@ -2,8 +2,9 @@ import os
 import base64
 import requests
 from dotenv import load_dotenv
+from bson.objectid import ObjectId
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 from langchain_core.tools import tool
 from langchain_core.runnables.config import RunnableConfig
 
@@ -214,12 +215,43 @@ def fetch_deals_of_company(company_id: str):
         return f"Error fetching HubSpot deals: {e}"
 
 
+@tool
+def fetch_notes_of_company(company_id: str):
+    """
+    Fetch HubSpot notes for the given HubSpot ID.
+
+    Args:
+        company_id (str): The HubSpot ID of the customer.
+
+    Returns:
+        dict: The response message containing the notes.
+    """
+    try:
+        response = requests.get(
+            f"{hubspot_api}/objects/companies/{company_id}/associations/notes",
+            headers=hubspot_headers,
+        ).json()
+
+        notes = []
+        for note in response["results"]:
+            note_id = note["id"]
+            note_response = requests.get(
+                f"{hubspot_api}/objects/notes/{note_id}?properties=hs_note_body",
+                headers=hubspot_headers,
+            ).json()
+            notes.append(note_response)
+        return notes
+    except Exception as e:
+        return f"Error fetching HubSpot notes: {e}"
+
+
 crm_agent_tools = [
     fetch_hubspot_contacts,
     fetch_company,
     fetch_contacts_of_company,
     fetch_deals_of_company,
     fetch_id_of_company,
+    fetch_notes_of_company,
 ]
 
 
@@ -360,19 +392,23 @@ def get_customer_information_by_name(company_name: str):
 
 
 @tool
-def get_customer_information_by_organization_id(organization_id: str):
+def get_customer_information_by_organization_id(
+    organization_id: str, config: RunnableConfig
+):
     """
     Get customer information by organization id.
 
     Args:
         organization_id (str): The organization id.
+        config (RunnableConfig): The configuration for the graph.
 
     Returns:
         customer_information(dict): The response message.
     """
+    token = config.get("configurable", {}).get("token")
     try:
         response = requests.get(
-            f"https://api-assistant.instwise.app/api/v1/customer/details?customer_id={organization_id}"
+            f"https://api-assistant.instwise.app/api/v1/customer/details?customer_id={organization_id}&token={token}"
         ).json()
         return response
     except Exception as e:
@@ -380,23 +416,47 @@ def get_customer_information_by_organization_id(organization_id: str):
 
 
 @tool
-def get_login_detail_by_organization_id(organization_id: str):
+def get_login_detail_by_organization_id(organization_id: str, config: RunnableConfig):
     """
     Get login/feature list by organization id.
 
     Args:
         organization_id (str): The organization id.
+        config (RunnableConfig): The configuration for the graph.
 
     Returns:
         login_detail(dict): The response message.
     """
+    token = config.get("configurable", {}).get("token")
     try:
         response = requests.get(
-            f"https://api-assistant.instwise.app/api/v1/customer/details?customer_id={organization_id}"
+            f"https://api-assistant.instwise.app/api/v1/customer/login-details?customer_id={organization_id}&token={token}"
         ).json()
         return response
     except Exception as e:
         return f"Error fetching login details: {e}"
+
+
+@tool
+def get_feature_list_by_organization_id(organization_id: str, config: RunnableConfig):
+    """
+    Get feature list by organization id.
+
+    Args:
+        organization_id (str): The organization id.
+        config (RunnableConfig): The configuration for the graph.
+
+    Returns:
+        feature_list(dict): The response message.
+    """
+    token = config.get("configurable", {}).get("token")
+    try:
+        response = requests.get(
+            f"https://api-assistant.instwise.app/api/v1/customer/features?customer_id={organization_id}&token={token}"
+        ).json()
+        return response
+    except Exception as e:
+        return f"Error fetching feature list: {e}"
 
 
 csm_agent_tools = [
@@ -404,6 +464,7 @@ csm_agent_tools = [
     get_customer_information_by_name,
     get_customer_information_by_organization_id,
     get_login_detail_by_organization_id,
+    get_feature_list_by_organization_id,
 ]
 
 
@@ -414,35 +475,41 @@ def get_conversation_by_customer_id(customer_id: str, config: RunnableConfig):
     Get conversation by customer id.
 
     Args:
-        customer_id (str): The customer id.
+        customer_id (ObjectId): The id of the company.
+        config (RunnableConfig): The configuration object for the graph.
 
     Returns:
         conversation_data(dict): The response message.
     """
     token = config.get("configurable", {}).get("token")
+
     try:
         response = requests.get(
-            f"https://api-assistant.instwise.app/api/v1/conversations?customer_id={customer_id}&token={token}"
+            f"https://api-assistant.instwise.app/api/v1/conversations/customer?customer_id={customer_id}&token={token}"
         ).json()
         return response
+    except ValidationError as e:
+        return f"Validation Error: {e}"
     except Exception as e:
         return f"Error fetching conversation data: {e}"
 
 
 @tool
-def get_survey_data_by_organization_id(organization_id: str):
+def get_survey_data_by_organization_id(organization_id: str, config: RunnableConfig):
     """
     Get survey data by organization id.
 
     Args:
         organization_id (str): The organization id.
+        config (RunnableConfig): The configuration for the graph
 
     Returns:
         survey_data(dict): The response message.
     """
+    token = config.get("configurable", {}).get("token")
     try:
         response = requests.get(
-            f"https://api-assistant.instwise.app/api/v1/feedback/survey?organization_id={organization_id}"
+            f"https://api-assistant.instwise.app/api/v1/feedback/survey?organization_id={organization_id}&token={token}"
         ).json()
         return response
     except Exception as e:
