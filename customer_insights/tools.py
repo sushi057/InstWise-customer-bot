@@ -27,51 +27,6 @@ zendesk_headers = {
     "Content-Type": "application/json",
 }
 
-# Query Agent Tools
-
-
-class ToCRMAgent(BaseModel):
-    """
-    Escalate to this agent to inquire about customer data
-    """
-
-    pass
-
-
-class ToCSMAgent(BaseModel):
-    """
-    Escalate to this agent to inquire about customer data
-    """
-
-    pass
-
-
-class ToHelpDeskAgent(BaseModel):
-    """
-    Escalate to this agent to inquire about helpdesk assistance
-    """
-
-    pass
-
-
-class ToChatDataAgent(BaseModel):
-    """
-    Escalate to this agent to inquire about customer support chat history
-    """
-
-    pass
-
-
-query_agent_tools = [
-    ToCRMAgent,
-    ToCSMAgent,
-    ToChatDataAgent,
-    ToHelpDeskAgent,
-]
-
-
-# CRM Agent Tools
-
 
 @tool()
 def fetch_hubspot_contacts():
@@ -146,9 +101,6 @@ def fetch_company(company_id: str):
         return response.json()
     except Exception as e:
         return f"Error fetching HubSpot companies: {e}"
-
-
-# print(fetch_hubspot_companies("23951489207"))
 
 
 @tool
@@ -245,19 +197,6 @@ def fetch_notes_of_company(company_id: str):
         return f"Error fetching HubSpot notes: {e}"
 
 
-crm_agent_tools = [
-    fetch_hubspot_contacts,
-    fetch_company,
-    fetch_contacts_of_company,
-    fetch_deals_of_company,
-    fetch_id_of_company,
-    fetch_notes_of_company,
-]
-
-
-# Helpdesk Agent Tools
-
-
 @tool
 def fetch_zendesk_tickets():
     """
@@ -311,12 +250,12 @@ def fetch_organization_by_name(organization_name: str):
 
 
 @tool
-def fetch_tickets_of_organization(organization_id: str):
+def fetch_tickets_of_organization(customer_id: str):
     """
     Fetch Zendesk tickets for the given organization.
 
     Args:
-       organization_id (str): The organization ID of the customer.
+       customer_id (str): The organization ID of the customer.
 
     Returns:
         str: The response message.
@@ -324,7 +263,7 @@ def fetch_tickets_of_organization(organization_id: str):
     try:
         # Fetch associated tickets of the organization
         response = requests.get(
-            f"{zendesk_api}/organizations/{organization_id}/tickets",
+            f"{zendesk_api}/organizations/{customer_id}/tickets",
             headers=zendesk_headers,
         )
         response.raise_for_status()
@@ -342,16 +281,6 @@ def fetch_tickets_of_organization(organization_id: str):
         return associated_tickets
     except Exception as e:
         return f"Error fetching Zendesk tickets: {e}"
-
-
-helpdesk_agent_tools = [
-    fetch_zendesk_tickets,
-    fetch_zendesk_organizations,
-    fetch_organization_by_name,
-    fetch_tickets_of_organization,
-]
-
-# CSM Agent Tools
 
 
 @tool
@@ -372,34 +301,12 @@ def get_all_customers():
 
 
 @tool
-def get_customer_information_by_name(company_name: str):
-    """
-    Get the customer_information for the given company name.
-
-    Args:
-        company_name(str): The name of the company.
-
-    Returns:
-        customer_information(dict): The response message.
-    """
-    try:
-        response = requests.get(
-            f"https://api-assistant.instwise.app/api/v1/customers?customer_name={company_name}"
-        ).json()
-        return response
-    except Exception as e:
-        return f"Error fetching CRM ID: {e}"
-
-
-@tool
-def get_customer_information_by_organization_id(
-    organization_id: str, config: RunnableConfig
-):
+def get_customer_information_by_customer_id(customer_id: str, config: RunnableConfig):
     """
     Get customer information by organization id.
 
     Args:
-        organization_id (str): The organization id.
+        customer_id (str): The organization id.
         config (RunnableConfig): The configuration for the graph.
 
     Returns:
@@ -408,7 +315,7 @@ def get_customer_information_by_organization_id(
     token = config.get("configurable", {}).get("token")
     try:
         response = requests.get(
-            f"https://api-assistant.instwise.app/api/v1/customer/details?customer_id={organization_id}&token={token}"
+            f"https://api-assistant.instwise.app/api/v1/customer/details?customer_id={customer_id}&token={token}"
         ).json()
         return response
     except Exception as e:
@@ -416,12 +323,12 @@ def get_customer_information_by_organization_id(
 
 
 @tool
-def get_login_detail_by_organization_id(organization_id: str, config: RunnableConfig):
+def get_login_detail_by_customer_id(customer_id: str, config: RunnableConfig):
     """
     Get login/feature list by organization id.
 
     Args:
-        organization_id (str): The organization id.
+        customer_id (str): The organization id.
         config (RunnableConfig): The configuration for the graph.
 
     Returns:
@@ -430,7 +337,7 @@ def get_login_detail_by_organization_id(organization_id: str, config: RunnableCo
     token = config.get("configurable", {}).get("token")
     try:
         response = requests.get(
-            f"https://api-assistant.instwise.app/api/v1/customer/login-details?customer_id={organization_id}&token={token}"
+            f"https://api-assistant.instwise.app/api/v1/customer/login-details?customer_id={customer_id}&token={token}"
         ).json()
         return response
     except Exception as e:
@@ -438,12 +345,12 @@ def get_login_detail_by_organization_id(organization_id: str, config: RunnableCo
 
 
 @tool
-def get_feature_list_by_organization_id(organization_id: str, config: RunnableConfig):
+def get_feature_list_by_customer_id(customer_id: str, config: RunnableConfig):
     """
     Get feature list by organization id.
 
     Args:
-        organization_id (str): The organization id.
+        customer_id (str): The organization id.
         config (RunnableConfig): The configuration for the graph.
 
     Returns:
@@ -452,20 +359,11 @@ def get_feature_list_by_organization_id(organization_id: str, config: RunnableCo
     token = config.get("configurable", {}).get("token")
     try:
         response = requests.get(
-            f"https://api-assistant.instwise.app/api/v1/customer/features?customer_id={organization_id}&token={token}"
+            f"https://api-assistant.instwise.app/api/v1/customer/features?customer_id={customer_id}&token={token}"
         ).json()
         return response
     except Exception as e:
         return f"Error fetching feature list: {e}"
-
-
-csm_agent_tools = [
-    get_all_customers,
-    get_customer_information_by_name,
-    get_customer_information_by_organization_id,
-    get_login_detail_by_organization_id,
-    get_feature_list_by_organization_id,
-]
 
 
 # Chatdata agent tools
@@ -495,12 +393,12 @@ def get_conversation_by_customer_id(customer_id: str, config: RunnableConfig):
 
 
 @tool
-def get_survey_data_by_organization_id(organization_id: str, config: RunnableConfig):
+def get_survey_data_by_customer_id(customer_id: str, config: RunnableConfig):
     """
     Get survey data by organization id.
 
     Args:
-        organization_id (str): The organization id.
+        customer_id (str): The organization id.
         config (RunnableConfig): The configuration for the graph
 
     Returns:
@@ -509,15 +407,54 @@ def get_survey_data_by_organization_id(organization_id: str, config: RunnableCon
     token = config.get("configurable", {}).get("token")
     try:
         response = requests.get(
-            f"https://api-assistant.instwise.app/api/v1/feedback/survey?organization_id={organization_id}&token={token}"
+            f"https://api-assistant.instwise.app/api/v1/feedback/survey?organization_id={customer_id}&token={token}"
         ).json()
         return response
     except Exception as e:
         return f"Error fetching survey data: {e}"
 
 
-chatdata_agent_tools = [
-    get_customer_information_by_name,
+@tool
+def get_customer_information_by_name(company_name: str):
+    """
+    Get the customer_information for the given company name.
+
+    Args:
+        company_name (str): The name of the company to search details for.
+
+    Returns:
+        customer_information(dict): The response message.
+    """
+    try:
+        response = requests.get(
+            f"https://api-assistant.instwise.app/api/v1/customers?customer_name={company_name}"
+        ).json()
+        zendesk_response = fetch_organization_by_name(company_name)
+        response["data"]["help_desk_cust_id"] = zendesk_response["results"][0]["id"]
+        return response["data"]
+    except Exception as e:
+        return f"Error fetching Customer IDs: {e}"
+
+
+# print(get_customer_information_by_name("hilton"))
+
+query_agent_tools = [get_customer_information_by_name]
+
+tools = [
+    fetch_hubspot_contacts,
+    fetch_id_of_company,
+    fetch_company,
+    fetch_contacts_of_company,
+    fetch_deals_of_company,
+    fetch_notes_of_company,
+    fetch_zendesk_tickets,
+    fetch_zendesk_organizations,
+    fetch_organization_by_name,
+    fetch_tickets_of_organization,
+    get_all_customers,
+    get_customer_information_by_customer_id,
+    get_login_detail_by_customer_id,
+    get_feature_list_by_customer_id,
     get_conversation_by_customer_id,
-    get_survey_data_by_organization_id,
+    get_survey_data_by_customer_id,
 ]
