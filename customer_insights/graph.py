@@ -1,25 +1,18 @@
 from langgraph.graph import StateGraph, START, END
 from langgraph.prebuilt import tools_condition
 
+from customer_insights.tools import text_to_sql
 from customer_insights.state import AgentStateGraph
-from customer_insights.agents import (
-    query_agent,
-    query_agent_tools,
-    customer_data_agent,
-    tools,
-    insights_agent,
-)
+from customer_insights.agents import data_agent, validation_agent, insights_agent
 from customer_insights.utils import create_tool_node_with_fallback
 
 
-def route_query_agent(state: AgentStateGraph):
-    """
-    Decide wether to use tools
-    """
-    route = tools_condition(state["messages"])
-    if route == "tools":
-        return "query_agent_tools"
-    return "customer_data_agent"
+def route_validation_agent(state: AgentStateGraph):
+    response = state["messages"][-1].content
+    if response == "True":
+        return "insights_agent"
+    else:
+        return "data_agent"
 
 
 def create_insights_graph(memory):
@@ -27,37 +20,31 @@ def create_insights_graph(memory):
     graph_builder = StateGraph(AgentStateGraph)
 
     # Define nodes
-    graph_builder.add_node("query_agent", query_agent)
-    graph_builder.add_node(
-        "query_agent_tools", create_tool_node_with_fallback(query_agent_tools)
-    )
-    graph_builder.add_node("customer_data_agent", customer_data_agent)
-    graph_builder.add_node("tools", create_tool_node_with_fallback(tools))
-    # graph_builder.add_node("insights_agent", insights_agent)
+    graph_builder.add_node("data_agent", data_agent)
+    graph_builder.add_node("tools", create_tool_node_with_fallback([text_to_sql]))
+    graph_builder.add_node("validation_agent", validation_agent)
+    graph_builder.add_node("insights_agent", insights_agent)
 
     # Define edges
-    graph_builder.add_edge(START, "query_agent")
+    graph_builder.add_edge(START, "data_agent")
     graph_builder.add_conditional_edges(
-        "query_agent",
-        route_query_agent,
-        {
-            "query_agent_tools": "query_agent_tools",
-            "customer_data_agent": "customer_data_agent",
-        },
-    )
-    graph_builder.add_edge("query_agent_tools", "query_agent")
-    graph_builder.add_conditional_edges(
-        "customer_data_agent",
+        "data_agent",
         tools_condition,
         {
             "tools": "tools",
-            "__end__": "__end__",
+            "__end__": "validation_agent",
         },
     )
-    graph_builder.add_edge("tools", "customer_data_agent")
-    graph_builder.add_edge("customer_data_agent", END)
-    # graph_builder.add_edge("insights_agent", END)
 
+    graph_builder.add_edge("tools", "data_agent")
+    graph_builder.add_conditional_edges(
+        "validation_agent",
+        route_validation_agent,
+        {"data_agent": "data_agent", "insights_agent": "insights_agent"},
+    )
+    graph_builder.add_edge("insights_agent", END)
+
+    # Add persistence memory
     graph = graph_builder.compile(checkpointer=memory)
 
     return graph

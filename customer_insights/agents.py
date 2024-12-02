@@ -1,21 +1,32 @@
-from langchain_openai import ChatOpenAI
+from dotenv import load_dotenv
+from pydantic import BaseModel, Field
 
+from langchain_core.messages import ToolMessage, HumanMessage, AIMessage
+from langchain_openai import ChatOpenAI
 from customer_insights.state import AgentStateGraph
-from customer_insights.tools import tools, query_agent_tools
+from customer_insights.tools import text_to_sql
 from customer_insights.prompts import (
     query_agent_prompt_template,
-    customer_data_agent_prompt_template,
+    data_agent_prompt_template,
+    validation_agent_prompt_template,
     insights_agent_prompt_template,
 )
 
+load_dotenv()
+
 llm = ChatOpenAI(model="gpt-4o")
+llm_mini = ChatOpenAI(model="gpt-4o-mini")
+
+
+class ValidationResponse(BaseModel):
+    response: bool = Field(..., description="The validation response from the agent.")
 
 
 def query_agent(state: AgentStateGraph):
     """
     This agent analyses user's query and parses information to fetch in messages
     """
-    query_llm_with_tools = llm.bind_tools(query_agent_tools)
+    query_llm_with_tools = llm_mini
     query_agent_runnable = query_agent_prompt_template | query_llm_with_tools
 
     response = query_agent_runnable.invoke({"messages": state["messages"]})
@@ -23,17 +34,45 @@ def query_agent(state: AgentStateGraph):
     return {**state, "messages": response}
 
 
-def customer_data_agent(state: AgentStateGraph):
+def data_agent(state: AgentStateGraph):
     """
-    This agent is responsible for fetching the customer data.
+    This agent executes the SQL query based on  the query agent.
     """
-    customer_data_agent_llm = llm.bind_tools(tools)
-    customer_data_agent_runnable = (
-        customer_data_agent_prompt_template | customer_data_agent_llm
-    )
-    response = customer_data_agent_runnable.invoke(state)
 
+    # Validate SQL response with user query
+    if isinstance(state["messages"][-1], AIMessage):
+        state["messages"].append(
+            HumanMessage(
+                content="The SQL response does not match the user query. Please try again."
+            )
+        )
+
+    data_agent_runnable = data_agent_prompt_template | llm.bind_tools(
+        [text_to_sql], parallel_tool_calls=False
+    )
+    response = data_agent_runnable.invoke(state)
     return {**state, "messages": response}
+
+
+def validation_agent(state: AgentStateGraph):
+    """
+    This agent validates the response from the data agent, wether it matches the user query or not.
+    """
+    query_response = state["messages"][-1].content
+    user_query = state["messages"][-4].content
+
+    model_with_structured_output = llm_mini.with_structured_output(ValidationResponse)
+
+    validate_response_model = (
+        validation_agent_prompt_template.partial(
+            user_query=user_query, query_response=query_response
+        )
+        | model_with_structured_output
+    )
+
+    response = validate_response_model.invoke({})
+
+    return {**state, "messages": AIMessage(content=str(response.response))}
 
 
 def insights_agent(state: AgentStateGraph):
@@ -42,10 +81,6 @@ def insights_agent(state: AgentStateGraph):
     """
     insights_llm_with_tools = llm
     insights_agent_runnable = insights_agent_prompt_template | insights_llm_with_tools
-    response = insights_agent_runnable.invoke(
-        {
-            "message": state["messages"],
-        }
-    )
 
+    response = insights_agent_runnable.invoke(state)
     return {**state, "messages": response}
