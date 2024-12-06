@@ -3,6 +3,7 @@ from typing import Literal
 
 from fastapi import FastAPI
 from langgraph.checkpoint.memory import MemorySaver
+from langgraph.errors import GraphRecursionError
 
 from config.config import get_customer_id
 from customer_support.graph.graph import create_graph
@@ -70,6 +71,12 @@ async def ask_support(
         ):
             event["messages"][-1].pretty_print()
             messages.append(event["messages"][-1].content)
+    except GraphRecursionError:
+        return {
+            "message": "Graph Recursion Error, Please try again.",
+            "session_id": session_id,
+            "customer_id": get_customer_id(),
+        }
     except Exception as e:
         return {"error": str(e), "session_id": session_id}
 
