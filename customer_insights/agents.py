@@ -6,7 +6,7 @@ from langchain_openai import ChatOpenAI
 from customer_insights.state import AgentStateGraph
 from customer_insights.tools import text_to_sql
 from customer_insights.prompts import (
-    query_agent_prompt_template,
+    # query_agent_prompt_template,
     data_agent_prompt_template,
     validation_agent_prompt_template,
     insights_agent_prompt_template,
@@ -22,30 +22,32 @@ class ValidationResponse(BaseModel):
     response: bool = Field(..., description="The validation response from the agent.")
 
 
-def query_agent(state: AgentStateGraph):
-    """
-    This agent analyses user's query and parses information to fetch in messages
-    """
-    query_llm_with_tools = llm_mini
-    query_agent_runnable = query_agent_prompt_template | query_llm_with_tools
-
-    response = query_agent_runnable.invoke({"messages": state["messages"]})
-
-    return {**state, "messages": response}
-
-
 def data_agent(state: AgentStateGraph):
     """
     This agent executes the SQL query based on  the query agent.
     """
 
     # Validate SQL response with user query
-    if isinstance(state["messages"][-1], AIMessage):
-        state["messages"].append(
-            HumanMessage(
-                content="The SQL response does not match the user query. Please try again."
-            )
+    if isinstance(state["messages"][-1], ToolMessage):
+        user_query = state["messages"][-3].content
+        sql_response = state["messages"][-1].content
+
+        validation_prompt = validation_agent_prompt_template.partial(
+            user_query=user_query, query_response=sql_response
         )
+
+        validation_chain = validation_prompt | llm_mini.with_structured_output(
+            ValidationResponse
+        )
+        response = validation_chain.invoke({})
+
+        # If sql query response doesn't match user query, prompt data agent to try again
+        if not response.response:
+            state["messages"].append(
+                HumanMessage(
+                    content="The SQL response does not match the user query. Please try again."
+                )
+            )
 
     data_agent_runnable = data_agent_prompt_template | llm.bind_tools(
         [text_to_sql], parallel_tool_calls=False
