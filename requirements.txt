@@ -8,3 +8,4 @@ uvicorn
 chainlit
 motor[srv]
 python-dotenv
+boto3
