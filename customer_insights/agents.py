@@ -28,27 +28,27 @@ def data_agent(state: AgentStateGraph):
     """
 
     # Validate SQL response with user query
-    if isinstance(state["messages"][-1], ToolMessage):
-        user_query = state["messages"][-3].content
-        sql_response = state["messages"][-1].content
+    # if isinstance(state["messages"][-1], ToolMessage):
+    #     user_query = state["messages"][-3].content
+    #     sql_response = state["messages"][-1].content
 
-        validation_prompt = validation_agent_prompt_template.partial(
-            user_query=user_query, query_response=sql_response
-        )
+    #     validation_prompt = validation_agent_prompt_template.partial(
+    #         user_query=user_query, query_response=sql_response
+    #     )
 
-        validation_chain = validation_prompt | llm_mini.with_structured_output(
-            ValidationResponse
-        )
-        response = validation_chain.invoke({})
+    #     validation_chain = validation_prompt | llm_mini.with_structured_output(
+    #         ValidationResponse
+    #     )
+    #     response = validation_chain.invoke({})
 
-        # If sql query response doesn't match user query, prompt data agent to try again
-        if not response.response:
-            print("FAILED SQL response VALIDATION. Trying again.")
-            state["messages"].append(
-                HumanMessage(
-                    content="The SQL response does not match the user query. Please try again."
-                )
-            )
+    #     # If sql query response doesn't match user query, prompt data agent to try again
+    #     if not response.response:
+    #         print("FAILED SQL response VALIDATION. Trying again.")
+    #         state["messages"].append(
+    #             HumanMessage(
+    #                 content="The SQL response does not match the user query. Please try again."
+    #             )
+    #         )
 
     data_agent_runnable = data_agent_prompt_template | llm.bind_tools(
         [query_database], parallel_tool_calls=False
