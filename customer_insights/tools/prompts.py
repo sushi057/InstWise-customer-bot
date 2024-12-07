@@ -45,11 +45,14 @@ GROUP BY c.company_id, c.name, c.domain
 ORDER BY num_deals DESC
 LIMIT 10;
 
-Natural Language Query: Show me list of contacts, deals and open support tickets for Hilton separately 
-SQL Query: contacts:: SELECT * FROM {os.getenv("DATABASE_NAME")}.contacts WHERE company_name = 'Hilton'; deals:: SELECT * FROM {os.getenv("DATABASE_NAME")}.deals WHERE company_name = 'Hilton'; tickets:: SELECT * FROM {os.getenv("DATABASE_NAME")}.tickets WHERE company_name = 'Hilton' AND status = 'open';
+Natural Language Query: Show me list of contacts, deals and open support tickets for Hyatt separately 
+SQL Query: contacts:: SELECT * FROM {os.getenv("DATABASE_NAME")}.contacts WHERE company_name = 'Hyatt'; deals:: SELECT * FROM {os.getenv("DATABASE_NAME")}.deals WHERE company_name = 'Hyatt'; tickets:: SELECT * FROM {os.getenv("DATABASE_NAME")}.tickets WHERE company_name = 'Hyatt' AND status = 'open';
 
-Natural Language Query: Show me the health of the Hilton
-SQL Query: customer_health:: SELECT * FROM reporting.customer_health WHERE customer_name = 'Hilton'
+Natural Language Query: Show me the health of the Hyatt
+SQL Query: customer_health:: SELECT * FROM reporting.customer_health WHERE customer_name = 'Hyatt'
+
+Natural Language Query: Show me the list of contacts for Hyatt
+SQL Query: contacts:: SELECT contacts.first_name, contacts.last_name, contacts.email FROM {os.getenv("DATABASE_NAME")}.contacts WHERE company_name = 'Hyatt';
 
 """
     + """Natural Language Query: {nl_query} separately
@@ -61,22 +64,22 @@ abstract_query_handler_template = (
 Given the schema: {schema} """
     + """
 Please check if the query is abstract meaning it does not define what field and condition to look for. And if it’s abstract form the natural language like query, if not just show the same as it’s coming from the user. Do not worry about exact field but should actually quantify the rule. Do not explain the reason etc. Just write updated query and not even user query. I just need to know the result. 
-Here is new user query “show me all the contacts, deals and support ticket for Hyatt”
+Here is new user query “show me all the contacts, deals and support ticket for {{COMPANY_NAME}}”
 
 Here are some examples of User query and updated query. 
-User Query: Show me summary of current state of Customer Hilton 
-Updated Query: Fetch all the information that you know about Hilton
+User Query: Show me summary of current state of Customer Hyatt 
+Updated Query: Fetch all the information that you know about Hyatt
 
-User Query: Show me customer sentiments for Hilton
-Updated Query:Get all the information related to Hilton that has sentiments data, like Chat conversation, support survey, support ticket and activities, phone calls, meeting , notes, 
+User Query: Show me customer sentiments for Hyatt
+Updated Query:Get all the information related to Hyatt that has sentiments data, like Chat conversation, support survey, support ticket and activities, phone calls, meeting , notes, 
 
 User Query: Which customer is most risky
 Updated Query:Get list of top 5 customers that has highest total amount of deals pending , has low health score, highest number of open tickets, low average customer survey score
 
-User Query: Write status report for Hilton that I need to send it my boss
-Updated Query:Get all the information that you know about Hilton, even including activities of Support Tickets
+User Query: Write status report for Hyatt that I need to send it my boss
+Updated Query:Get all the information that you know about Hyatt, even including activities of Support Tickets
 
-User Query: I need to meet with Jim from Hilton , please let me know if I should be caution about anything
+User Query: I need to meet with Jim from Hyatt , please let me know if I should be caution about anything
 Updated Query:Get all the information that has customer sentiments data, like Chat conversation, support survey, support ticket and activities, phone calls, meeting , notes, 
 
 User Query: Which customer should I prioritize
@@ -85,11 +88,11 @@ Updated Query:Get list of top 5 customers that has highest total amount of deals
 User Query: Which of our top revenue-generating customers are at high or medium risk?
 Updated Query:Get list of top 5 customers that has highest ARR , has low health score, highest number of open tickets, low average customer survey score and that are close to renewal date
 
-User Query: Show me all customer information for Hilton
-Updated Query: Show me all customer information for Hilton
+User Query: Show me all customer information for Hyatt
+Updated Query: Show me all customer information for Hyatt
 
-User Query: Show me all the contacts and support ticket for Hilton
-Updated query: Show me all the contacts and support ticket for Hilton
+User Query: Show me all the contacts and support ticket for Hyatt
+Updated query: Show me all the contacts and support ticket for Hyatt
 
 User Query: Show to top 5 customers with highest amount of deals and highest open tickets
 Updated  Query: Show to top 5 customers with highest amount of deals and highest open tickets
