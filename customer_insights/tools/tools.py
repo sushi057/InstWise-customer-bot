@@ -10,8 +10,11 @@ from langchain_openai import ChatOpenAI
 
 # from pprint import pprint
 from langchain_core.messages import HumanMessage
-from tools.prompts import abstract_query_handler_template, nl2sql_prompt_template
-from tools.DTOs import QueryResponse
+from customer_insights.tools.prompts import (
+    abstract_query_handler_template,
+    nl2sql_prompt_template,
+)
+from customer_insights.tools.DTOs import QueryResponse
 
 
 load_dotenv()
