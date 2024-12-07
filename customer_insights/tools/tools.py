@@ -6,7 +6,7 @@ from langchain_core.tools import tool
 
 # from langchain_core.runnables.config import RunnableConfig
 from langchain_core.prompts import PromptTemplate
-from langchain_openai import OpenAI
+from langchain_openai import ChatOpenAI
 
 # from pprint import pprint
 from langchain_core.messages import HumanMessage
@@ -90,8 +90,11 @@ nl2sql_prompt = PromptTemplate.from_template(nl2sql_prompt_template)
 
 abstract_query_handler = PromptTemplate.from_template(abstract_query_handler_template)
 
-llm = OpenAI(temperature=0.0, max_tokens=512)
-nl2sql_chain = abstract_query_handler | llm | nl2sql_prompt | llm
+llm = ChatOpenAI(model="gpt-4o", temperature=0.0, max_tokens=512)
+# nl2sql_chain = abstract_query_handler | llm | nl2sql_prompt | llm
+
+abstract_query_chain = abstract_query_handler | llm
+nl2sql_chain = nl2sql_prompt | llm
 
 
 @tool
@@ -101,8 +104,14 @@ def query_database(nl_query):
     param nl_query: The natural language query to convert to SQL and run.
     param_type nl_query: str
     """
-    sql_query = nl2sql_chain.invoke([HumanMessage(content=nl_query)])
-    sql_query = sql_query.split(";")
+    abstract_query_response = abstract_query_chain.invoke(
+        HumanMessage(content=nl_query)
+    )
+    sql_query = nl2sql_chain.invoke(
+        [HumanMessage(content=abstract_query_response.content)]
+    )
+    # sql_query = nl2sql_chain.invoke([HumanMessage(content=nl_query)])
+    sql_query = sql_query.content.split(";")
     print("Using query: ", sql_query)
 
     responses = []
