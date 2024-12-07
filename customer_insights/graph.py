@@ -1,9 +1,10 @@
 from langgraph.graph import StateGraph, START, END
 from langgraph.prebuilt import tools_condition
 
-from customer_insights.tools import text_to_sql
+from customer_insights.tools.tools import query_database
 from customer_insights.state import AgentStateGraph
-from customer_insights.agents import data_agent, validation_agent, insights_agent
+
+from customer_insights.agents import data_agent
 from customer_insights.utils import create_tool_node_with_fallback
 
 
@@ -21,7 +22,7 @@ def create_insights_graph(memory):
 
     # Define nodes
     graph_builder.add_node("data_agent", data_agent)
-    graph_builder.add_node("tools", create_tool_node_with_fallback([text_to_sql]))
+    graph_builder.add_node("tools", create_tool_node_with_fallback([query_database]))
     # graph_builder.add_node("validation_agent", validation_agent)
     # graph_builder.add_node("insights_agent", insights_agent)
 

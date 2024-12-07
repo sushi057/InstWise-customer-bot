@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 from langchain_core.messages import ToolMessage, HumanMessage, AIMessage
 from langchain_openai import ChatOpenAI
 from customer_insights.state import AgentStateGraph
-from customer_insights.tools import text_to_sql
+from customer_insights.tools.tools import query_database
 from customer_insights.prompts import (
     # query_agent_prompt_template,
     data_agent_prompt_template,
@@ -43,6 +43,7 @@ def data_agent(state: AgentStateGraph):
 
         # If sql query response doesn't match user query, prompt data agent to try again
         if not response.response:
+            print("FAILED SQL response VALIDATION. Trying again.")
             state["messages"].append(
                 HumanMessage(
                     content="The SQL response does not match the user query. Please try again."
@@ -50,7 +51,7 @@ def data_agent(state: AgentStateGraph):
             )
 
     data_agent_runnable = data_agent_prompt_template | llm.bind_tools(
-        [text_to_sql], parallel_tool_calls=False
+        [query_database], parallel_tool_calls=False
     )
     response = data_agent_runnable.invoke(state)
     return {**state, "messages": response}
