@@ -13,17 +13,6 @@ def update_dialog_stack(left: list[str], right: Optional[str]) -> list[str]:
 
 
 class UserInfo(BaseModel):
-    """
-    User information
-
-    Args:
-        user_id (str): User ID
-        user_email (str): User email
-        name (str): User name
-        pending_issues (str | None): Pending issues
-        company (str): Company name
-    """
-
     user_id: str
     user_email: str
     name: str
@@ -38,12 +27,9 @@ class State(TypedDict):
         list[
             Literal[
                 "primary_assistant",
-                "investigation_agent",
                 "solution_agent",
-                "recommendation_agent",
-                "upsell_agent",
+                "followup_agent",
                 "log_agent",
-                "survey_agent",
             ]
         ],
         update_dialog_stack,

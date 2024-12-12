@@ -6,6 +6,8 @@ import secrets
 
 from fastapi import HTTPException
 from langchain_core.messages import ToolMessage
+from langgraph.prebuilt import ToolNode
+from langchain_core.runnables import RunnableLambda
 
 from customer_support.states.state import State
 
@@ -62,6 +64,45 @@ def pop_dialog_state(state: State) -> dict:
     }
 
 
+def handle_tool_error(state) -> dict:
+    """
+    Handle tool error and return a dictionary containing error messages.
+
+    Args:
+        state: A dictionary representing the state of the tool.
+
+    Returns:
+        A dictionary containing error messages.
+
+    """
+    error = state.get("error")
+    tool_calls = state["messages"][-1].tool_calls
+    return {
+        "messages": [
+            ToolMessage(
+                content=f"Error: {repr(error)}\n please fix your mistakes.",
+                tool_call_id=tc["id"],
+            )
+            for tc in tool_calls
+        ]
+    }
+
+
+def create_tool_node_with_fallback(tools: list) -> dict:
+    """
+    Creates a tool node with fallbacks.
+
+    Args:
+        tools (list): A list of tools.
+
+    Returns:
+        dict: The tool node with fallbacks.
+    """
+    return ToolNode(tools).with_fallbacks(
+        [RunnableLambda(handle_tool_error)], exception_key="error"
+    )
+
+
 #  Fetch prompts for the organization
 def fetch_organization_details(org_id: str):
     domain = "backend.instwise.app"
@@ -84,3 +125,8 @@ def fetch_organization_details(org_id: str):
 
 def get_session_id():
     return secrets.token_urlsafe(10)
+
+
+def visualize_graph(graph):
+    with open("./customer_support/graph.png", "wb") as f:
+        f.write(graph.get_graph(xray=True).draw_mermaid_png())
