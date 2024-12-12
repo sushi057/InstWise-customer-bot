@@ -2,6 +2,7 @@ from typing import Optional
 from typing import Literal
 
 from fastapi import FastAPI
+from fastapi.responses import PlainTextResponse
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.errors import GraphRecursionError
 
@@ -81,7 +82,7 @@ async def ask_support(
         return {"error": str(e), "session_id": session_id}
 
     return {
-        "message": messages[-1],
+        "message": PlainTextResponse(messages[-1]),
         "session_id": session_id,
         "customer_id": get_customer_id(),
     }
