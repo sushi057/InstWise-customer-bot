@@ -8,9 +8,9 @@ companies table: [company_id,  name,  domain,  is_active,  start_date,  end_date
 contacts table: [contact_id,  first_name,  last_name,  email,  company_name,  created_date]
 deals table: [deal_id,  dealname,  amount,  dealstage,  company_name,  created_at,  closedate]
 tickets table: [ticket_id,  subject,  priority,  status,  company_name,  created_at,  assignee_id,  requester_id,  submitter_id,  description,  ticket_type,  tags,  satisfaction_rating,  due_at,  updated_at, comment, comment_date]
-meetings table: [meeting_id,  created_at,  updated_at,  comapny_name,  duration,  subject]
-calls table: [call_id,  created_at,  updated_at,  comapny_name]
-notes table: [note_id,  created_at,  comapny_name,  note_body]
+meetings table: [meeting_id,  created_at,  updated_at,  company_name,  duration,  subject]
+calls table: [call_id,  created_at,  updated_at,  company_name]
+notes table: [note_id,  created_at,  company_name,  note_body]
 customer_features table: [feature_id, created_at, updated_at, feature_description, feature_date, email, company_name, version, start_date, end_date]
 customer_logins table: [login_id, created_at, updated_at, login_date, email, company_name, version, start_date, end_date]
 customer_conversations table: [conversation_id, created_at, updated_at, conversation_session, question, answer, session_order, user_id, start_date, end_date]
@@ -54,6 +54,8 @@ SQL Query: customer_health:: SELECT * FROM reporting.customer_health WHERE custo
 Natural Language Query: Show me the list of contacts for Hyatt
 SQL Query: contacts:: SELECT contacts.first_name, contacts.last_name, contacts.email FROM {os.getenv("DATABASE_NAME")}.contacts WHERE company_name = 'Hyatt';
 
+Natural Language Query: Fetch customer name where domain is hyatt.com
+SQL Query: companies:: SELECT * FROM reporting.companies WHERE domain = 'hyatt.com';
 """
     + """Natural Language Query: {nl_query} separately
 SQL Query:"""
@@ -64,7 +66,6 @@ abstract_query_handler_template = (
 Given the schema: {schema} """
     + """
 Please check if the query is abstract meaning it does not define what field and condition to look for. And if it’s abstract form the natural language like query, if not just show the same as it’s coming from the user. Do not worry about exact field but should actually quantify the rule. Do not explain the reason etc. Just write updated query and not even user query. I just need to know the result. 
-Here is new user query “show me all the contacts, deals and support ticket for {{COMPANY_NAME}}”
 
 Here are some examples of User query and updated query. 
 User Query: Show me summary of current state of Customer Hyatt 
@@ -96,6 +97,9 @@ Updated query: Show me all the contacts and support ticket for Hyatt
 
 User Query: Show to top 5 customers with highest amount of deals and highest open tickets
 Updated  Query: Show to top 5 customers with highest amount of deals and highest open tickets
+
+User Query: Fetch customer name for domain hyatt.com
+Updated: Fetch customer name where domain is hyatt.com
 
 User Query: {nl_query}
 Updated Query:"""
