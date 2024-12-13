@@ -1,36 +1,28 @@
-from langgraph.checkpoint.memory import MemorySaver
-from langgraph.graph import StateGraph, START, END
+from typing import Literal
+from langgraph.graph import StateGraph, END
 from langgraph.prebuilt import tools_condition
 from langchain_core.runnables import Runnable, RunnableConfig
-from langgraph.checkpoint.memory import MemorySaver
-
 
 from customer_support.agents.agents import (
     create_agents,
-    route_primary_assistant,
-    route_log_agent,
-    route_investigation_agent,
-    route_solution_agent,
-    route_recommendation_agent,
-    route_log_agent,
-    route_upsell_agent,
-    route_survey_agent,
     primary_assistant_tools,
-    investigation_tools,
     solution_tools,
-    recommendation_tools,
+    followup_tools,
     log_tools,
-    upsell_tools,
-    survey_tools,
+    CompleteOrEscalate,
 )
-
-from server.database import retrieve_customer_by_email
+from customer_support.tools.agent_routes import (
+    ToSolutionAgent,
+    ToLogAgent,
+    ToFollowUpAgent,
+)
 from customer_support.states.state import State
-from customer_support.tools.tools import (
+from customer_support.tools.tools import fetch_user_info
+from customer_support.utils.utils import (
+    create_entry_node,
+    pop_dialog_state,
     create_tool_node_with_fallback,
-    fetch_user_info,
 )
-from customer_support.utils.utils import create_entry_node, pop_dialog_state
 
 
 class Assistant:
@@ -60,13 +52,13 @@ class Assistant:
         return {"messages": result}
 
 
-async def get_user_info(state: State, config: RunnableConfig):
+def get_user_info(state: State, config: RunnableConfig):
     configurable = config.get("configurable", {})
     user_email = configurable.get("user_email")
     customer_id = configurable.get("customer_id")
 
-    # Assume user is organization when 0000
-    if customer_id == "0000":
+    # Assume user is using form organization when 0000
+    if customer_id != "0000":
         return {
             **state,
             "user_info": {"user_id": customer_id, "user_email": user_email},
@@ -86,6 +78,76 @@ async def get_user_info(state: State, config: RunnableConfig):
     }
 
 
+def route_primary_assistant(
+    state: State,
+) -> Literal[
+    "primary_assistant_tools",
+    "enter_solution_agent",
+    "enter_followup_agent",
+    "enter_log_agent",
+    "__end__",
+]:
+    route = tools_condition(state)
+    if route == END:
+        return END
+
+    tool_calls = state["messages"][-1].tool_calls
+    if tool_calls:
+        if tool_calls[0]["name"] == ToSolutionAgent.__name__:
+            return "enter_solution_agent"
+        elif tool_calls[0]["name"] == ToLogAgent.__name__:
+            return "enter_log_agent"
+        elif tool_calls[0]["name"] == ToFollowUpAgent.__name__:
+            return "enter_followup_agent"
+        return "primary_assistant_tools"
+    return ValueError("Invalid Route")
+
+
+def route_solution_agent(
+    state: State,
+) -> Literal["solution_agent_tools", "leave_skill", "__end__"]:
+    route = tools_condition(state)
+    if route == END:
+        return END
+
+    tool_calls = state["messages"][-1].tool_calls
+    did_cancel = any(tc["name"] == CompleteOrEscalate.__name__ for tc in tool_calls)
+    if did_cancel:
+        return "leave_skill"
+
+    return "solution_agent_tools"
+
+
+def route_followup_agent(
+    state: State,
+) -> Literal["followup_agent_tools", "leave_skill", "__end__"]:
+    route = tools_condition(state)
+    if route == END:
+        return END
+
+    tool_calls = state["messages"][-1].tool_calls
+    did_cancel = any(tc["name"] == CompleteOrEscalate.__name__ for tc in tool_calls)
+    if did_cancel:
+        return "leave_skill"
+
+    return "followup_agent_tools"
+
+
+def route_log_agent(
+    state: State,
+) -> Literal["log_agent_tools", "leave_skill", "__end__"]:
+    route = tools_condition(state)
+    if route == END:
+        return END
+
+    tool_calls = state["messages"][-1].tool_calls
+    did_cancel = any(tc["name"] == CompleteOrEscalate.__name__ for tc in tool_calls)
+    if did_cancel:
+        return "leave_skill"
+
+    return "log_agent_tools"
+
+
 def route_entry_point(state: State):
     if "user_info" in state:
         return "primary_assistant"
@@ -94,8 +156,8 @@ def route_entry_point(state: State):
 
 def create_graph(org_id: str, memory):
     builder = StateGraph(State)
-    builder.add_node("get_user_info", get_user_info)
 
+    builder.add_node("get_user_info", get_user_info)
     builder.set_conditional_entry_point(
         route_entry_point,
         {
@@ -108,19 +170,25 @@ def create_graph(org_id: str, memory):
     # Create agents
     agents = create_agents(org_id=org_id)
 
-    # Investigation Agent
+    # Primary Assistant
 
+    builder.add_node("primary_assistant", Assistant(agents["assistant_runnable"]))
     builder.add_node(
-        "enter_investigation_agent",
-        create_entry_node("Investigation Agent", "investigation_agent"),
+        "primary_assistant_tools",
+        create_tool_node_with_fallback(primary_assistant_tools),
     )
-    builder.add_node("investigation_agent", Assistant(agents["investigation_runnable"]))
-    builder.add_edge("enter_investigation_agent", "investigation_agent")
-    builder.add_node(
-        "investigation_agent_tools", create_tool_node_with_fallback(investigation_tools)
+    builder.add_edge("primary_assistant_tools", "primary_assistant")
+    builder.add_conditional_edges(
+        "primary_assistant",
+        route_primary_assistant,
+        {
+            "enter_solution_agent": "enter_solution_agent",
+            "enter_followup_agent": "enter_followup_agent",
+            "enter_log_agent": "enter_log_agent",
+            "primary_assistant_tools": "primary_assistant_tools",
+            END: END,
+        },
     )
-    builder.add_edge("investigation_agent_tools", "investigation_agent")
-    builder.add_conditional_edges("investigation_agent", route_investigation_agent)
 
     # Solution Agent
 
@@ -136,23 +204,17 @@ def create_graph(org_id: str, memory):
     builder.add_edge("solution_agent_tools", "solution_agent")
     builder.add_conditional_edges("solution_agent", route_solution_agent)
 
-    # Recommendation Agent
-
+    # Follow-up Agent
     builder.add_node(
-        "enter_recommendation_agent",
-        create_entry_node("Recommendation Agent", "recommendation_agent"),
+        "enter_followup_agent", create_entry_node("Follow-up Agent", "followup_agent")
     )
+    builder.add_node("followup_agent", Assistant(agents["followup_runnable"]))
+    builder.add_edge("enter_followup_agent", "followup_agent")
     builder.add_node(
-        "recommendation_agent", Assistant(agents["recommendation_runnable"])
+        "followup_agent_tools", create_tool_node_with_fallback(followup_tools)
     )
-    builder.add_edge("enter_recommendation_agent", "recommendation_agent")
-    builder.add_node(
-        "recommendation_agent_tools",
-        create_tool_node_with_fallback(recommendation_tools),
-    )
-    builder.add_conditional_edges("recommendation_agent", route_recommendation_agent)
-    builder.add_edge("recommendation_agent_tools", "recommendation_agent")
-
+    builder.add_edge("followup_agent_tools", "followup_agent")
+    builder.add_conditional_edges("followup_agent", route_followup_agent)
     # Log Agent
 
     builder.add_node("enter_log_agent", create_entry_node("Log Agent", "log_agent"))
@@ -161,54 +223,6 @@ def create_graph(org_id: str, memory):
     builder.add_node("log_agent_tools", create_tool_node_with_fallback(log_tools))
     builder.add_edge("log_agent_tools", "log_agent")
     builder.add_conditional_edges("log_agent", route_log_agent)
-
-    # Upsell Agent
-
-    builder.add_node(
-        "enter_upsell_agent", create_entry_node("Upsell Agent", "upsell_agent")
-    )
-    builder.add_node("upsell_agent", Assistant(agents["upsell_runnable"]))
-    builder.add_edge("enter_upsell_agent", "upsell_agent")
-    builder.add_node("upsell_agent_tools", create_tool_node_with_fallback(upsell_tools))
-    builder.add_edge("upsell_agent_tools", "upsell_agent")
-    builder.add_conditional_edges("upsell_agent", route_upsell_agent)
-
-    # Survey Agent
-
-    builder.add_node(
-        "enter_survey_agent", create_entry_node("Survey Agent", "survey_agent")
-    )
-    builder.add_node("survey_agent", Assistant(agents["survey_runnable"]))
-    builder.add_edge("enter_survey_agent", "survey_agent")
-    builder.add_node("survey_agent_tools", create_tool_node_with_fallback(survey_tools))
-    builder.add_edge("survey_agent_tools", "survey_agent")
-    builder.add_conditional_edges("survey_agent", route_survey_agent)
-    # builder.add_edge("survey_agent", END)
-
-    # Primary Assistant
-
-    builder.add_node("primary_assistant", Assistant(agents["assistant_runnable"]))
-    builder.add_node(
-        "primary_assistant_tools",
-        create_tool_node_with_fallback(primary_assistant_tools),
-    )
-    builder.add_edge("primary_assistant_tools", "primary_assistant")
-    builder.add_conditional_edges(
-        "primary_assistant",
-        route_primary_assistant,
-        {
-            "enter_investigation_agent": "enter_investigation_agent",
-            "enter_solution_agent": "enter_solution_agent",
-            "enter_recommendation_agent": "enter_recommendation_agent",
-            "enter_log_agent": "enter_log_agent",
-            "enter_upsell_agent": "enter_upsell_agent",
-            "enter_survey_agent": "enter_survey_agent",
-            "primary_assistant_tools": "primary_assistant_tools",
-            END: END,
-        },
-    )
-
-    # builder.add_edge(START, "primary_assistant")
 
     builder.add_node("leave_skill", pop_dialog_state)
     builder.add_edge("leave_skill", "primary_assistant")
