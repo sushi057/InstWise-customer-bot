@@ -101,7 +101,7 @@ nl2sql_chain = nl2sql_prompt | llm
 
 
 @tool
-def query_database(nl_query):
+def query_database(nl_query: str):
     """
     Converts a natural language query to SQL and runs the SQL query on the redshift database.
     param nl_query: The natural language query to convert to SQL and run.
@@ -123,3 +123,8 @@ def query_database(nl_query):
         if len(query.lower()) > 0:
             responses.append(execute_sql_query(query))
     return responses
+
+
+if __name__ == "__main__":
+    user_query = input("Enter your query: ")
+    print(query_database.invoke(user_query))
