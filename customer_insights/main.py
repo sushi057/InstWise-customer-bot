@@ -1,6 +1,9 @@
 import uuid
 from langgraph.checkpoint.memory import MemorySaver
 
+# from tools.tools import query_database
+# from agents import llm
+# from prompts import data_agent_prompt_template
 from graph import create_insights_graph
 from utils import visualize_graph
 
@@ -27,3 +30,5 @@ while True:
         {"messages": ("user", user_input)}, config, stream_mode="values"
     ):
         event["messages"][-1].pretty_print()
+
+    # print(data_agent(user_query=user_input))

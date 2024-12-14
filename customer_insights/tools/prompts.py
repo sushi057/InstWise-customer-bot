@@ -20,7 +20,7 @@ customer_health: [company_id, customer_name, opened_deals, closed_deals, lost_de
 
 nl2sql_prompt_template = (
     f"""Given the following schema, convert the following natural language query to SQL
-Shema: 
+Schema: 
 {schema}
 
 Guidelines:
@@ -29,7 +29,7 @@ Guidelines:
 3. Do not add new lines inside the queries.
 4. Make sure you use correct column and table names as given in the schema.
 5. Do not perform data type casting on columns.
-6. The words "Company", "Organization", and "companies" are used interchangeably.
+6. The words "Company", "Organization", "customer", and "companies" are used interchangeably.
 7. If a query requires specific columns, make sure to include only these columns in the SELECT clause.
 8. If a query requires directly retrieving data from multiple tables, return separate queries, one for each table. Separate the queries with a semicolon. 
     precede each query with a comment that describes which table it is pulling from. If it was pullling from multiple tables precede the single query with "Multiple tables::".       

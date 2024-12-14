@@ -26,35 +26,23 @@ def data_agent(state: AgentStateGraph):
     """
     This agent executes the SQL query based on  the query agent.
     """
+    # data_agent_runnable = data_agent_prompt_template | llm.bind_tools(
+    #     [query_database], parallel_tool_calls=False
+    # )
+    # response = data_agent_runnable.invoke(state)
+    # return {**state, "messages": response}
+    response = query_database.invoke(state["messages"][-1].content)
+    json_response = [response_item.model_dump_json() for response_item in response]
+    json_response_string = "\n\n".join(json_response)
 
-    # Validate SQL response with user query
-    # if isinstance(state["messages"][-1], ToolMessage):
-    #     user_query = state["messages"][-3].content
-    #     sql_response = state["messages"][-1].content
+    data_agent_runnable = data_agent_prompt_template | llm
 
-    #     validation_prompt = validation_agent_prompt_template.partial(
-    #         user_query=user_query, query_response=sql_response
-    #     )
-
-    #     validation_chain = validation_prompt | llm_mini.with_structured_output(
-    #         ValidationResponse
-    #     )
-    #     response = validation_chain.invoke({})
-
-    #     # If sql query response doesn't match user query, prompt data agent to try again
-    #     if not response.response:
-    #         print("FAILED SQL response VALIDATION. Trying again.")
-    #         state["messages"].append(
-    #             HumanMessage(
-    #                 content="The SQL response does not match the user query. Please try again."
-    #             )
-    #         )
-
-    data_agent_runnable = data_agent_prompt_template | llm.bind_tools(
-        [query_database], parallel_tool_calls=False
+    final_response = data_agent_runnable.invoke(
+        {"user_query": state["messages"][-1].content, "response": json_response_string}
     )
-    response = data_agent_runnable.invoke(state)
-    return {**state, "messages": response}
+
+    # return AIMessage(content=final_response.content)
+    return {**state, "messages": final_response}
 
 
 def validation_agent(state: AgentStateGraph):
