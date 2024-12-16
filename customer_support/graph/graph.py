@@ -66,6 +66,9 @@ def get_user_info(state: State, config: RunnableConfig):
 
     user_info = fetch_user_info(user_email)
 
+    if not user_info:
+        return {**state, "user_info": {"user_id": None, "user_email": None}}
+
     return {
         **state,
         "user_info": {
