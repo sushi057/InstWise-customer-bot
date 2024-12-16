@@ -3,7 +3,8 @@ from langgraph.graph import StateGraph, END
 from langgraph.prebuilt import tools_condition
 from langchain_core.runnables import Runnable, RunnableConfig
 
-from customer_support.agents.agents import (
+
+from graphs.customer_support.agents.agents import (
     create_agents,
     primary_assistant_tools,
     solution_tools,
@@ -11,14 +12,14 @@ from customer_support.agents.agents import (
     log_tools,
     CompleteOrEscalate,
 )
-from customer_support.tools.agent_routes import (
+from graphs.customer_support.tools.agent_routes import (
     ToSolutionAgent,
     ToLogAgent,
     ToFollowUpAgent,
 )
-from customer_support.states.state import State
-from customer_support.tools.tools import fetch_user_info
-from customer_support.utils.utils import (
+from graphs.customer_support.states.state import State
+from graphs.customer_support.tools.tools import fetch_user_info
+from graphs.customer_support.utils.utils import (
     create_entry_node,
     pop_dialog_state,
     create_tool_node_with_fallback,
@@ -57,7 +58,7 @@ def get_user_info(state: State, config: RunnableConfig):
     user_email = configurable.get("user_email")
     customer_id = configurable.get("customer_id")
 
-    # Assume user is using form organization when 0000
+    # If customer_id is not 0000, then the API call is from public link
     if customer_id != "0000":
         return {
             **state,

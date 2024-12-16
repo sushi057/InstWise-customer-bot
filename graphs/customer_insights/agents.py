@@ -3,9 +3,9 @@ from pydantic import BaseModel, Field
 
 from langchain_core.messages import ToolMessage, HumanMessage, AIMessage
 from langchain_openai import ChatOpenAI
-from customer_insights.state import AgentStateGraph
-from customer_insights.tools.tools import query_database
-from customer_insights.prompts import (
+from graphs.customer_insights.state import AgentStateGraph
+from graphs.customer_insights.tools.tools import query_database
+from graphs.customer_insights.prompts import (
     # query_agent_prompt_template,
     data_agent_prompt_template,
     validation_agent_prompt_template,

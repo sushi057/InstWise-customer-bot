@@ -1,11 +1,11 @@
 from langgraph.graph import StateGraph, START, END
 from langgraph.prebuilt import tools_condition
 
-from customer_insights.tools.tools import query_database
-from customer_insights.state import AgentStateGraph
+from graphs.customer_insights.tools.tools import query_database
+from graphs.customer_insights.state import AgentStateGraph
 
-from customer_insights.agents import data_agent
-from customer_insights.utils import create_tool_node_with_fallback
+from graphs.customer_insights.agents import data_agent
+from graphs.customer_insights.utils import create_tool_node_with_fallback
 
 
 def route_validation_agent(state: AgentStateGraph):

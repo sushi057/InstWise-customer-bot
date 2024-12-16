@@ -9,7 +9,7 @@ from langchain_core.messages import ToolMessage
 from langgraph.prebuilt import ToolNode
 from langchain_core.runnables import RunnableLambda
 
-from customer_support.states.state import State
+from graphs.customer_support.states.state import State
 
 planhat_mock_api_path = os.path.abspath("data/planhat_mock.json")
 # planhat_mock_api_path = "planhat_mock.json"
@@ -128,5 +128,5 @@ def get_session_id():
 
 
 def visualize_graph(graph):
-    with open("./customer_support/graph.png", "wb") as f:
+    with open("./graphs/customer_support/graph.png", "wb") as f:
         f.write(graph.get_graph(xray=True).draw_mermaid_png())

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 
 from schemas.customer import CheckEmailRequest, CheckEmailResponse
-from customer_insights.tools.tools import query_database
+from graphs.customer_insights.tools.tools import query_database
 
 router = APIRouter(tags=["customer"])
 
@@ -23,6 +23,6 @@ async def get_customer_by_email(request: CheckEmailRequest):
                 domain=result[0].result_set[0]["company_name"],
             )
         else:
-            return CheckEmailResponse(customer_name="No customer found", domain="")
+            raise HTTPException(status_code=404, detail="Customer not found")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

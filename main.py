@@ -8,9 +8,9 @@ from langgraph.errors import GraphRecursionError
 
 from routes import customer, outreach
 from config.config import get_customer_id
-from customer_support.graph.graph import create_graph
-from customer_support.utils.utils import get_session_id
-from customer_insights.graph import create_insights_graph
+from graphs.customer_support.graph.graph import create_graph
+from graphs.customer_support.utils.utils import get_session_id
+from graphs.customer_insights.graph import create_insights_graph
 
 app = FastAPI()
 

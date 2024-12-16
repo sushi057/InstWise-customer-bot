@@ -4,8 +4,8 @@
 from pydantic import BaseModel
 
 from models.openai_model import get_openai_model
-from customer_support.states.state import State
-from customer_support.tools.tools import (
+from graphs.customer_support.states.state import State
+from graphs.customer_support.tools.tools import (
     # fetch_user_info,
     # fetch_pending_issues,
     solution_rag_call,
@@ -13,14 +13,14 @@ from customer_support.tools.tools import (
     upsell_features,
     collect_feedback,
 )
-from customer_support.tools.agent_routes import (
+from graphs.customer_support.tools.agent_routes import (
     ToSolutionAgent,
     ToLogAgent,
     ToFollowUpAgent,
 )
-from customer_support.prompts.prompts import create_prompts
+from graphs.customer_support.prompts.prompts import create_prompts
 
-from customer_insights.tools.tools import query_database
+from graphs.customer_insights.tools.tools import query_database
 
 
 class CompleteOrEscalate(BaseModel):
