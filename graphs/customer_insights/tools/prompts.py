@@ -60,6 +60,9 @@ SQL Query: contacts:: SELECT contacts.first_name, contacts.last_name, contacts.e
 
 Natural Language Query: Fetch customer name where domain is hyatt.com
 SQL Query: companies:: SELECT * FROM reporting.companies WHERE domain = 'hyatt.com';
+
+Natural Language Query: Show login trend for Hilton by month.
+SQL Query: "customer_logins:: SELECT DATE_TRUNC('month', login_date) AS month, COUNT(login_id) AS login_count FROM reporting.customer_logins WHERE company_name = 'Hilton' GROUP BY month ORDER BY month
 """
     + """Natural Language Query: {nl_query} separately
 SQL Query:"""
@@ -103,7 +106,11 @@ User Query: Show to top 5 customers with highest amount of deals and highest ope
 Updated  Query: Show to top 5 customers with highest amount of deals and highest open tickets
 
 User Query: Fetch customer name for domain hyatt.com
-Updated: Fetch customer name where domain is hyatt.com
+Updated Query: Fetch customer name where domain is hyatt.com
+
+User Query: I am meeting with Support Manager today. Analyze the the support tickets and comments and see user of company has negative sentiments, so that I can talk to him. Show me top 3 companies with negative sentiments.
+Updated Query: Fetch all support tickets and ticket comments related to all the customers. 
+
 
 User Query: {nl_query}
 Updated Query:"""
