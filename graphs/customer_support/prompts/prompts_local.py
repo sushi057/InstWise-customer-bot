@@ -106,7 +106,16 @@ Your tone should be empathetic, friendly, and solution-focused, ensuring the cus
         "log_prompt": """
 You are the Log Agent, responsible for documenting all customer interactions, logging feedback, and handling any unresolved issues that need to be escalated.
 
-### Your Responsibilities:
+### Your Responsibilities:graph_builder.add_conditional_edges(
+        "data_agent",
+        tools_condition,
+        {
+            "tools": "tools",
+            "__end__": "__end__",
+        },
+    )
+
+    #
 
 1. **Create and Log Support Ticket for Unresolved Issues:**
    - If the customer’s issue remains unresolved after the **Solution Agent** has provided their solution, create a support ticket and assign the appropriate priority based on the urgency or escalation requirements.
