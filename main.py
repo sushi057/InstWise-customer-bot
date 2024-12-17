@@ -1,30 +1,29 @@
-import os
 from typing import Optional
-import uuid
-import requests
-from fastapi import Depends, FastAPI, HTTPException
+from typing import Literal
+
+from fastapi import FastAPI
+from fastapi.responses import PlainTextResponse
 from langgraph.checkpoint.memory import MemorySaver
+from langgraph.errors import GraphRecursionError
 
-from graph.graph import create_graph
-from utils.utils import fetch_organization_details, get_session_id
-from server.database import (
-    retrieve_customer_by_email,
-)
-
-# Visualize graph
-
-# with open("graph_v0.2.png", "wb") as f:
-#     f.write(graph.get_graph(xray=True).draw_mermaid_png())
+from routes import customer, outreach
+from config.config import get_customer_id
+from customer_support.graph.graph import create_graph
+from customer_support.utils.utils import get_session_id
+from customer_insights.graph import create_insights_graph
 
 app = FastAPI()
 
-memory = MemorySaver()
+# Include router
+app.include_router(customer.router, prefix="/customer", tags=["customer"])
+app.include_router(outreach.router, prefix="/outreach", tags=["outreach"])
 
 session_graph_cache = {"session_id": None, "graph": None, "customer_id": None}
 
 session_object = {
     "session_id": None,
     "customer_id": None,
+    "organization_id": None,
 }
 
 
@@ -40,6 +39,7 @@ async def ask_support(
     org_id: str,
     session_id: Optional[str] = None,
     customer_id: Optional[str] = None,
+    api_type: str = Literal["insights", "support"],
 ):
 
     if not session_id:
@@ -48,19 +48,24 @@ async def ask_support(
     if session_graph_cache["session_id"] != session_id:
         session_graph_cache["session_id"] = session_id
         new_memory = MemorySaver()
-        session_graph_cache["graph"] = create_graph(org_id=org_id, memory=new_memory)
+
+        # Check API type
+        if api_type == "support":
+            session_graph_cache["graph"] = create_graph(
+                org_id=org_id, memory=new_memory
+            )
+        elif api_type == "insights":
+            session_graph_cache["graph"] = create_insights_graph(memory=new_memory)
         # Add user_info state here
 
     graph = session_graph_cache["graph"]
-
-    with open("graph_v0.2.png", "wb") as f:
-        f.write(graph.get_graph(xray=True).draw_mermaid_png())
 
     config = {
         "configurable": {
             "thread_id": session_id,
             "user_email": user_email,
             "customer_id": customer_id,
+            "token": session_id + "_" + org_id,
         }
     }
 
@@ -71,12 +76,17 @@ async def ask_support(
         ):
             event["messages"][-1].pretty_print()
             messages.append(event["messages"][-1].content)
-            # return {"message": event["messages"][-1].content}
+    except GraphRecursionError:
+        return {
+            "message": "Graph Recursion Error, Please try again.",
+            "session_id": session_id,
+            "customer_id": get_customer_id(),
+        }
     except Exception as e:
         return {"error": str(e), "session_id": session_id}
 
     return {
-        "message": messages[-1],
+        "message": PlainTextResponse(messages[-1]),
         "session_id": session_id,
-        "customer_id": session_graph_cache["customer_id"],
+        "customer_id": get_customer_id(),
     }
