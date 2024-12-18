@@ -141,7 +141,7 @@ def upsell_features(query: str) -> AIMessage:
 @tool
 def collect_feedback(
     query: str,
-    rating: int,
+    rating: int | None,
     feedback: str,
     organization_id: str,
     user_email: str,
@@ -163,7 +163,7 @@ def collect_feedback(
         "query": query,
         "rating": rating,
         "feedback": feedback,
-        "organization_id": "66e534d37a7f6e9808c7b921",
+        "organization_id": organization_id,
         "user_email": user_email,
     }
 
@@ -174,7 +174,6 @@ def collect_feedback(
             json=feedback_data,
         )
         response.raise_for_status()
-        # print(response.json())
         return AIMessage("Your feedback has been recorded.")
     except requests.exceptions.RequestException as e:
         return AIMessage(f"An error occurred while recording your feedback: {e}")
