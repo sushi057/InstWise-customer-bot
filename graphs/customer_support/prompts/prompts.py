@@ -1,3 +1,4 @@
+from datetime import datetime
 from langchain.prompts import ChatPromptTemplate
 
 from . import prompts_local
@@ -14,7 +15,7 @@ def create_prompts(org_id: str):
             ),
             ("placeholder", "{messages}"),
         ]
-    )
+    ).partial(time=datetime.now())
 
     solution_prompt = ChatPromptTemplate.from_messages(
         [
