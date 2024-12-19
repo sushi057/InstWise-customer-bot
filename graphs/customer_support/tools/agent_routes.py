@@ -18,7 +18,4 @@ class ToLogAgent(BaseModel):
 class ToFollowUpAgent(BaseModel):
     """Transfer work to the follow-up agent to handle the personalized follow-up."""
 
-    user_info: dict = Field(
-        ..., description="The user's information to personalize the follow-up."
-    )
-    status: str = Field(..., description="The status of the user's issue.")
+    # status: str = Field(..., description="The status of the user's issue.")
