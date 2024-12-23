@@ -1,6 +1,6 @@
 from typing import TypedDict, Annotated, Literal, Optional
 from langgraph.graph.message import AnyMessage, add_messages
-from openai import BaseModel
+from pydantic import BaseModel
 
 
 def update_dialog_stack(left: list[str], right: Optional[str]) -> list[str]:
