@@ -8,12 +8,10 @@ companies table: [company_id,  name,  domain,  is_active,  start_date,  end_date
 contacts table: [contact_id,  first_name,  last_name,  email,  company_name,  created_date]
 deals table: [deal_id,  dealname,  amount,  dealstage,  company_name,  created_at,  closedate]
 tickets table: [ticket_id,  subject,  priority,  status,  company_name,  created_at,  assignee_id,  requester_id,  submitter_id,  description,  ticket_type,  tags,  satisfaction_rating,  due_at,  updated_at, comment, comment_date]
+tickets_comments table: [ticket_id, company_name, comment, status, comment_date]
+notes table: [note_id,  created_date,  company_name,  note_body]
 meetings table: [meeting_id,  created_at,  updated_at,  company_name,  duration,  subject]
 calls table: [call_id,  created_at,  updated_at,  company_name]
-notes table: [note_id,  created_at,  company_name,  note_body]
-meetings table: [meeting_id,  created_at,  updated_at,  company_name,  duration,  subject]
-calls table: [call_id,  created_at,  updated_at,  company_name]
-notes table: [note_id,  created_at,  company_name,  note_body]
 customer_features table: [feature_id, created_at, updated_at, feature_description, feature_date, email, company_name, version, start_date, end_date]
 customer_logins table: [login_id, created_at, updated_at, login_date, email, company_name, version, start_date, end_date]
 customer_conversations table: [conversation_id, created_at, updated_at, conversation_session, question, answer, session_order, user_id, start_date, end_date]
@@ -24,7 +22,6 @@ customer_health: [company_id, customer_name, opened_deals, closed_deals, lost_de
 nl2sql_prompt_template = (
     f"""Given the following schema, convert the following natural language query to SQL
 Schema: 
-Shcema: 
 {schema}
 
 Guidelines:
@@ -63,6 +60,9 @@ SQL Query: companies:: SELECT * FROM reporting.companies WHERE domain = 'hyatt.c
 
 Natural Language Query: Show login trend for Hilton by month.
 SQL Query: "customer_logins:: SELECT DATE_TRUNC('month', login_date) AS month, COUNT(login_id) AS login_count FROM reporting.customer_logins WHERE company_name = 'Hilton' GROUP BY month ORDER BY month
+
+Natural Language Query: Show me the top 5 companies that has highest amount of pending deals
+Multiple tables:: SELECT c.company_id, c.name, c.domain, SUM(d.amount) AS total_pending_amount FROM reporting.companies AS c JOIN reporting.deals AS d ON c.name = d.company_name WHERE d.dealstage <> 'closedwon' or d.dealstage <> 'closedlost' GROUP BY c.company_id, c.name, c.domain ORDER BY total_pending_amount DESC LIMIT 5;
 """
     + """Natural Language Query: {nl_query} separately
 SQL Query:"""
@@ -79,7 +79,7 @@ User Query: Show me summary of current state of Customer Hyatt
 Updated Query: Fetch all the information that you know about Hyatt
 
 User Query: Show me customer sentiments for Hyatt
-Updated Query:Get all the information related to Hyatt that has sentiments data, like Chat conversation, support survey, support ticket and activities, phone calls, meeting , notes, 
+Updated Query:Get all the information related to Hyatt that has sentiments data, like customer conversation, support feedback, support ticket and ticket comments, calls, meeting, notes.
 
 User Query: Which customer is most risky
 Updated Query:Get list of top 5 customers that has highest total amount of deals pending , has low health score, highest number of open tickets, low average customer survey score
@@ -88,7 +88,7 @@ User Query: Write status report for Hyatt that I need to send it my boss
 Updated Query:Get all the information that you know about Hyatt, even including activities of Support Tickets
 
 User Query: I need to meet with Jim from Hyatt , please let me know if I should be caution about anything
-Updated Query:Get all the information that has customer sentiments data, like Chat conversation, support survey, support ticket and activities, phone calls, meeting , notes, 
+Updated Query:Get all the information that has customer sentiments data, like customer conversation, support feedback, support ticket and ticket comments, calls, meeting, notes. 
 
 User Query: Which customer should I prioritize
 Updated Query:Get list of top 5 customers that has highest total amount of deals pending , has low health score, highest number of open tickets, low average customer survey score and that are close to renewal date
@@ -111,6 +111,17 @@ Updated Query: Fetch customer name where domain is hyatt.com
 User Query: I am meeting with Support Manager today. Analyze the the support tickets and comments and see user of company has negative sentiments, so that I can talk to him. Show me top 3 companies with negative sentiments.
 Updated Query: Fetch all support tickets and ticket comments related to all the customers. 
 
+User Query: Show me top 5 risky customers
+Updated Query: Get list of top 5 customers that has highest total amount of deals not closed , low login counts, highest number of open tickets, low average customer survey score
+
+User Query: Show me CRM data for Hilton.
+Updated Query: Show me contacts, deals, calls, meetings, notes for Hilton.
+
+User Query: Show me support information for Hyatt.
+Updated Query: Show me tickets, tickets comments, customer conversations, feedbacks for Hyatt.
+
+User Query: Show me CSM information for Hyatt.
+Updated Query: Show me customer health, login details, features for Hyatt.
 
 User Query: {nl_query}
 Updated Query:"""
