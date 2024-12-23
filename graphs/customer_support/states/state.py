@@ -13,7 +13,6 @@ def update_dialog_stack(left: list[str], right: Optional[str]) -> list[str]:
 
 
 class UserInfo(BaseModel):
-    """User Info"""
     user_id: str
     user_email: str
     name: str
