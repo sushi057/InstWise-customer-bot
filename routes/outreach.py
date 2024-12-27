@@ -1,96 +1,101 @@
+import os
+import requests
+from typing import Union
+
 from fastapi import APIRouter, HTTPException
+from langchain_openai import ChatOpenAI
+
+from graphs.customer_insights.tools.tools import query_database
 from schemas.outreach import (
+    PersonalizedEmailsList,
+    CustomerListWithNegativeSentiments,
     GenerateEmailReplyRequest,
     GenerateEmailReplyResponse,
-    SendEmailRequest,
-    SendEmailResponse,
+    GenerateEmailsRequest,
+    GenerateEmailsResponse,
+)
+from prompts.outreach import (
+    customers_with_negative_sentiments_prompt,
+    personalized_emails_prompt,
 )
 
-router = APIRouter()
+router = APIRouter(tags=["outreach"])
+
+RAG_API_URL = os.getenv("RAG_API_URL")
+rag_api_headers = {"X-API-KEY": f"{os.getenv('X_API_KEY')}"}
+
+llm = ChatOpenAI(model="gpt-4o")
+
+# LLM with structured output for getting customers with negative sentiments
+structured_llm_for_negative_sentiments = llm.with_structured_output(
+    CustomerListWithNegativeSentiments
+)
+structured_llm_for_personalized_emails = llm.with_structured_output(
+    PersonalizedEmailsList
+)
 
 
-@router.post("/email-replies", response_model=GenerateEmailReplyResponse)
+@router.post("/generate-email-reply", response_model=GenerateEmailReplyResponse)
 async def generate_email_reply(request: GenerateEmailReplyRequest):
     """
-    Generate an email reply to a customer.
+    Generate email body using the response from RAG with email body title, email subject and email body.
     """
-    return GenerateEmailReplyResponse(
-        email_body="""
-To add breakfast to a hotel reservation using the StaynTouch application, please follow these steps:
+    try:
+        rag_query = f"Generate an email reply for for email body title as {request.email_body_title} with subject {request.subject} for {request.customer_name}."
 
-Start a New Reservation:
+        response = requests.get(
+            RAG_API_URL,
+            params={"query": rag_query, "company_id": request.org_id},
+            headers=rag_api_headers,
+        )
 
-Create a new reservation in the StaynTouch application.
-Select Room and Rate:
-
-Choose a room type and rate combination from the Rooms and Rates screen.
-Enhance Stay:
-
-On the Enhance Stay page, you'll see a list of top-selling add-ons. You can also explore different options on the left side of the screen for more add-ons.
-Find Breakfast Add-On:
-
-Look for the breakfast add-on in the list of available enhancements.
-Select Quantity:
-
-Choose the number of breakfasts you would like to add to your reservation.
-Add Breakfast:
-
-Click the "ADD" button to include breakfast in your hotel reservation.
-Room Enhancements Dialog:
-
-A "ROOM ENHANCEMENTS" dialog will appear with options to "ADD MORE TO THIS ROOM" or "CLOSE WINDOW." If you want to add more enhancements, choose "ADD MORE TO THIS ROOM"; otherwise, click "CLOSE WINDOW."
-Confirm Reservation:
-
-Finally, proceed by clicking the green "BOOK" button to confirm the addition of breakfast to your hotel reservation.
-Please let me know if you need further assistance or if there's anything else I can help you with!
- """
-    )
+        return GenerateEmailReplyResponse(
+            email_body=response.json()["results"]["answer"]
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/send-email", response_model=list[SendEmailResponse])
-async def send_email(request: SendEmailRequest):
+@router.post(
+    "/generate-outreach-emails",
+    response_model=Union[list[GenerateEmailsResponse], list],
+)
+async def send_email(request: GenerateEmailsRequest):
     """
-    Send an email to a customer.
+    Generate personalized outreach emails for the customers with overall negative sentiments.
     """
-    responses = [
-        SendEmailResponse(
-            email_from="sushilbhattachan@gmail.com",
-            email_to="sarah@hilton.com",
-            subject="Noticed a decline in login activity",
-            email_body="""
-Hi Sarah,
+    try:
+        fetch_sentiment_query = "Fetch everything in tickets, tickets comments, conversation and feedbacks for 5 customers."
+        sentiment_response = query_database(fetch_sentiment_query)
 
-I hope this message finds you well.
+        customers_with_negative_sentiments = (
+            customers_with_negative_sentiments_prompt
+            | structured_llm_for_negative_sentiments
+        ).invoke(
+            {
+                "customer_sentiments": sentiment_response,
+            }
+        )
 
-I’ve noticed a recent decline in login activity and wanted to check in to see if there’s anything we can assist you with. If you’re facing any challenges using our application or if there’s anything preventing you from fully utilizing it, please don’t hesitate to reach out.
+        personalized_emails = (
+            personalized_emails_prompt | structured_llm_for_personalized_emails
+        ).invoke(
+            {
+                "customers_with_negative_sentiments": customers_with_negative_sentiments.customers,
+            }
+        )
 
-We’re here to help and ensure you have a smooth experience with our platform.
-
-Looking forward to hearing from you.
-
-Best regards,
-Sushil Bhattachan
-""",
-        ),
-        SendEmailResponse(
-            email_from="sushilbhattachan@gmail.com",
-            email_to="david@hyatt.com",
-            subject="Assistance with Auto Face Recognition for Check in",
-            email_body="""
-Hi Sarah,
-
-I hope you’re doing well.
-
-I noticed that the Auto Face Recognition feature for check-in has not been actively utilized recently. I wanted to check if there’s any assistance we can provide to help you or your team leverage this feature effectively.
-
-If there are any challenges or questions regarding its setup or usage, please feel free to let us know. We’re here to ensure you get the most out of this functionality and have a seamless experience.
-
-Looking forward to your response.
-
-Best regards,
-Sushil Bhattachan
-""",
-        ),
-    ]
-
-    return responses
+        if personalized_emails.emails:
+            return [
+                GenerateEmailsResponse(
+                    email_from="success@theagilemove.com",
+                    email_to=email_item.email_to,
+                    subject=email_item.subject,
+                    email_body=email_item.email_body,
+                )
+                for email_item in personalized_emails.emails
+            ]
+        else:
+            return []
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
