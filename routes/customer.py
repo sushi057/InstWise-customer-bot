@@ -12,17 +12,15 @@ async def get_customer_by_email(request: CheckEmailRequest):
     Check if email exists in the database and return details.
     """
     try:
-        query = f"Check if {request.email} exists in our contacts."
+        query = f"Find the customer name associated with the domain {request.email.split('@')[1]} "
         result = query_database(query)
 
         if result[0].result_set:
             return CheckEmailResponse(
-                customer_name=result[0].result_set[0]["first_name"]
-                + " "
-                + result[0].result_set[0]["last_name"],
-                domain=result[0].result_set[0]["company_name"],
+                customer_name=result[0].result_set[0]["name"],
+                domain=result[0].result_set[0]["domain"],
             )
         else:
-            raise HTTPException(status_code=404, detail="Customer not found")
+            raise HTTPException(status_code=404, detail="Customer not found.")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=404, detail=str(e))
