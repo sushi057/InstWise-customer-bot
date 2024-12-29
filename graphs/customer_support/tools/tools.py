@@ -20,7 +20,7 @@ class FeedbackInput(BaseModel):
     user_email: str = Field(..., title="The user's email")
 
 
-RAG_API_URL = "https://chat-backend.instwise.app/api/assistant/ask"
+RAG_API_URL = os.getenv("RAG_API_URL")
 headers = {"X-API-KEY": f"{os.getenv('X_API_KEY')}"}
 
 hubspot_api = "https://api.hubapi.com/crm/v3/objects"
