@@ -88,7 +88,7 @@ async def send_email(request: GenerateEmailsRequest):
         if personalized_emails.emails:
             return [
                 GenerateEmailsResponse(
-                    email_from="success@theagilemove.com",
+                    email_from="sushilbhattachan@gmail.com",
                     email_to=email_item.email_to,
                     subject=email_item.subject,
                     email_body=email_item.email_body,

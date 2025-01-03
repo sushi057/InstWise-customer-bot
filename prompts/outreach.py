@@ -33,6 +33,7 @@ The following information contains customers with overall negative sentiments.
 
 Review the above information and generate personalized, empathetic emails for each customer with negative sentiments. Ensure the emails acknowledge their concerns, offer sincere apologies, and being taken to address their issues. 
 This mail is supposed to be an outreach mail without any specific concern or issues. Aim to preserve the customer relationship and rebuild trust.
+The best regards should be from Sushil Bhattachan, Customer Success Team.
 
 """,
         )
