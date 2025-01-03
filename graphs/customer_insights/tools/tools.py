@@ -127,4 +127,9 @@ def query_database(nl_query: str):
 
 if __name__ == "__main__":
     user_query = input("Enter your query: ")
-    print(query_database.invoke(user_query))
+    # print(query_database.invoke(user_query))
+    print(
+        execute_sql_query(
+            f"SELECT * FROM reporting.companies WHERE domain = '{user_query.split("@")[1]}'"
+        )
+    )
