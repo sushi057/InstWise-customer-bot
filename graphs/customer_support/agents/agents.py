@@ -3,7 +3,7 @@
 # from langgraph.prebuilt import tools_condition
 from pydantic import BaseModel
 
-from models.openai_model import get_openai_model
+from config.openai_model import get_openai_model
 from graphs.customer_support.states.state import State
 from graphs.customer_support.tools.tools import (
     # fetch_user_info,
