@@ -1,7 +1,7 @@
 **/__pycache__/
 .env
-.venv
-.vscode
-.chainlit
+.venv/
+.langgraph_api/
+.vscode/
 notes.md
 graphs/customer_support/prompts/prompts.txt
