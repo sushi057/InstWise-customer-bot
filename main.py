@@ -33,7 +33,7 @@ async def ask_support(
     query: str,
     user_email: EmailStr,  # Optional
     org_id: str,
-    api_type: Literal["insights", "support"],
+    api_type: Literal["support", "insights"],
     session_id: Optional[str] = None,
     customer_id: Optional[str] = None,  # 0000
 ):
@@ -41,14 +41,12 @@ async def ask_support(
     Private Chat API for customer support and customer insights.
     The customer_id is 0000 by default for internal users.
     """
-    if not session_id:
-        new_session_id = get_session_id()
 
     if session_graph_cache["session_id"] != session_id:
-        session_graph_cache["session_id"] = new_session_id
+        session_graph_cache["session_id"] = get_session_id()
         new_memory = MemorySaver()
 
-        # Check API type
+        # Generate graph based on the API type
         if api_type == "support":
             session_graph_cache["graph"] = create_graph(
                 org_id=org_id, memory=new_memory
@@ -60,9 +58,9 @@ async def ask_support(
 
     config = {
         "configurable": {
-            "thread_id": session_id,
-            "user_email": user_email,
-            "customer_id": customer_id,
+            "thread_id": session_graph_cache["session_id"],
+            "customer_email": user_email,
+            "org_id": org_id,
             "internal_user": True,
         }
     }
@@ -86,7 +84,7 @@ async def ask_support(
 
     return {
         "message": PlainTextResponse(messages[-1]),
-        "session_id": session_id,
+        "session_id": session_graph_cache["session_id"],
         "customer_id": get_customer_info().get("customer_id"),
     }
 
@@ -106,8 +104,7 @@ async def ask_public_chat(
 
     # Checks for a new session and creates a new graph
     if session_graph_cache["session_id"] != session_id:
-        # session_id = get_session_id()
-        session_graph_cache["session_id"] = session_id
+        session_graph_cache["session_id"] = get_session_id()
         new_memory = MemorySaver()
 
         session_graph_cache["graph"] = create_graph(org_id=org_id, memory=new_memory)
@@ -116,9 +113,9 @@ async def ask_public_chat(
 
     config = RunnableConfig(
         configurable={
-            "thread_id": session_id,
+            "thread_id": session_graph_cache["session_id"],
             "user_email": user_email,
-            "customer_id": customer_id,
+            "org_id": org_id,
             "internal_user": False,
         }
     )
@@ -139,7 +136,7 @@ async def ask_public_chat(
 
     return {
         "message": PlainTextResponse(messages[-1]),
-        "session_id": session_id,
+        "session_id": session_graph_cache["session_id"],
         "customer_id": get_customer_info().get("customer_id"),
         "user_email": get_customer_info().get("customer_email"),
     }
