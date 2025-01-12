@@ -123,6 +123,12 @@ Updated Query: Show me tickets, tickets comments, customer conversations, feedba
 User Query: Show me CSM information for Hyatt.
 Updated Query: Show me customer health, login details, features for Hyatt.
 
+User Query: What are Hilton's recent mentions of competitors or alternative solutions, and how can we position ourselves effectively in the next interaction?
+Updated Query: Get all information related to Hilton that has notes, meetings, calls, support ticket, ticket comments.
+
+User Query: Highlight recent objections, stalled opportunities, or escalations for HIlton that are slowing deal closure
+Updated Query: Get all the information related to Hilton that has notes, meetings, calls, tickets , ticket comments, conversation and feedback
+
 User Query: {nl_query}
 Updated Query:"""
 )

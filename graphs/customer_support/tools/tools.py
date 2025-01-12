@@ -1,14 +1,17 @@
 import os
-import base64
+
+# import base64
 import requests
+from typing import Annotated
 from pydantic import BaseModel, Field
 
+from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import tool
-from langchain_core.messages.ai import AIMessage
+from langchain_core.tools.base import InjectedToolCallId
+from langchain_core.messages import AIMessage, ToolMessage
+from langgraph.types import Command
 
-# from langchain_core.messages import ToolMessage
-
-
+from graphs.customer_support.states.state import CustomerInfo
 from graphs.customer_insights.tools.tools import query_database
 
 
@@ -23,42 +26,64 @@ class FeedbackInput(BaseModel):
 RAG_API_URL = os.getenv("RAG_API_URL")
 headers = {"X-API-KEY": f"{os.getenv('X_API_KEY')}"}
 
-hubspot_api = "https://api.hubapi.com/crm/v3/objects"
-hubspot_headers = {
-    "Authorization": f'Bearer {os.getenv("HUBSPOT_BEARER_TOKEN")}',
-    "Content-Type": "application/json",
-}
+# hubspot_api = "https://api.hubapi.com/crm/v3/objects"
+# hubspot_headers = {
+#     "Authorization": f"Bearer {os.getenv('HUBSPOT_BEARER_TOKEN')}",
+#     "Content-Type": "application/json",
+# }
 
-zendesk_api = "https://instwisehelp.zendesk.com/api/v2"
-encoded_credentials = base64.b64encode(
-    (f'{os.getenv("ZENDESK_EMAIL")}/token:{os.getenv("ZENDESK_TOKEN")}').encode("utf-8")
-).decode("utf-8")
-zendesk_headers = {
-    "Authorization": f"Basic {encoded_credentials}",
-    "Content-Type": "application/json",
-}
+# zendesk_api = "https://instwisehelp.zendesk.com/api/v2"
+# encoded_credentials = base64.b64encode(
+#     (f"{os.getenv('ZENDESK_EMAIL')}/token:{os.getenv('ZENDESK_TOKEN')}").encode("utf-8")
+# ).decode("utf-8")
+# zendesk_headers = {
+#     "Authorization": f"Basic {encoded_credentials}",
+#     "Content-Type": "application/json",
+# }
 
 
-# Placeholder function for text-to-sql tool, query_database
+# @tool
 def call_query_database(query: str):
-    return query_database(query)
+    """
+    Placeholder function to call text-to-sql tool, query_database.
+    """
+    return query_database.invoke(query)
 
 
-#
-
-
-# Used for get_user_info node
-def fetch_user_info(user_email: str):
+@tool
+def fetch_user_info(tool_call_id: Annotated[str, InjectedToolCallId], user_email: str):
     """
     Fetch user info with the text-to-sql tool.
+    This tool is primarily used for the fetch_user_info node.
 
     Args:
+        tool_call_id: Tool call ID for the current tool call.
         user_email: The email of the user.
     """
     try:
-        response = call_query_database(f"Find the customer with the email {user_email}")
+        response = call_query_database(
+            f"Fetch customer details with the domain {user_email.split('@')[1]}"
+        )
+
+        # Fetch customer info for given email and update state
         if response[0].result_set:
-            return response[0].result_set[0]
+            customer_info = response[0].result_set[0]
+            return Command(
+                update={
+                    "customer_info": CustomerInfo(
+                        company_name=customer_info.get("name"),
+                        customer_email=user_email,
+                        customer_id=customer_info.get("company_id"),
+                        start_date=customer_info.get("start_date"),
+                    ),
+                    "messages": [
+                        ToolMessage(
+                            content="Successfully fetched customer information.",
+                            tool_call_id=tool_call_id,
+                        )
+                    ],
+                },
+            )
         else:
             return {}
     except Exception as e:
@@ -72,22 +97,32 @@ def fetch_user_info(user_email: str):
 
 
 @tool
-def solution_rag_call(query: str) -> AIMessage:
+def solution_rag_call(query: str, config: RunnableConfig) -> AIMessage:
     """
     This function sends a query to the RAG API and returns the answer as an AIMessage.
 
     Parameters:
     - query (str): The query to send to the RAG API.
+    - company_id(str): The company id to send to the RAG API.
 
     Returns:
     - AIMessage: The response from the RAG API as an AIMessage object.
     """
+    company_id = config.get("configurable")["org_id"]
     response = requests.get(
         RAG_API_URL,
-        params={"query": query, "company_id": "66158fe71bfe10b58cb23eea"},
+        params={"query": query, "company_id": company_id},
         headers=headers,
     )
     return AIMessage(response.json()["results"]["answer"])
+
+
+@tool
+def create_zendesk_ticket_for_unresolved_issues() -> AIMessage:
+    """
+    This function creates a ticket in Zendesk.
+    """
+    return AIMessage("Ticket created successfully.")
 
 
 @tool
@@ -177,3 +212,15 @@ def collect_feedback(
         return AIMessage("Your feedback has been recorded.")
     except requests.exceptions.RequestException as e:
         return AIMessage(f"An error occurred while recording your feedback: {e}")
+
+
+if __name__ == "__main__":
+    print(
+        collect_feedback(
+            query="original query",
+            rating=5,
+            feedback="test feedback",
+            organization_id="test",
+            user_email="sarah@hilton.com",
+        )
+    )

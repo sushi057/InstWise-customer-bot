@@ -1,4 +1,4 @@
-from typing import TypedDict, Annotated, Literal, Optional
+from typing import TypedDict, Annotated, Optional
 from langgraph.graph.message import AnyMessage, add_messages
 from pydantic import BaseModel
 
@@ -12,25 +12,15 @@ def update_dialog_stack(left: list[str], right: Optional[str]) -> list[str]:
     return left + [right]
 
 
-class UserInfo(BaseModel):
-    user_id: str
-    user_email: str
-    name: str
-    pending_issues: str | None
-    company: str
+class CustomerInfo(BaseModel):
+    customer_id: str
+    customer_email: str
+    company_name: str
+    start_date: str
 
 
-class State(TypedDict):
+class GraphState(TypedDict):
     messages: Annotated[list[AnyMessage], add_messages]
-    user_info: UserInfo
-    dialog_state: Annotated[
-        list[
-            Literal[
-                "primary_assistant",
-                "solution_agent",
-                "followup_agent",
-                "log_agent",
-            ]
-        ],
-        update_dialog_stack,
-    ]
+    customer_info: CustomerInfo
+    pending_issues: list[str]
+    internal_user: bool
