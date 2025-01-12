@@ -1,15 +1,14 @@
 from typing import Optional, Literal
 
-import uvicorn
 from pydantic import EmailStr
 from fastapi import FastAPI
 from fastapi.responses import PlainTextResponse
 from langchain_core.runnables import RunnableConfig
 from langgraph.checkpoint.memory import MemorySaver
-from langgraph.errors import GraphRecursionError
+# from langgraph.errors import GraphRecursionError
 
 from routes import customer, outreach
-from config.config import get_customer_id
+from config.config import get_customer_info
 from graphs.customer_support.graph.graph import create_graph
 from graphs.customer_support.utils.utils import get_session_id
 from graphs.customer_insights.graph import create_insights_graph
@@ -21,12 +20,7 @@ app.include_router(customer.router, prefix="/customer", tags=["customer"])
 app.include_router(outreach.router, prefix="/outreach", tags=["outreach"])
 
 session_graph_cache = {"session_id": "", "graph": None, "customer_id": ""}
-
-session_object = {
-    "session_id": None,
-    "customer_id": None,
-    "organization_id": None,
-}
+customer_info = {"customer_info": None}
 
 
 @app.get("/", status_code=200)
@@ -39,10 +33,14 @@ async def ask_support(
     query: str,
     user_email: EmailStr,  # Optional
     org_id: str,
-    api_type=Literal["insights", "support"],
+    api_type: Literal["insights", "support"],
     session_id: Optional[str] = None,
-    customer_id: Optional[str] = None,  # from query_database tool
+    customer_id: Optional[str] = None,  # 0000
 ):
+    """
+    Private Chat API for customer support and customer insights.
+    The customer_id is 0000 by default for internal users.
+    """
     if not session_id:
         new_session_id = get_session_id()
 
@@ -65,30 +63,31 @@ async def ask_support(
             "thread_id": session_id,
             "user_email": user_email,
             "customer_id": customer_id,
-            "token": session_graph_cache["session_id"] + "_" + org_id,
+            "internal_user": True,
         }
     }
 
     messages = []
+
     try:
         async for event in graph.astream(
             {"messages": [("user", query)]}, config, stream_mode="values"
         ):
             event["messages"][-1].pretty_print()
             messages.append(event["messages"][-1].content)
-    except GraphRecursionError:
-        return {
-            "message": "Graph Recursion Error, Please try again.",
-            "session_id": session_id,
-            "customer_id": get_customer_id(),
-        }
+    # except GraphRecursionError:
+    #     return {
+    #         "message": "Graph Recursion Error, Please try again.",
+    #         "session_id": session_id,
+    #         "customer_id": customer_info.get("customer_id"),
+    #     }
     except Exception as e:
         return {"error": str(e), "session_id": session_id}
 
     return {
         "message": PlainTextResponse(messages[-1]),
         "session_id": session_id,
-        "customer_id": get_customer_id(),
+        "customer_id": get_customer_info().get("customer_id"),
     }
 
 
@@ -96,18 +95,18 @@ async def ask_support(
 async def ask_public_chat(
     query: str,
     org_id: str,
-    # customer_id: Optional[str],
     session_id: Optional[str] = None,
-    # user_email: Optional[EmailStr],
+    customer_id: Optional[str] = None,
+    user_email: Optional[EmailStr] = None,
 ):
     """
-    Chat API for public customers.
-    This API only has customer_support agent.
+    Chat API for external customers. This API only supports customer_support workflow.
+    Initially, user_email is empty. The customer_id is other than 0000.
     """
 
-    # Check if new session and create a new graph with new memory
-    if not session_id:
-        session_id = get_session_id()
+    # Checks for a new session and creates a new graph
+    if session_graph_cache["session_id"] != session_id:
+        # session_id = get_session_id()
         session_graph_cache["session_id"] = session_id
         new_memory = MemorySaver()
 
@@ -118,30 +117,29 @@ async def ask_public_chat(
     config = RunnableConfig(
         configurable={
             "thread_id": session_id,
+            "user_email": user_email,
+            "customer_id": customer_id,
+            "internal_user": False,
         }
     )
 
     messages = []
     try:
         async for event in graph.astream(
-            {"messages": [("user", query)]},
+            {
+                "messages": [("user", query)],
+            },
             config,
             stream_mode="values",
         ):
             event["messages"][-1].pretty_print()
             messages.append(event["messages"][-1].content)
-    except GraphRecursionError:
-        return {
-            "message": "Graph Recursion Error, Please try again.",
-            "session_id": session_id,
-            "customer_id": get_customer_id(),
-        }
     except Exception as e:
         return {"error": str(e), "session_id": session_id}
 
     return {
         "message": PlainTextResponse(messages[-1]),
         "session_id": session_id,
-        "customer_id": get_customer_id(),
-        "user_email": None,
+        "customer_id": get_customer_info().get("customer_id"),
+        "user_email": get_customer_info().get("customer_email"),
     }

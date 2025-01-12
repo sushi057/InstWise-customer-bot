@@ -1,12 +1,13 @@
 import uuid
 from langgraph.checkpoint.memory import MemorySaver
 
-from graph.graph import create_graph
-from utils.utils import visualize_graph
+from graphs.customer_support.graph.graph import create_graph
+from graphs.customer_support.utils.utils import visualize_graph
 
 memory = MemorySaver()
 
 graph = create_graph(org_id="123", memory=memory)
+
 visualize_graph(graph)
 
 thread_id = str(uuid.uuid4())
@@ -17,10 +18,9 @@ config = {
         "thread_id": str(uuid.uuid4()),
         # "user_email": "sarah@test.com",
         "customer_id": "123",
-        "token": "1235" + "_" + "66e534d37a7f6e9808c7b921",
+        "internal_user": False,
     }
 }
-
 
 while True:
     user_input = input("User: ")
@@ -32,3 +32,6 @@ while True:
         {"messages": ("user", user_input)}, config, stream_mode="values"
     ):
         event["messages"][-1].pretty_print()
+
+if __name__ == "__main__":
+    print("From graphs/customer_support/main.py")
