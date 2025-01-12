@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 
-from schemas.customer import CheckEmailRequest, CheckEmailResponse
+from models.customer import CheckEmailRequest, CheckEmailResponse
 from graphs.customer_insights.tools.tools import execute_sql_query
 
 router = APIRouter(tags=["customer"])

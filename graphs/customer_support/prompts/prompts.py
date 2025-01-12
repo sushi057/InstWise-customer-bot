@@ -17,6 +17,16 @@ def create_prompts(org_id: str):
         ]
     ).partial(time=datetime.now())
 
+    # greeting_prompt = ChatPromptTemplate.from_messages(
+    #     [
+    #         (
+    #             "system",
+    #             organization_detail["org"]["greeting_prompt"],
+    #         ),
+    #         ("placeholder", "{messages}"),
+    #     ]
+    # ).partial(time=datetime.now())
+
     solution_prompt = ChatPromptTemplate.from_messages(
         [
             (
@@ -37,16 +47,15 @@ def create_prompts(org_id: str):
         ]
     )
 
-    log_prompt = ChatPromptTemplate.from_messages(
-        [
-            ("system", organization_detail["org"]["log_prompt"]),
-            ("placeholder", "{messages}"),
-        ]
-    )
+    # log_prompt = ChatPromptTemplate.from_messages(
+    #     [
+    #         ("system", organization_detail["org"]["log_prompt"]),
+    #         ("placeholder", "{messages}"),
+    #     ]
+    # )
 
     return {
         "primary_assistant_prompt": primary_assistant_prompt,
         "solution_prompt": solution_prompt,
         "followup_prompt": followup_prompt,
-        "log_prompt": log_prompt,
     }

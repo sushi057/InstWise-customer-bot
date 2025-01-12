@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException
 from langchain_openai import ChatOpenAI
 
 from graphs.customer_insights.tools.tools import query_database
-from schemas.outreach import (
+from models.outreach import (
     PersonalizedEmailsList,
     CustomerListWithNegativeSentiments,
     GenerateEmailReplyRequest,
