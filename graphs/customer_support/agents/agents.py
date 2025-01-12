@@ -43,7 +43,7 @@ def create_agents(org_id: str):
     # Entry node for the graph
     def fetch_user_info(
         state: GraphState, config: RunnableConfig
-    ) -> Command[Literal["fetch_user_info", "primary_assistant", "__end__"]]:
+    ) -> Command[Literal["fetch_user_info", "primary_assistant"]]:
         """
         Fetch User Info Node
         """
@@ -60,10 +60,9 @@ def create_agents(org_id: str):
             ## Message asking user email initially
             if "@" not in last_human_message:
                 return Command(
-                    goto="__end__",
                     update={
                         "messages": AIMessage(
-                            content="Could you please provide your email address so that I can assist you better?"
+                            content="Hi, Could you please provide your email address so that I can assist you better?"
                         )
                     },
                 )
@@ -71,10 +70,9 @@ def create_agents(org_id: str):
                 customer_email = get_valid_email(last_human_message)
                 if not customer_email:
                     return Command(
-                        goto="fetch_user_info",
                         update={
                             "messages": AIMessage(
-                                "Please provide a valid email address."
+                                "Please provide a valid email address so that I can assist you better."
                             )
                         },
                     )
@@ -118,7 +116,7 @@ def create_agents(org_id: str):
                     goto="__end__",
                     update={
                         "messages": AIMessage(
-                            content="Sorry, we couldn't find any information for the provided email address. Please try again."
+                            content="Sorry, I couldn't find any information for the provided email address. Please try again with a different email address."
                         )
                     },
                 )
