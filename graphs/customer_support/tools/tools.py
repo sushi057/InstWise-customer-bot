@@ -5,6 +5,7 @@ import requests
 from typing import Annotated
 from pydantic import BaseModel, Field
 
+from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import tool
 from langchain_core.tools.base import InjectedToolCallId
 from langchain_core.messages import AIMessage, ToolMessage
@@ -96,7 +97,7 @@ def fetch_user_info(tool_call_id: Annotated[str, InjectedToolCallId], user_email
 
 
 @tool
-def solution_rag_call(query: str, customer_id: str) -> AIMessage:
+def solution_rag_call(query: str, config: RunnableConfig) -> AIMessage:
     """
     This function sends a query to the RAG API and returns the answer as an AIMessage.
 
@@ -107,9 +108,10 @@ def solution_rag_call(query: str, customer_id: str) -> AIMessage:
     Returns:
     - AIMessage: The response from the RAG API as an AIMessage object.
     """
+    company_id = config.get("configurable")["org_id"]
     response = requests.get(
         RAG_API_URL,
-        params={"query": query, "company_id": customer_id},
+        params={"query": query, "company_id": company_id},
         headers=headers,
     )
     return AIMessage(response.json()["results"]["answer"])
@@ -210,3 +212,15 @@ def collect_feedback(
         return AIMessage("Your feedback has been recorded.")
     except requests.exceptions.RequestException as e:
         return AIMessage(f"An error occurred while recording your feedback: {e}")
+
+
+if __name__ == "__main__":
+    print(
+        collect_feedback(
+            query="original query",
+            rating=5,
+            feedback="test feedback",
+            organization_id="test",
+            user_email="sarah@hilton.com",
+        )
+    )
