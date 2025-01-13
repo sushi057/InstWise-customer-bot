@@ -1,12 +1,14 @@
 from datetime import datetime
 from langchain.prompts import ChatPromptTemplate
 
-from . import prompts_local
+from utils.utils import fetch_organization_details
+# from . import prompts_local
 
 
 def create_prompts(org_id: str):
-    # organization_detail = fetch_organization_details(org_id)
-    organization_detail = prompts_local.organization_details
+    organization_detail = fetch_organization_details(org_id)
+    # organization_detail = prompts_local.organization_details
+
     primary_assistant_prompt = ChatPromptTemplate.from_messages(
         [
             (
