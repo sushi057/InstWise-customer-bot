@@ -11,7 +11,7 @@ from langchain_core.tools.base import InjectedToolCallId
 from langchain_core.messages import AIMessage, ToolMessage
 from langgraph.types import Command
 
-from graphs.customer_support.states.state import CustomerInfo
+from graphs.customer_support.states.state import CustomerInfo, GraphState
 from graphs.customer_insights.tools.tools import query_database
 
 
@@ -173,33 +173,39 @@ def upsell_features(query: str) -> AIMessage:
     return AIMessage(response.json()["results"]["answer"])
 
 
-@tool
+# @tool
 def collect_feedback(
     query: str,
     rating: int | None,
     feedback: str,
-    organization_id: str,
     user_email: str,
+    config: RunnableConfig,
+    state: GraphState,
 ) -> AIMessage:
     """
     Record's user's feedback to the database.
 
     Args:
-        query (str): The query for the feedback.
+        query (str): User's original query
         rating (int): The user's rating.
-        feedback (str): The user's feedback.
+        feedback (str): The user's overall feedback.
         user_email (str): The user's email.
-        organization_id (str): The organization id.
+        customer_id (str): The customer id
 
     Returns:
         AIMessage: A message confirming the feedback has been collected.
     """
+    org_id = config.get("configurable").get("org_id")
+    customer_id = state.get("customer_info").get("customer_id")
+
     feedback_data = {
         "query": query,
         "rating": rating,
         "feedback": feedback,
-        "organization_id": organization_id,
         "user_email": user_email,
+        "organization": org_id,
+        "customer": customer_id,
+        "user": org_id + "_" + user_email,
     }
 
     # API call to add feedback to the database
@@ -220,7 +226,8 @@ if __name__ == "__main__":
             query="original query",
             rating=5,
             feedback="test feedback",
-            organization_id="test",
             user_email="sarah@hilton.com",
+            config=RunnableConfig(configurable={"org_id": "test"}),
+            state={"customer_info": {"customer_id": "test"}},
         )
     )
