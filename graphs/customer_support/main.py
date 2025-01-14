@@ -1,12 +1,12 @@
 import uuid
 from langgraph.checkpoint.memory import MemorySaver
 
-from graphs.customer_support.graph.graph import create_graph
-from graphs.customer_support.utils.utils import visualize_graph
+from graphs.customer_support.graph.graph import create_support_graph
+from graphs.customer_support.utils.helpers import visualize_graph
 
 memory = MemorySaver()
 
-graph = create_graph(org_id="123", memory=memory)
+graph = create_support_graph(org_id="123", memory=memory)
 
 visualize_graph(graph)
 

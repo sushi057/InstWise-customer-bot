@@ -12,12 +12,12 @@ from graphs.customer_support.graph.routes import (
     route_solution_agent,
     route_followup_agent,
 )
-from graphs.customer_support.utils.utils import (
+from graphs.customer_support.utils.helpers import (
     create_tool_node_with_fallback,
 )
 
 
-def create_graph(org_id: str, memory):
+def create_support_graph(org_id: str, memory):
     builder = StateGraph(GraphState)
 
     agents = create_agents(org_id=org_id)

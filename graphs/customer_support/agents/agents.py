@@ -18,7 +18,7 @@ from graphs.customer_support.tools.tools import (
     collect_feedback,
     call_query_database,
 )
-from graphs.customer_support.utils.utils import get_valid_email
+from graphs.customer_support.utils.helpers import get_valid_email
 
 
 primary_assistant_tools = [call_query_database, ToSolutionAgent, ToFollowUpAgent]

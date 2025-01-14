@@ -1,6 +1,11 @@
+from datetime import datetime
+
+from langchain.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableLambda
 from langgraph.prebuilt import ToolNode
 from langchain_core.messages import ToolMessage
+
+from utils.utils import fetch_organization_details
 
 
 def handle_tool_error(state) -> dict:
@@ -46,3 +51,34 @@ def create_tool_node_with_fallback(tools: list) -> dict:
     return ToolNode(tools).with_fallbacks(
         [RunnableLambda(handle_tool_error)], exception_key="error"
     )
+
+
+def create_internal_workflow_prompts(org_id: str):
+    """
+    Get updated prompts for the internal workflow based on the organization ID.
+
+    Args:
+        org_id (str): The organization ID.
+
+    Returns:
+        dict: The updated prompts for the internal workflow.
+    """
+    organization_detail = fetch_organization_details(org_id)
+
+    data_agent_prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", organization_detail["org"]["data_agent_prompt"]),
+            ("placeholder", "{messages}"),
+        ]
+    ).partial(time=datetime.now())
+
+    schema = organization_detail["org"]["schema_prompt"]
+    abstract_queries_prompt = organization_detail["org"]["abstract_refinement_prompt"]
+    nltosql_prompt = organization_detail["org"]["nltosql_prompt"]
+
+    return {
+        "data_agent_prompt": data_agent_prompt,
+        "schema": schema,
+        "abstract_queries_prompt": abstract_queries_prompt,
+        "nltosql_prompt": nltosql_prompt,
+    }
