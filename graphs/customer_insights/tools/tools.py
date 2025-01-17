@@ -4,17 +4,15 @@ from dotenv import load_dotenv
 
 from langchain_core.tools import tool
 
-# from langchain_core.runnables.config import RunnableConfig
 from langchain_core.prompts import PromptTemplate
 from langchain_openai import ChatOpenAI
 
-# from pprint import pprint
-from langchain_core.messages import HumanMessage
-from graphs.customer_insights.tools.prompts import (
-    abstract_query_handler_template,
-    nl2sql_prompt_template,
-)
 from graphs.customer_insights.tools.DTOs import QueryResponse
+from utils.utils import fetch_organization_details
+# from graphs.customer_insights.tools.prompts import (
+#     abstract_query_handler_template,
+#     nl2sql_prompt_template,
+# )
 
 
 load_dotenv()
@@ -89,47 +87,88 @@ def execute_sql_query(sql_query):
         return f"An error occurred: {e}"
 
 
-nl2sql_prompt = PromptTemplate.from_template(nl2sql_prompt_template)
+def create_nl2sql_tool(
+    schema_prompt: str, nltosql_prompt: str, abstract_queries_prompt: str
+):
+    """Create extract_database (nl2sql) tool with latest prompts."""
 
-abstract_query_handler = PromptTemplate.from_template(abstract_query_handler_template)
+    # schema for the database
+    schema = (
+        f"""
+Database Name: {os.getenv("DATABASE_NAME")}
+"""
+    ) + schema_prompt
 
-llm = ChatOpenAI(model="gpt-4o", temperature=0.0, max_tokens=512)
-# nl2sql_chain = abstract_query_handler | llm | nl2sql_prompt | llm
+    # nl2sql_prompt_template
+    nl2sql_prompt_template = (
+        f"""
+Given the following schema, convert the following natural language query to SQL
+Schema:
+{schema}
 
-abstract_query_chain = abstract_query_handler | llm
-nl2sql_chain = nl2sql_prompt | llm
-
-
-@tool
-def query_database(nl_query: str):
-    """
-    Converts a natural language query to SQL and runs the SQL query on the redshift database.
-    param nl_query: The natural language query to convert to SQL and run.
-    param_type nl_query: str
-    """
-    abstract_query_response = abstract_query_chain.invoke(
-        HumanMessage(content=nl_query)
+{nltosql_prompt}
+"""
+        + """
+Natural Language Query: {nl_query} separately
+SQL Query:
+"""
     )
-    sql_query = nl2sql_chain.invoke(
-        [HumanMessage(content=abstract_query_response.content)]
-    )
-    # sql_query = nl2sql_chain.invoke([HumanMessage(content=nl_query)])
-    sql_query = sql_query.content.split(";")
-    print("Using query: ", sql_query)
 
-    responses = []
-    for query in sql_query:
-        query = query.strip()
-        if len(query.lower()) > 0:
-            responses.append(execute_sql_query(query))
-    return responses
+    # abstract_query_handler_template
+    abstract_query_handler_template = (
+        f"""
+Given the schema: {schema} 
+
+{abstract_queries_prompt}
+
+"""
+        + """
+User Query: {nl_query}
+Updated Query
+"""
+    )
+
+    # Update prompt template to pass database name
+    nl2sql_prompt = PromptTemplate.from_template(nl2sql_prompt_template)
+    abstract_query_handler = PromptTemplate.from_template(
+        abstract_query_handler_template
+    )
+
+    llm = ChatOpenAI(model="gpt-4o", temperature=0.0, max_tokens=512)
+    abstract_query_chain = abstract_query_handler | llm
+    nl2sql_chain = nl2sql_prompt | llm
+
+    @tool
+    def query_database(nl_query: str):
+        """
+        Converts a natural language query to SQL and runs the SQL query on the redshift database.
+        param nl_query: The natural language query to convert to SQL and run.
+        param_type nl_query: str
+        """
+
+        abstract_query_response = abstract_query_chain.invoke(nl_query)
+        sql_query = nl2sql_chain.invoke(abstract_query_response.content)
+        # sql_query = nl2sql_chain.invoke([HumanMessage(content=nl_query)])
+        sql_query = sql_query.content.split(";")
+        print("Using query: ", sql_query)
+
+        responses = []
+        for query in sql_query:
+            query = query.strip()
+            if len(query.lower()) > 0:
+                responses.append(execute_sql_query(query))
+        return responses
+
+    return query_database
 
 
 if __name__ == "__main__":
     user_query = input("Enter your query: ")
+    prompts = fetch_organization_details("66158fe71bfe10b58cb23eea")["org"]
+
+    query_database = create_nl2sql_tool(
+        schema_prompt=prompts["schema_prompt"],
+        nltosql_prompt=prompts["nltosql_prompt"],
+        abstract_queries_prompt=prompts["abstract_refinement_prompt"],
+    )
     print(query_database.invoke(user_query))
-    # print(
-    #     execute_sql_query(
-    #         f"SELECT * FROM reporting.companies WHERE domain = '{user_query.split("@")[1]}'"
-    #     )
-    # )

@@ -1,17 +1,17 @@
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 
-from langchain_core.messages import AIMessage
+# from langchain_core.messages import AIMessage
 from langchain_openai import ChatOpenAI
 
 from graphs.customer_insights.state import AgentStateGraph
-from graphs.customer_insights.tools.tools import query_database
-from graphs.customer_insights.prompts import (
-    # query_agent_prompt_template,
-    data_agent_prompt_template,
-    # validation_agent_prompt_template,
-    # insights_agent_prompt_template,
+from graphs.customer_insights.tools.tools import (
+    create_nl2sql_tool,
+    # query_database
 )
+
+from graphs.customer_insights.prompts import data_agent_prompt_template
+from graphs.customer_insights.helpers import create_internal_workflow_prompts
 
 load_dotenv()
 
@@ -23,43 +23,28 @@ class ValidationResponse(BaseModel):
     response: bool = Field(..., description="The validation response from the agent.")
 
 
-def data_agent(state: AgentStateGraph):
-    """
-    This agent executes the SQL query based on  the query agent.
-    """
-    data_agent_runnable = data_agent_prompt_template | llm.bind_tools(
-        [query_database], parallel_tool_calls=False
+def create_internal_workflow_agents(org_id: str):
+    """Create agents and tools for the internal workflow."""
+
+    # Load prompts
+    internal_workflow_prompts = create_internal_workflow_prompts(org_id=org_id)
+    query_database = create_nl2sql_tool(
+        schema_prompt=internal_workflow_prompts["schema"],
+        nltosql_prompt=internal_workflow_prompts["nltosql_prompt"],
+        abstract_queries_prompt=internal_workflow_prompts["abstract_queries_prompt"],
     )
-    response = data_agent_runnable.invoke(state)
-    return {**state, "messages": response}
 
+    def data_agent(state: AgentStateGraph):
+        """This agent will draw insights from the data based on the user query."""
 
-# def validation_agent(state: AgentStateGraph):
-#     """
-#     This agent validates the response from the data agent, wether it matches the user query or not.
-#     """
-#     query_response = state["messages"][-1].content
-#     user_query = state["messages"][-4].content
+        # Replace with internal_workflow_prompts["data_agent_prompt"]
+        data_agent_runnable = data_agent_prompt_template | llm.bind_tools(
+            [query_database], parallel_tool_calls=False
+        )
+        response = data_agent_runnable.invoke(state)
+        return {**state, "messages": response}
 
-#     model_with_structured_output = llm_mini.with_structured_output(ValidationResponse)
-
-#     validate_response_model = (
-#         validation_agent_prompt_template.partial(
-#             user_query=user_query, query_response=query_response
-#         )
-#         | model_with_structured_output
-#     )
-
-#     response = validate_response_model.invoke({})
-
-#     return {**state, "messages": AIMessage(content=str(response.response))}
-
-# def insights_agent(state: AgentStateGraph):
-#     """
-#     This agent provides insights based on the data.
-#     """
-#     insights_llm_with_tools = llm
-#     insights_agent_runnable = insights_agent_prompt_template | insights_llm_with_tools
-
-#     response = insights_agent_runnable.invoke(state)
-#     return {**state, "messages": response}
+    return {
+        "data_agent": data_agent,
+        "query_database": query_database,
+    }

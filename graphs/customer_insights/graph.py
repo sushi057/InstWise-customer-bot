@@ -1,11 +1,15 @@
 from langgraph.graph import StateGraph, START, END
 from langgraph.prebuilt import tools_condition
 
-from graphs.customer_insights.tools.tools import query_database
+# from graphs.customer_insights.tools.tools import query_database
 from graphs.customer_insights.state import AgentStateGraph
-
-from graphs.customer_insights.agents import data_agent
-from graphs.customer_insights.utils import create_tool_node_with_fallback
+from graphs.customer_insights.agents import (
+    create_internal_workflow_agents,
+    # data_agent
+)
+from graphs.customer_insights.helpers import (
+    create_tool_node_with_fallback,
+)
 
 
 def route_validation_agent(state: AgentStateGraph):
@@ -16,15 +20,17 @@ def route_validation_agent(state: AgentStateGraph):
         return "data_agent"
 
 
-def create_insights_graph(memory):
-
+def create_insights_graph(org_id: str, memory):
     graph_builder = StateGraph(AgentStateGraph)
 
+    # Load agents
+    agents = create_internal_workflow_agents(org_id=org_id)
+
     # Define nodes
-    graph_builder.add_node("data_agent", data_agent)
-    graph_builder.add_node("tools", create_tool_node_with_fallback([query_database]))
-    # graph_builder.add_node("validation_agent", validation_agent)
-    # graph_builder.add_node("insights_agent", insights_agent)
+    graph_builder.add_node("data_agent", agents["data_agent"])
+    graph_builder.add_node(
+        "tools", create_tool_node_with_fallback([agents["query_database"]])
+    )
 
     # Define edges
     graph_builder.add_edge(START, "data_agent")
@@ -36,15 +42,7 @@ def create_insights_graph(memory):
             "__end__": "__end__",
         },
     )
-
     graph_builder.add_edge("tools", "data_agent")
-    # graph_builder.add_conditional_edges(
-    #     "validation_agent",
-    #     route_validation_agent,
-    #     {"data_agent": "data_agent", "insights_agent": "insights_agent"},
-    # )
-    # graph_builder.add_edge("insights_agent", END)
-
     graph_builder.add_edge("data_agent", END)
 
     # Add persistence memory
