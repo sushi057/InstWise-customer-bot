@@ -4,6 +4,7 @@ from langchain_core.messages import AIMessage
 from langchain_core.runnables import RunnableConfig
 
 from config.config import set_customer_info
+from graphs.customer_insights.tools.tools import create_nl2sql_tool
 from graphs.customer_support.states.state import CustomerInfo
 
 from config.openai_model import get_openai_model
@@ -16,34 +17,40 @@ from graphs.customer_support.tools.tools import (
     recommend_features,
     upsell_features,
     collect_feedback,
-    call_query_database,
+    # call_query_database,
 )
-from graphs.customer_support.utils.helpers import get_valid_email
-
-
-primary_assistant_tools = [call_query_database, ToSolutionAgent, ToFollowUpAgent]
-solution_tools = [
-    solution_rag_call,
-    create_zendesk_ticket_for_unresolved_issues,
-]
-followup_tools = [
-    recommend_features,
-    upsell_features,
-    call_query_database,
-    collect_feedback,
-]
+from graphs.customer_support.helpers.helpers import get_valid_email
 
 
 def create_agents(org_id: str):
+    """Create agents for the customer support graph"""
+    llm = get_openai_model(model="gpt-4o")
     prompts = create_prompts(org_id)
 
-    llm = get_openai_model(model="gpt-4o")
-    # llm_mini = get_openai_model(model="gpt-4o-mini")
+    # Create NL2SQL tool
+    call_query_database = create_nl2sql_tool(
+        schema_prompt=prompts["schema_prompt"],
+        nltosql_prompt=prompts["nltosql_prompt"],
+        abstract_queries_prompt=prompts["abstract_queries_prompt"],
+    )
+
+    # Define tools for the agents
+    primary_assistant_tools = [call_query_database, ToSolutionAgent, ToFollowUpAgent]
+    solution_tools = [
+        solution_rag_call,
+        create_zendesk_ticket_for_unresolved_issues,
+    ]
+    followup_tools = [
+        recommend_features,
+        upsell_features,
+        call_query_database,
+        collect_feedback,
+    ]
 
     # Entry node for the graph
     def fetch_user_info(
         state: GraphState, config: RunnableConfig
-    ) -> Command[Literal["fetch_user_info", "primary_assistant"]]:
+    ) -> Command[Literal["primary_assistant", "__end__"]]:
         """
         Fetch User Info Node
         """
@@ -81,7 +88,7 @@ def create_agents(org_id: str):
 
         # Fetch customer info with the customer_email from the database
         try:
-            response = call_query_database(
+            response = call_query_database.invoke(
                 f"Fetch customer details with the domain {customer_email.split('@')[1]}"
             )
 
@@ -191,6 +198,9 @@ def create_agents(org_id: str):
     return {
         "fetch_user_info": fetch_user_info,
         "primary_assistant": primary_assistant,
+        "primary_assistant_tools": primary_assistant_tools,
         "solution_agent": solution_agent,
+        "solution_agent_tools": solution_tools,
         "followup_agent": followup_agent,
+        "followup_agent_tools": followup_tools,
     }
