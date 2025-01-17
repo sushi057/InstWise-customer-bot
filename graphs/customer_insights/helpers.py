@@ -65,19 +65,19 @@ def create_internal_workflow_prompts(org_id: str):
     """
     organization_detail = fetch_organization_details(org_id)
 
-    data_agent_prompt = ChatPromptTemplate.from_messages(
-        [
-            ("system", organization_detail["org"]["data_agent_prompt"]),
-            ("placeholder", "{messages}"),
-        ]
-    ).partial(time=datetime.now())
+    # data_agent_prompt = ChatPromptTemplate.from_messages(
+    #     [
+    #         ("system", organization_detail["org"]["data_agent_prompt"]),
+    #         ("placeholder", "{messages}"),
+    #     ]
+    # ).partial(time=datetime.now())
 
     schema = organization_detail["org"]["schema_prompt"]
     abstract_queries_prompt = organization_detail["org"]["abstract_refinement_prompt"]
     nltosql_prompt = organization_detail["org"]["nltosql_prompt"]
 
     return {
-        "data_agent_prompt": data_agent_prompt,
+        # "data_agent_prompt": data_agent_prompt,
         "schema": schema,
         "abstract_queries_prompt": abstract_queries_prompt,
         "nltosql_prompt": nltosql_prompt,
