@@ -1,26 +1,21 @@
 import uuid
-from langgraph.checkpoint.memory import MemorySaver
+from langchain_core.runnables import RunnableConfig
 
-from graphs.customer_support.graph.graph import create_graph
-from graphs.customer_support.utils.utils import visualize_graph
-
-memory = MemorySaver()
-
-graph = create_graph(org_id="123", memory=memory)
-
-visualize_graph(graph)
+from graphs.customer_support.graph.graph import create_support_graph
+from graphs.customer_support.helpers.helpers import visualize_graph
 
 thread_id = str(uuid.uuid4())
-
-
-config = {
-    "configurable": {
+config = RunnableConfig(
+    configurable={
         "thread_id": str(uuid.uuid4()),
         # "user_email": "sarah@test.com",
-        "customer_id": "123",
-        "internal_user": False,
+        "org_id": "66158fe71bfe10b58cb23eea",
+        "internal_user": True,
     }
-}
+)
+
+graph = create_support_graph("66158fe71bfe10b58cb23eea")
+visualize_graph(graph)
 
 while True:
     user_input = input("User: ")

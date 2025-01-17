@@ -36,24 +36,24 @@ Guidelines:
     precede each query with a comment that describes which table it is pulling from. If it was pullling from multiple tables precede the single query with "Multiple tables::".       
         
 Natural Language Query: Show me the first 2 companies separately
-SQL Query: companies:: SELECT * FROM {os.getenv("DATABASE_NAME")}.companies LIMIT 2;     
+SQL Query: companies:: SELECT * FROM reporting.companies LIMIT 2;     
 
 Natural Language Query: Show me the top companies that have highest number of deals separately
-SQL Query: Multiple tables:: SELECT c.company_id, c.name, c.domain, COUNT(d.deal_id) AS num_deals FROM {os.getenv("DATABASE_NAME")}.companies AS c
-JOIN {os.getenv("DATABASE_NAME")}.deals AS d
+SQL Query: Multiple tables:: SELECT c.company_id, c.name, c.domain, COUNT(d.deal_id) AS num_deals FROM reporting.companies AS c
+JOIN reporting.deals AS d
 ON c.name = d.company_name
 GROUP BY c.company_id, c.name, c.domain
 ORDER BY num_deals DESC
 LIMIT 10;
 
 Natural Language Query: Show me list of contacts, deals and open support tickets for Hyatt separately 
-SQL Query: contacts:: SELECT * FROM {os.getenv("DATABASE_NAME")}.contacts WHERE company_name = 'Hyatt'; deals:: SELECT * FROM {os.getenv("DATABASE_NAME")}.deals WHERE company_name = 'Hyatt'; tickets:: SELECT * FROM {os.getenv("DATABASE_NAME")}.tickets WHERE company_name = 'Hyatt' AND status = 'open';
+SQL Query: contacts:: SELECT * FROM reporting.contacts WHERE company_name = 'Hyatt'; deals:: SELECT * FROM reporting.deals WHERE company_name = 'Hyatt'; tickets:: SELECT * FROM reporting.tickets WHERE company_name = 'Hyatt' AND status = 'open';
 
 Natural Language Query: Show me the health of the Hyatt
 SQL Query: customer_health:: SELECT * FROM reporting.customer_health WHERE customer_name = 'Hyatt'
 
 Natural Language Query: Show me the list of contacts for Hyatt
-SQL Query: contacts:: SELECT contacts.first_name, contacts.last_name, contacts.email FROM {os.getenv("DATABASE_NAME")}.contacts WHERE company_name = 'Hyatt';
+SQL Query: contacts:: SELECT contacts.first_name, contacts.last_name, contacts.email FROM reporting.contacts WHERE company_name = 'Hyatt';
 
 Natural Language Query: Fetch customer name where domain is hyatt.com
 SQL Query: companies:: SELECT * FROM reporting.companies WHERE domain = 'hyatt.com';
