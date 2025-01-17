@@ -1,17 +1,23 @@
+import os
+import requests
 from typing import Optional, Literal
-
+from dotenv import load_dotenv
 from pydantic import EmailStr
 from fastapi import FastAPI
-from fastapi.responses import PlainTextResponse
 from langchain_core.runnables import RunnableConfig
 from langgraph.checkpoint.memory import MemorySaver
 # from langgraph.errors import GraphRecursionError
 
 from routes import customer, outreach
 from config.config import get_customer_info
-from graphs.customer_support.graph.graph import create_graph
-from graphs.customer_support.utils.utils import get_session_id
+from graphs.customer_support.graph.graph import create_support_graph
+from graphs.customer_support.helpers.helpers import get_session_id
 from graphs.customer_insights.graph import create_insights_graph
+
+load_dotenv()
+rag_api_url = os.getenv("RAG_API_URL")
+rag_api_headers = {"X-API-KEY": f"{os.getenv('X_API_KEY')}"}
+
 
 app = FastAPI()
 
@@ -42,18 +48,34 @@ async def ask_support(
     The customer_id is 0000 by default for internal users.
     """
 
+    # Improve this session_id cache design
     if session_graph_cache["session_id"] != session_id:
         session_graph_cache["session_id"] = get_session_id()
         new_memory = MemorySaver()
 
-        # Generate graph based on the API type
-        if api_type == "support":
-            session_graph_cache["graph"] = create_graph(
+        # Generate new graph based on the API type
+        if api_type == "insights":
+            session_graph_cache["graph"] = create_insights_graph(
                 org_id=org_id, memory=new_memory
             )
-        elif api_type == "insights":
-            session_graph_cache["graph"] = create_insights_graph(memory=new_memory)
 
+    if api_type == "support":
+        # session_graph_cache["graph"] = create_support_graph(
+        #     org_id=org_id, memory=new_memory
+        # )
+        response = requests.get(
+            rag_api_url,
+            headers=rag_api_headers,
+            params={
+                "query": query,
+                "company_id": org_id,
+            },
+        )
+        return {
+            "message": response.json()["results"]["answer"],
+            "session_id": session_graph_cache["session_id"],
+            "customer_id": customer_id,
+        }
     graph = session_graph_cache["graph"]
 
     config = {
@@ -83,7 +105,7 @@ async def ask_support(
         return {"error": str(e), "session_id": session_id}
 
     return {
-        "message": PlainTextResponse(messages[-1]),
+        "message": messages[-1],
         "session_id": session_graph_cache["session_id"],
         "customer_id": get_customer_info().get("customer_id"),
     }
@@ -104,10 +126,8 @@ async def ask_public_chat(
 
     # Checks for a new session and creates a new graph
     if session_graph_cache["session_id"] != session_id:
-        session_graph_cache["session_id"] = get_session_id()
-        new_memory = MemorySaver()
-
-        session_graph_cache["graph"] = create_graph(org_id=org_id, memory=new_memory)
+        session_graph_cache["session_id"] = session_id
+        session_graph_cache["graph"] = create_support_graph(org_id=org_id)
 
     graph = session_graph_cache["graph"]
 
@@ -135,7 +155,7 @@ async def ask_public_chat(
         return {"error": str(e), "session_id": session_id}
 
     return {
-        "message": PlainTextResponse(messages[-1]),
+        "message": messages[-1],
         "session_id": session_graph_cache["session_id"],
         "customer_id": get_customer_info().get("customer_id"),
         "user_email": get_customer_info().get("customer_email"),
