@@ -1,5 +1,5 @@
 langchain==0.3.9
-langgraph==0.2.61
+langgraph==0.2.65
 langchain-community==0.3.8
 langchain-openai==0.2.10
 uuid==1.30
