@@ -6,7 +6,7 @@ from fastapi.responses import PlainTextResponse
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.errors import GraphRecursionError
 
-from routes import customer, outreach
+from routes import customer, outreach, zendesk
 from config.config import get_customer_id
 from customer_support.graph.graph import create_graph
 from customer_support.utils.utils import get_session_id
@@ -17,6 +17,7 @@ app = FastAPI()
 # Include router
 app.include_router(customer.router, prefix="/customer", tags=["customer"])
 app.include_router(outreach.router, prefix="/outreach", tags=["outreach"])
+app.include_router(zendesk.router, prefix="/zendesk", tags=["zendesk"])
 
 session_graph_cache = {"session_id": None, "graph": None, "customer_id": None}
 
