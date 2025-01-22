@@ -1,22 +1,15 @@
-import os
-import requests
 from typing import Optional, Literal
-from dotenv import load_dotenv
 from pydantic import EmailStr
 from fastapi import FastAPI
 from langchain_core.runnables import RunnableConfig
-from langgraph.checkpoint.memory import MemorySaver
-# from langgraph.errors import GraphRecursionError
+from langgraph.errors import GraphRecursionError
 
 from routes import customer, outreach
-from config.config import get_customer_info
+from config.config import CustomerInfo, get_customer_info, set_customer_info
 from graphs.customer_support.graph.graph import create_support_graph
 from graphs.customer_support.helpers.helpers import get_session_id
 from graphs.customer_insights.graph import create_insights_graph
-
-load_dotenv()
-rag_api_url = os.getenv("RAG_API_URL")
-rag_api_headers = {"X-API-KEY": f"{os.getenv('X_API_KEY')}"}
+from utils.helpers import call_rag_api
 
 
 app = FastAPI()
@@ -39,9 +32,9 @@ async def ask_support(
     query: str,
     user_email: EmailStr,  # Optional
     org_id: str,
+    customer_id: str,  # 0000
     api_type: Literal["support", "insights"],
     session_id: Optional[str] = None,
-    customer_id: Optional[str] = None,  # 0000
 ):
     """
     Private Chat API for customer support and customer insights.
@@ -51,41 +44,34 @@ async def ask_support(
     # Improve this session_id cache design
     if session_graph_cache["session_id"] != session_id:
         session_graph_cache["session_id"] = get_session_id()
-        new_memory = MemorySaver()
+
+        set_customer_info(
+            customer_info=CustomerInfo(
+                customer_id=customer_id, customer_email=user_email
+            )
+        )
 
         # Generate new graph based on the API type
         if api_type == "insights":
-            session_graph_cache["graph"] = create_insights_graph(
-                org_id=org_id, memory=new_memory
-            )
+            session_graph_cache["graph"] = create_insights_graph(org_id=org_id)
 
     if api_type == "support":
-        # session_graph_cache["graph"] = create_support_graph(
-        #     org_id=org_id, memory=new_memory
-        # )
-        response = requests.get(
-            rag_api_url,
-            headers=rag_api_headers,
-            params={
-                "query": query,
-                "company_id": org_id,
-            },
-        )
+        rag_api_answer = call_rag_api(query=query, org_id=org_id)
         return {
-            "message": response.json()["results"]["answer"],
+            "message": rag_api_answer,
             "session_id": session_graph_cache["session_id"],
             "customer_id": customer_id,
         }
     graph = session_graph_cache["graph"]
 
-    config = {
-        "configurable": {
+    config = RunnableConfig(
+        configurable={
             "thread_id": session_graph_cache["session_id"],
             "customer_email": user_email,
             "org_id": org_id,
             "internal_user": True,
         }
-    }
+    )
 
     messages = []
 
@@ -95,12 +81,6 @@ async def ask_support(
         ):
             event["messages"][-1].pretty_print()
             messages.append(event["messages"][-1].content)
-    # except GraphRecursionError:
-    #     return {
-    #         "message": "Graph Recursion Error, Please try again.",
-    #         "session_id": session_id,
-    #         "customer_id": customer_info.get("customer_id"),
-    #     }
     except Exception as e:
         return {"error": str(e), "session_id": session_id}
 
@@ -117,7 +97,7 @@ async def ask_public_chat(
     org_id: str,
     session_id: Optional[str] = None,
     customer_id: Optional[str] = None,
-    user_email: Optional[EmailStr] = None,
+    user_email: Optional[str] = None,
 ):
     """
     Chat API for external customers. This API only supports customer_support workflow.
@@ -128,6 +108,11 @@ async def ask_public_chat(
     if session_graph_cache["session_id"] != session_id:
         session_graph_cache["session_id"] = session_id
         session_graph_cache["graph"] = create_support_graph(org_id=org_id)
+
+        # Set global CustomerInfo to null for a new session
+        set_customer_info(
+            customer_info=CustomerInfo(customer_id=None, customer_email=None)
+        )
 
     graph = session_graph_cache["graph"]
 
@@ -151,6 +136,12 @@ async def ask_public_chat(
         ):
             event["messages"][-1].pretty_print()
             messages.append(event["messages"][-1].content)
+    except GraphRecursionError:
+        return {
+            "message": "Graph Recursion Error, Please try again.",
+            "session_id": session_id,
+            "customer_id": customer_info.get("customer_id"),
+        }
     except Exception as e:
         return {"error": str(e), "session_id": session_id}
 
