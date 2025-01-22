@@ -1,4 +1,6 @@
+from langgraph.graph.graph import CompiledGraph
 from langgraph.graph import StateGraph, START, END
+from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import tools_condition
 
 # from graphs.customer_insights.tools.tools import query_database
@@ -12,15 +14,8 @@ from graphs.customer_insights.helpers import (
 )
 
 
-def route_validation_agent(state: AgentStateGraph):
-    response = state["messages"][-1].content
-    if response == "True":
-        return "insights_agent"
-    else:
-        return "data_agent"
-
-
-def create_insights_graph(org_id: str, memory):
+def create_insights_graph(org_id: str) -> CompiledGraph:
+    """Create graph for insights workflow"""
     graph_builder = StateGraph(AgentStateGraph)
 
     # Load agents
@@ -46,6 +41,7 @@ def create_insights_graph(org_id: str, memory):
     graph_builder.add_edge("data_agent", END)
 
     # Add persistence memory
+    memory = MemorySaver()
     graph = graph_builder.compile(checkpointer=memory)
 
     return graph

@@ -2,15 +2,13 @@ from typing import TypedDict
 
 
 class CustomerInfo(TypedDict):
-    customer_id: str
-    customer_email: str
-    # company_name: str
+    customer_id: str | None
+    customer_email: str | None
 
 
 CUSTOMER_INFO: CustomerInfo = {
     "customer_id": None,
     "customer_email": None,
-    # "company_name": None,
 }
 
 

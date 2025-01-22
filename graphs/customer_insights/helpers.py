@@ -1,11 +1,8 @@
-from datetime import datetime
-
-from langchain.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableLambda
 from langgraph.prebuilt import ToolNode
 from langchain_core.messages import ToolMessage
 
-from utils.utils import fetch_organization_details
+from utils.helpers import fetch_organization_details
 
 
 def handle_tool_error(state) -> dict:
@@ -38,7 +35,7 @@ def visualize_graph(graph):
         f.write(graph.get_graph(xray=True).draw_mermaid_png())
 
 
-def create_tool_node_with_fallback(tools: list) -> dict:
+def create_tool_node_with_fallback(tools: list):
     """
     Creates a tool node with fallbacks.
 
@@ -64,13 +61,6 @@ def create_internal_workflow_prompts(org_id: str):
         dict: The updated prompts for the internal workflow.
     """
     organization_detail = fetch_organization_details(org_id)
-
-    # data_agent_prompt = ChatPromptTemplate.from_messages(
-    #     [
-    #         ("system", organization_detail["org"]["data_agent_prompt"]),
-    #         ("placeholder", "{messages}"),
-    #     ]
-    # ).partial(time=datetime.now())
 
     schema = organization_detail["org"]["schema_prompt"]
     abstract_queries_prompt = organization_detail["org"]["abstract_refinement_prompt"]

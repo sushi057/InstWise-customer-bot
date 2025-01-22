@@ -8,11 +8,7 @@ from langchain_core.prompts import PromptTemplate
 from langchain_openai import ChatOpenAI
 
 from graphs.customer_insights.tools.DTOs import QueryResponse
-from utils.utils import fetch_organization_details
-# from graphs.customer_insights.tools.prompts import (
-#     abstract_query_handler_template,
-#     nl2sql_prompt_template,
-# )
+from utils.helpers import fetch_organization_details
 
 
 load_dotenv()
@@ -134,7 +130,7 @@ Updated Query
         abstract_query_handler_template
     )
 
-    llm = ChatOpenAI(model="gpt-4o", temperature=0.0, max_tokens=512)
+    llm = ChatOpenAI(model="gpt-4o", temperature=0.0, max_completion_tokens=512)
     abstract_query_chain = abstract_query_handler | llm
     nl2sql_chain = nl2sql_prompt | llm
 
@@ -146,10 +142,9 @@ Updated Query
         param_type nl_query: str
         """
 
-        abstract_query_response = abstract_query_chain.invoke(nl_query)
-        sql_query = nl2sql_chain.invoke(abstract_query_response.content)
-        # sql_query = nl2sql_chain.invoke([HumanMessage(content=nl_query)])
-        sql_query = sql_query.content.split(";")
+        abstract_query_response = abstract_query_chain.invoke({"nl_query": nl_query})
+        sql_query = nl2sql_chain.invoke({"nl_query": abstract_query_response.content})
+        sql_query = sql_query.content.split(";")  # type: ignore
         print("Using query: ", sql_query)
 
         responses = []
