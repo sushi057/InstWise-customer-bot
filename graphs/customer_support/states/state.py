@@ -1,4 +1,4 @@
-from typing import TypedDict, Annotated, Optional
+from typing import Literal, TypedDict, Annotated, Optional
 from langgraph.graph.message import AnyMessage, add_messages
 from pydantic import BaseModel
 
@@ -24,3 +24,4 @@ class GraphState(TypedDict):
     customer_info: CustomerInfo
     pending_issues: list[str]
     internal_user: bool
+    dialog_state: Literal["followup_agent", "solution_agent"]

@@ -1,7 +1,7 @@
 from datetime import datetime
 from langchain.prompts import ChatPromptTemplate
 
-from utils.utils import fetch_organization_details
+from utils.helpers import fetch_organization_details
 
 # from . import prompts_local
 

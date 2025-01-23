@@ -1,5 +1,7 @@
+from typing import cast
 from fastapi import APIRouter, HTTPException
 
+from graphs.customer_insights.tools.DTOs import QueryResponse
 from models.customer import CheckEmailRequest, CheckEmailResponse
 from graphs.customer_insights.tools.tools import execute_sql_query
 
@@ -13,7 +15,7 @@ async def get_customer_by_email(request: CheckEmailRequest):
     """
     try:
         check_customer_query = f"SELECT * FROM reporting.companies WHERE domain = '{request.email.split('@')[1]}'"
-        result = execute_sql_query(check_customer_query)
+        result = cast(QueryResponse, execute_sql_query(check_customer_query))
 
         if result.result_set:
             return CheckEmailResponse(

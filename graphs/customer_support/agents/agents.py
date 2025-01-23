@@ -1,5 +1,5 @@
-from typing import Literal
-from langgraph.types import Command
+from typing import Literal, cast
+from langgraph.types import Command, interrupt
 from langchain_core.messages import AIMessage
 from langchain_core.runnables import RunnableConfig
 
@@ -10,14 +10,17 @@ from graphs.customer_support.states.state import CustomerInfo
 from config.openai_model import get_openai_model
 from graphs.customer_support.states.state import GraphState
 from graphs.customer_support.prompts.prompts import create_prompts
-from graphs.customer_support.tools.agent_routes import ToFollowUpAgent, ToSolutionAgent
+from graphs.customer_support.tools.agent_routes import (
+    CompleteOrEscalate,
+    ToFollowUpAgent,
+    ToSolutionAgent,
+)
 from graphs.customer_support.tools.tools import (
     create_zendesk_ticket_for_unresolved_issues,
     solution_rag_call,
     recommend_features,
     upsell_features,
     collect_feedback,
-    # call_query_database,
 )
 from graphs.customer_support.tools.zendesk import create_zendesk_ticket
 
@@ -41,6 +44,7 @@ def create_agents(org_id: str):
     solution_tools = [
         solution_rag_call,
         create_zendesk_ticket_for_unresolved_issues,
+        CompleteOrEscalate,
         create_zendesk_ticket
     ]
     followup_tools = [
@@ -48,6 +52,7 @@ def create_agents(org_id: str):
         upsell_features,
         call_query_database,
         collect_feedback,
+        CompleteOrEscalate,
     ]
 
     # Entry node for the graph
@@ -55,16 +60,17 @@ def create_agents(org_id: str):
         state: GraphState, config: RunnableConfig
     ) -> Command[Literal["primary_assistant", "__end__"]]:
         """
-        Fetch User Info Node
+        Get user info from database based on the user type.
+        If the user is an internal user, get the customer info with the email from the config else ask for the email address.
         """
 
-        configurable = config.get("configurable")
+        configurable = config.get("configurable", {})
         internal_user = configurable["internal_user"]
 
         # Get customer_email based on the chat_type
         ## If the user is not a internal user, ask for email address
         if not internal_user:
-            last_human_message = state["messages"][-1].content
+            last_human_message = cast(str, state["messages"][-1].content)
 
             # Ask for email during initial conversation, if email is provided make sure its a valid email
             ## Message asking user email initially
@@ -75,6 +81,7 @@ def create_agents(org_id: str):
                             content="Hi, Could you please provide your email address so that I can assist you better?"
                         )
                     },
+                    goto="__end__",
                 )
             else:
                 customer_email = get_valid_email(last_human_message)
@@ -85,6 +92,7 @@ def create_agents(org_id: str):
                                 "Please provide a valid email address so that I can assist you better."
                             )
                         },
+                        goto="__end__",
                     )
         else:
             customer_email = configurable["customer_email"]
@@ -131,12 +139,19 @@ def create_agents(org_id: str):
                     },
                 )
         except Exception as e:
-            return {
-                "message": "An error occurred while fetching user info",
-                "error": str(e),
-            }
+            raise e
+            # return {
+            #     "message": "An error occurred while fetching user info",
+            #     "error": str(e),
+            # }
 
-    def primary_assistant(state: GraphState):
+    def primary_assistant(
+        state: GraphState,
+    ) -> Command[
+        Literal[
+            "solution_agent", "followup_agent", "primary_assistant_tools", "__end__"
+        ]
+    ]:
         """
         Primary Assistant
         """
@@ -160,6 +175,7 @@ def create_agents(org_id: str):
                     goto="solution_agent",
                     update={
                         "messages": [response, tool_message],
+                        "dialog_state": "solution_agent",
                     },
                 )
 
@@ -175,28 +191,81 @@ def create_agents(org_id: str):
                     goto="followup_agent",
                     update={
                         "messages": [response, tool_message],
+                        "dialog_state": "followup_agent",
                     },
                 )
+            else:
+                return Command(
+                    goto="primary_assistant_tools",
+                    update={"messages": response},
+                )
 
-        return {**state, "messages": response}
+        return Command(update={"messages": response})
 
-    def solution_agent(state: GraphState):
+    def solution_agent(
+        state: GraphState,
+    ) -> Command[Literal["solution_agent_tools", "__end__"]]:
         """
         Solution Agent
         """
         solution_runnable = prompts["solution_prompt"] | llm.bind_tools(solution_tools)
 
         response = solution_runnable.invoke(state)
-        return {**state, "messages": response}
 
-    def followup_agent(state: GraphState):
+        if response.tool_calls:
+            if response.tool_calls[0]["name"] == CompleteOrEscalate.name:
+                tool_message = {
+                    "role": "tool",
+                    "content": "Transferring the user to the Primary Assistant.",
+                    "tool_call_id": response.tool_calls[-1]["id"],
+                }
+                return Command(
+                    goto="primary_assistant",
+                    update={"messages": [response, tool_message], "dialog_state": None},
+                )
+            else:
+                return Command(
+                    goto="solution_agent_tools", update={"messages": response}
+                )
+        return Command(update={"messages": response})
+
+        # return {**state, "messages": response}
+
+    def followup_agent(
+        state: GraphState,
+    ) -> Command[Literal["followup_agent_tools", "__end__"]]:
         """
         Followup Agent
         """
         followup_runnable = prompts["followup_prompt"] | llm.bind_tools(followup_tools)
 
         response = followup_runnable.invoke(state)
-        return {**state, "messages": response}
+        if response.tool_calls:
+            if response.tool_calls[0]["name"] == CompleteOrEscalate.name:
+                tool_message = {
+                    "role": "tool",
+                    "content": "Transferring the user to the Primary Assistant.",
+                    "tool_call_id": response.tool_calls[-1]["id"],
+                }
+                return Command(
+                    goto="primary_assistant",
+                    update={"messages": [response, tool_message], "dialog_state": None},
+                )
+            else:
+                return Command(
+                    goto="followup_agent_tools", update={"messages": response}
+                )
+        return Command(update={"messages": response})
+        # return {**state, "messages": response}
+
+    def human_node(state: GraphState) -> Command[Literal["followup_agent"]]:
+        """
+        Human node that takes user input and routes to the followup agent.
+        """
+        user_input = interrupt(value="")
+        return Command(
+            goto="followup_agent", update={"role": "human", "content": user_input}
+        )
 
     return {
         "fetch_user_info": fetch_user_info,
@@ -206,4 +275,5 @@ def create_agents(org_id: str):
         "solution_agent_tools": solution_tools,
         "followup_agent": followup_agent,
         "followup_agent_tools": followup_tools,
+        "human_node": human_node,
     }

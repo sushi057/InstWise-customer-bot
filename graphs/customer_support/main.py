@@ -8,9 +8,8 @@ thread_id = str(uuid.uuid4())
 config = RunnableConfig(
     configurable={
         "thread_id": str(uuid.uuid4()),
-        # "user_email": "sarah@test.com",
         "org_id": "66158fe71bfe10b58cb23eea",
-        "internal_user": True,
+        "internal_user": False,
     }
 )
 
