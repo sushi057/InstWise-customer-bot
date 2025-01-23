@@ -22,6 +22,8 @@ from graphs.customer_support.tools.tools import (
     upsell_features,
     collect_feedback,
 )
+from graphs.customer_support.tools.zendesk import create_zendesk_ticket
+
 from graphs.customer_support.helpers.helpers import get_valid_email
 
 
@@ -43,6 +45,7 @@ def create_agents(org_id: str):
         solution_rag_call,
         create_zendesk_ticket_for_unresolved_issues,
         CompleteOrEscalate,
+        create_zendesk_ticket
     ]
     followup_tools = [
         recommend_features,
