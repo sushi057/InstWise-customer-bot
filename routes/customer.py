@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 
-from schemas.customer import CheckEmailRequest, CheckEmailResponse
-from customer_insights.tools.tools import query_database
+from models.customer import CheckEmailRequest, CheckEmailResponse
+from graphs.customer_insights.tools.tools import execute_sql_query
 
 router = APIRouter(tags=["customer"])
 
@@ -12,17 +12,15 @@ async def get_customer_by_email(request: CheckEmailRequest):
     Check if email exists in the database and return details.
     """
     try:
-        query = f"Check if {request.email} exists in our contacts."
-        result = query_database(query)
+        check_customer_query = f"SELECT * FROM reporting.companies WHERE domain = '{request.email.split('@')[1]}'"
+        result = execute_sql_query(check_customer_query)
 
-        if result[0].result_set:
+        if result.result_set:
             return CheckEmailResponse(
-                customer_name=result[0].result_set[0]["first_name"]
-                + " "
-                + result[0].result_set[0]["last_name"],
-                domain=result[0].result_set[0]["company_name"],
+                customer_name=result.result_set[0]["name"],
+                domain=result.result_set[0]["domain"],
             )
         else:
-            return CheckEmailResponse(customer_name="No customer found", domain="")
+            raise HTTPException(status_code=404, detail="Customer not found.")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=404, detail=str(e))
