@@ -16,13 +16,14 @@ from graphs.customer_support.tools.agent_routes import (
     ToSolutionAgent,
 )
 from graphs.customer_support.tools.tools import (
-    create_zendesk_ticket_for_unresolved_issues,
     solution_rag_call,
     recommend_features,
     upsell_features,
     collect_feedback,
 )
-from graphs.customer_support.tools.zendesk import create_zendesk_ticket
+from graphs.customer_support.tools.zendesk import (
+    create_zendesk_ticket_for_unresolved_issues,
+)
 
 from graphs.customer_support.helpers.helpers import get_valid_email
 
@@ -45,7 +46,6 @@ def create_agents(org_id: str):
         solution_rag_call,
         create_zendesk_ticket_for_unresolved_issues,
         CompleteOrEscalate,
-        create_zendesk_ticket
     ]
     followup_tools = [
         recommend_features,
