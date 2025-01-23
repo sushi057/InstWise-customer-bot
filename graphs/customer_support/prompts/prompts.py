@@ -1,14 +1,21 @@
+import os
+from dotenv import load_dotenv
 from datetime import datetime
 from langchain.prompts import ChatPromptTemplate
 
+from graphs.customer_support.prompts.prompts_local import organization_details
 from utils.helpers import fetch_organization_details
 
-# from . import prompts_local
+load_dotenv()
+DEV_ENV = os.getenv("DEV_ENV", "prod")
 
 
 def create_prompts(org_id: str):
-    organization_detail = fetch_organization_details(org_id)
-    # organization_detail = prompts_local.organization_details
+    if DEV_ENV == "prod":
+        organization_detail = fetch_organization_details(org_id)
+    else:
+        organization_detail = organization_details
+
     primary_assistant_prompt = ChatPromptTemplate.from_messages(
         [
             (
