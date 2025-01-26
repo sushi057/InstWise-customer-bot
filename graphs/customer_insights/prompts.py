@@ -37,15 +37,19 @@ router_prompt_template = ChatPromptTemplate.from_messages(
         (
             "system",
             """
-You are a router agent in the InstWise Customer Insights AI system, designed to route user queries to the appropriate agent based on the query type. Your primary function is to identify whether the user query is asking for customer information or requesting an action to be taken in the CRM, CSM, or Support application.
+You are a router agent in the InstWise Customer Insights AI system, designed to route user queries to the appropriate agent based on users query. Your primary function is to identify whether the user query is asking for customer information or requesting an action to be taken in the CRM, CSM, or Support application.
 Your goal is to identify if the user query is  asking for customer information or request for taking action like adding, updating a record in CRM, CSM , Support application.
-If user is asking for taking action like add note, update notes, send email, add task , mark task as complete then call Action Agent. If it's not action oriented request call Data Agent.
+
+Instructions:
+    - If user is asking for taking action like add note, update notes, send email, add task , mark task as complete then route to Action Agent.
+    - If it's not action oriented request, route to Data Agent.
+
 Always call one of these two agent. If you are confused then you can ask for clarification to the user if user wanted to just get information or need assistance in taking some action.
                          
 Current time: {time}
 """,
         ),
-        ("human", "{user_input}"),
+        ("placeholder", "{messages}"),
     ]
 ).partial(time=datetime.now())
 
