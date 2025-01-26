@@ -13,7 +13,6 @@ from graphs.customer_insights.tools.tools import (
 
 from graphs.customer_insights.prompts import (
     data_agent_prompt_template,
-    router_prompt_template,
     action_agent_template,
 )
 from graphs.customer_insights.helpers import create_internal_workflow_prompts

@@ -1,7 +1,7 @@
-from langchain_core.messages import HumanMessage
+from typing import cast
 from langchain_openai import ChatOpenAI
 from langgraph.graph.graph import CompiledGraph
-from langgraph.graph import StateGraph, START, END
+from langgraph.graph import StateGraph
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import tools_condition
 
@@ -26,15 +26,15 @@ llm_mini = ChatOpenAI(model="gpt-4o-mini")
 # Define route function
 def route_function(state: AgentStateGraph):
     """Route the user query to the appropriate agent."""
+
     # Only use the user's message for routing, when last agent isnt action or data agent
     router_runnable = router_prompt_template | llm_mini.with_structured_output(
         RouterAgentOutput
     )
-    # if isinstance(state["messages"][-1], HumanMessage):
-    #     user_input = state["messages"][-1]
-    response = router_runnable.invoke({"user_input": state["messages"][-1].content})
-    # return {**state, "router_output": response}
-
+    response = cast(
+        RouterAgentOutput, router_runnable.invoke({"messages": state["messages"]})
+    )
+    print(f"""Routing to {response.route}""")
     if response.route == "action_agent":  # type: ignore
         return "action_agent"
     else:
@@ -60,8 +60,6 @@ def create_insights_graph(org_id: str) -> CompiledGraph:
     )
 
     # Define edges
-    # graph_builder.add_edge(START, "router")
-    # graph_builder.add_edge(START, "data_agent")
     graph_builder.set_conditional_entry_point(
         # "router",
         route_function,
