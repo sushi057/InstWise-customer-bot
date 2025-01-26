@@ -1,7 +1,7 @@
 import os
 import json
 import requests
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from fastapi import HTTPException, status
 from dotenv import load_dotenv
 
@@ -11,10 +11,20 @@ load_dotenv()
 
 
 class Ticket(BaseModel):
-    customer_id: str
-    email: EmailStr
-    subject: str
-    description: str
+    customer_id: str = Field(..., description="Customers unique ID")
+    email: EmailStr = Field(..., description="Requester's email")
+    subject: str = Field(..., description="Ticket subject")
+    description: str = Field(..., min_length=1, description="Ticket description")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "customer_id": "123",
+                "email": "customer@example.com",
+                "subject": "Need help with API",
+                "description": "Detailed description of the issue",
+            }
+        }
 
 
 zendesk_domain = os.getenv("ZENDESK_SUBDOMAIN")
@@ -23,14 +33,11 @@ password = os.getenv("ZENDESK_TOKEN")
 headers = {"content-type": "application/json"}
 
 
-@tool
-async def create_zendesk_ticket_for_unresolved_issues(ticket_input: Ticket):
-    """
-    Create a ticket in Zendesk.
-
-    Args:
-    - ticket_input: Ticket data
-    """
+@tool()
+def create_zendesk_ticket_for_unresolved_issues(
+    ticket_input: Ticket,
+):
+    """Create a ticket in Zendesk for unresolved customer issues."""
     if not zendesk_domain or not user or not password or password is None:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -112,3 +119,16 @@ async def get_all_tickets():
             status_code=response.status_code,
             detail=f"Failed to fetch tickets: {response.text}",
         )
+
+
+# if __name__ == "__main__":
+#     print(
+#         create_zendesk_ticket_for_unresolved_issues(
+#             Ticket(
+#                 customer_id="32489327711124",
+#                 email="sarah@hilton.com",
+#                 subject="Need help with API",
+#                 description="Detailed description of the issue",
+#             )
+#         )
+#     )
