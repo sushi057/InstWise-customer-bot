@@ -1,9 +1,10 @@
-from typing import Annotated, Literal
+from typing import Annotated, Literal, cast
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 
 # from langchain_core.messages import AIMessage
 from langchain_openai import ChatOpenAI
+from langchain_core.messages.ai import AIMessage
 
 from graphs.customer_insights.state import AgentStateGraph
 from graphs.customer_insights.tools.tools import (
@@ -14,11 +15,13 @@ from graphs.customer_insights.tools.tools import (
 from graphs.customer_insights.prompts import (
     data_agent_prompt_template,
     action_agent_template,
+    product_knowledge_agent_template,
 )
 from graphs.customer_insights.helpers import create_internal_workflow_prompts
 from graphs.customer_support.tools.zendesk import (
     create_zendesk_ticket_for_unresolved_issues,
 )
+from utils.helpers import call_rag_api
 
 load_dotenv()
 
@@ -28,7 +31,7 @@ llm_mini = ChatOpenAI(model="gpt-4o-mini")
 
 class RouterAgentOutput(BaseModel):
     route: Annotated[
-        Literal["data_agent", "action_agent"],
+        Literal["data_agent", "action_agent", "product_knowledge_agent"],
         Field(description="The agent to route the user query to."),
     ]
 
@@ -67,9 +70,23 @@ def create_internal_workflow_agents(org_id: str):
         response = data_agent_runnable.invoke({"messages": state["messages"]})
         return {**state, "messages": response}
 
+    def product_knowledge_agent(state: AgentStateGraph):
+        """This agent will provide product knowledge to the user."""
+
+        # product_knowledge_agent_runnable = product_knowledge_agent_template | llm_mini
+        # response = product_knowledge_agent_runnable.invoke(
+        #     {"messages": state["messages"]}
+        # )
+        # return {**state, "messages": response}
+        last_message = cast(str, state["messages"][-1].content)
+        response = call_rag_api(query=last_message, org_id=org_id)
+
+        return {**state, "messages": AIMessage(content=response)}
+
     return {
         "query_database": query_database,
         "action_agent": action_agent,
         "action_agent_tools": action_agent_tools,
         "data_agent": data_agent,
+        "product_knowledge_agent": product_knowledge_agent,
     }

@@ -1,7 +1,57 @@
 from datetime import datetime
 from langchain_core.prompts import ChatPromptTemplate
 
+# Router prompt template
+router_prompt_template = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            """
+You are a routing assistant that directs user queries to the appropriate agent.
+Route based on these strict criteria:
 
+1. PRODUCT KNOWLEDGE AGENT:
+- Questions about "how to" use features
+- Questions about product functionality
+- Documentation requests
+- Feature explanations
+- Product issues
+Examples:
+- "How do I export data?"
+- "What features are available?"
+- "Show me documentation for API"
+- "Cannot add customer"
+
+2. ACTION AGENT:
+- Requests to perform actions
+- Create/update tickets
+- Send emails
+- Schedule tasks
+Examples:
+- "Create a ticket for this issue"
+- "Send email to customer"
+- "Update this record"
+
+3. DATA AGENT:
+- Data analysis requests
+- Report generation
+- Metrics/statistics queries
+- Historical data
+Examples:
+- "Show me sales data"
+- "Get customer metrics"
+- "Analysis of support tickets"
+
+OUTPUT FORMAT: Return ONLY ONE of: "product_knowledge_agent", "action_agent", or "data_agent"
+
+Current time: {time}
+""",
+        ),
+        ("placeholder", "{messages}"),
+    ]
+).partial(time=datetime.now())
+
+# Data agent prompt template
 data_agent_prompt_template = ChatPromptTemplate.from_messages(
     [
         (
@@ -32,29 +82,7 @@ Current time: {time}
     ]
 ).partial(time=datetime.now())
 
-# Router prompt template
-router_prompt_template = ChatPromptTemplate.from_messages(
-    [
-        (
-            "system",
-            """
-You are a router agent in the InstWise Customer Insights AI system, designed to route user queries to the appropriate agent based on users query. Your primary function is to identify whether the user query is asking for customer information or requesting an action to be taken in the CRM, CSM, or Support application.
-Your goal is to identify if the user intention. 
-
-Instructions:
-    - If user is asking to add or update information in CRM, CSM or Support Application then route to Action Agent else route to Data Agent.
-    - However, requests like generation of the content like Emails, call scripts, plans, strategies, playbook should call Data Agent.
-    - Also requests to review, check, looking at it should still be routed to Data Agent.
-
-Always call one of these two agent. If you are confused then you can ask for clarification to the user if user wanted to just get information or need assistance in taking some action.
-                         
-Current time: {time}
-""",
-        ),
-        ("placeholder", "{messages}"),
-    ]
-).partial(time=datetime.now())
-
+# Action agent prompt template
 action_agent_template = ChatPromptTemplate.from_messages(
     [
         (
@@ -71,3 +99,15 @@ Current time: {time}
         ("placeholder", "{messages}"),
     ]
 ).partial(time=datetime.now())
+
+product_knowledge_agent_template = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            """
+You are the Knowledge Agent for our Customer Insights Workflow. Your main job is to answer user's query.
+            """,
+        ),
+        ("placeholder", "{messages}"),
+    ]
+)

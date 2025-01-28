@@ -4,6 +4,7 @@ from langgraph.graph.graph import CompiledGraph
 from langgraph.graph import StateGraph
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import tools_condition
+from langsmith import traceable
 
 # from graphs.customer_insights.tools.tools import query_database
 from graphs.customer_insights.state import AgentStateGraph
@@ -24,6 +25,7 @@ llm_mini = ChatOpenAI(model="gpt-4o-mini")
 
 
 # Define route function
+@traceable(run_type="tool", name="Router Function")
 def route_function(state: AgentStateGraph):
     """Route the user query to the appropriate agent."""
 
@@ -34,9 +36,13 @@ def route_function(state: AgentStateGraph):
     response = cast(
         RouterAgentOutput, router_runnable.invoke({"messages": state["messages"]})
     )
-    print(f"""Routing to {response.route}""")
+    print(
+        f"""===========================================\n\nRouting to {response.route}"""
+    )
     if response.route == "action_agent":  # type: ignore
         return "action_agent"
+    elif response.route == "product_knowledge_agent":
+        return "product_knowledge_agent"
     else:
         return "data_agent"
 
@@ -58,6 +64,7 @@ def create_insights_graph(org_id: str) -> CompiledGraph:
         "action_agent_tools",
         create_tool_node_with_fallback([create_zendesk_ticket_for_unresolved_issues]),
     )
+    graph_builder.add_node("product_knowledge_agent", agents["product_knowledge_agent"])
 
     # Define edges
     graph_builder.set_conditional_entry_point(
@@ -66,6 +73,7 @@ def create_insights_graph(org_id: str) -> CompiledGraph:
         {
             "data_agent": "data_agent",
             "action_agent": "action_agent",
+            "product_knowledge_agent": "product_knowledge_agent",
         },
     )
     graph_builder.add_conditional_edges(
@@ -82,6 +90,7 @@ def create_insights_graph(org_id: str) -> CompiledGraph:
         },
     )
     graph_builder.add_edge("action_agent_tools", "action_agent")
+    graph_builder.add_edge("product_knowledge_agent", "__end__")
 
     # Add persistence memory
     memory = MemorySaver()
