@@ -1,8 +1,20 @@
+from langchain_core.messages import ToolMessage
 from langchain_core.runnables import RunnableLambda
 from langgraph.prebuilt import ToolNode
-from langchain_core.messages import ToolMessage
+from pydantic import BaseModel
 
+from graphs.customer_insights.tools.tools import execute_sql_query
 from utils.helpers import fetch_organization_details
+
+
+class OrganizationDetails(BaseModel):
+    """
+    Organization details.
+    """
+
+    company_id: str
+    zendesk_org_id: str
+    hubspot_company_id: str
 
 
 def handle_tool_error(state) -> dict:
@@ -72,3 +84,21 @@ def create_internal_workflow_prompts(org_id: str):
         "abstract_queries_prompt": abstract_queries_prompt,
         "nltosql_prompt": nltosql_prompt,
     }
+
+
+def fetch_organization_details_by_name(customer_name: str):
+    """
+    Fetch organization details (ids) by customer name.
+    """
+    try:
+        sql_query = f"SELECT company_id, zendesk_org_id, hubspot_company_id FROM reporting.companies WHERE name = '{customer_name}'"
+        response = execute_sql_query(sql_query)
+
+        if response.result_set:
+            return OrganizationDetails(
+                company_id=response.result_set[0]["company_id"],
+                zendesk_org_id=response.result_set[0]["zendesk_org_id"],
+                hubspot_company_id=response.result_set[0]["hubspot_company_id"],
+            )
+    except Exception as e:
+        raise Exception(f"Error fetchign organization details by name: {e}")

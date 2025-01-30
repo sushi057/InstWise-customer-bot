@@ -7,7 +7,7 @@ from langchain_core.tools import tool
 from langchain_core.prompts import PromptTemplate
 from langchain_openai import ChatOpenAI
 
-from graphs.customer_insights.tools.DTOs import QueryResponse
+from graphs.customer_insights.tools.models import QueryResponse
 from utils.helpers import fetch_organization_details
 
 
@@ -54,13 +54,13 @@ def execute_sql_query(sql_query):
             formatted_results = []
             for records in result_response["Records"]:
                 row_dict = {}
-                for column_metadata, fileds in zip(
+                for column_metadata, fields in zip(
                     result_response["ColumnMetadata"], records
                 ):
                     row_dict[column_metadata["label"]] = (
                         None
-                        if list(fileds.keys())[0] == "isNull"
-                        else list(fileds.values())[0]
+                        if list(fields.keys())[0] == "isNull"
+                        else list(fields.values())[0]
                     )
                 formatted_results.append(row_dict)
 

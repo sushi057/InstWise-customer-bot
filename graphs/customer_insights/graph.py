@@ -1,25 +1,19 @@
 from typing import cast
+
 from langchain_openai import ChatOpenAI
-from langgraph.graph.graph import CompiledGraph
-from langgraph.graph import StateGraph
 from langgraph.checkpoint.memory import MemorySaver
+from langgraph.graph import StateGraph
+from langgraph.graph.graph import CompiledGraph
 from langgraph.prebuilt import tools_condition
 from langsmith import traceable
 
+from graphs.customer_insights.agents import RouterAgentOutput  # data_agent
+from graphs.customer_insights.agents import (action_agent_tools,
+                                             create_internal_workflow_agents)
+from graphs.customer_insights.helpers import create_tool_node_with_fallback
+from graphs.customer_insights.prompts import router_prompt_template
 # from graphs.customer_insights.tools.tools import query_database
 from graphs.customer_insights.state import AgentStateGraph
-from graphs.customer_insights.agents import (
-    RouterAgentOutput,
-    create_internal_workflow_agents,
-    # data_agent
-)
-from graphs.customer_insights.helpers import (
-    create_tool_node_with_fallback,
-)
-from graphs.customer_insights.prompts import router_prompt_template
-from graphs.customer_support.tools.zendesk import (
-    create_zendesk_ticket_for_unresolved_issues,
-)
 
 llm_mini = ChatOpenAI(model="gpt-4o-mini")
 
@@ -37,7 +31,7 @@ def route_function(state: AgentStateGraph):
         RouterAgentOutput, router_runnable.invoke({"messages": state["messages"]})
     )
     print(
-        f"""===========================================\n\nRouting to {response.route}"""
+        f"""===========================================\n\nRouting to {response.route}\n"""
     )
     if response.route == "action_agent":  # type: ignore
         return "action_agent"
@@ -62,7 +56,7 @@ def create_insights_graph(org_id: str) -> CompiledGraph:
     graph_builder.add_node("action_agent", agents["action_agent"])
     graph_builder.add_node(
         "action_agent_tools",
-        create_tool_node_with_fallback([create_zendesk_ticket_for_unresolved_issues]),
+        create_tool_node_with_fallback(action_agent_tools),
     )
     graph_builder.add_node("product_knowledge_agent", agents["product_knowledge_agent"])
 

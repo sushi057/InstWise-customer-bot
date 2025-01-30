@@ -1,23 +1,21 @@
 from typing import Annotated, Literal, cast
+
 from dotenv import load_dotenv
+from langchain_core.messages.ai import AIMessage
+from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field
 
-# from langchain_core.messages import AIMessage
-from langchain_openai import ChatOpenAI
-from langchain_core.messages.ai import AIMessage
-
-from graphs.customer_insights.state import AgentStateGraph
-from graphs.customer_insights.tools.tools import (
-    create_nl2sql_tool,
-    # query_database
-)
-
-from graphs.customer_insights.prompts import (
-    data_agent_prompt_template,
-    action_agent_template,
-    product_knowledge_agent_template,
-)
 from graphs.customer_insights.helpers import create_internal_workflow_prompts
+from graphs.customer_insights.prompts import (
+    action_agent_template,
+    data_agent_prompt_template,
+)
+from graphs.customer_insights.state import AgentStateGraph
+from graphs.customer_insights.tools.hubspot import (
+    create_note_hubspot,
+    create_task_hubspot,
+)
+from graphs.customer_insights.tools.tools import create_nl2sql_tool
 from graphs.customer_support.tools.zendesk import (
     create_zendesk_ticket_for_unresolved_issues,
 )
@@ -36,7 +34,11 @@ class RouterAgentOutput(BaseModel):
     ]
 
 
-action_agent_tools = [create_zendesk_ticket_for_unresolved_issues]
+action_agent_tools = [
+    create_zendesk_ticket_for_unresolved_issues,
+    create_note_hubspot,
+    create_task_hubspot,
+]
 
 
 def create_internal_workflow_agents(org_id: str):
@@ -53,7 +55,6 @@ def create_internal_workflow_agents(org_id: str):
     def action_agent(state: AgentStateGraph):
         """This agent will execute actions in the CRM, CSM, or Support application."""
 
-        # Replace with internal_workflow_prompts["action_agent_prompt"]
         action_agent_runnable = action_agent_template | llm.bind_tools(
             action_agent_tools
         )
@@ -63,7 +64,6 @@ def create_internal_workflow_agents(org_id: str):
     def data_agent(state: AgentStateGraph):
         """This agent will draw insights from the data based on the user query."""
 
-        # Replace with internal_workflow_prompts["data_agent_prompt"]
         data_agent_runnable = data_agent_prompt_template | llm.bind_tools(
             [query_database], parallel_tool_calls=False
         )
@@ -71,13 +71,6 @@ def create_internal_workflow_agents(org_id: str):
         return {**state, "messages": response}
 
     def product_knowledge_agent(state: AgentStateGraph):
-        """This agent will provide product knowledge to the user."""
-
-        # product_knowledge_agent_runnable = product_knowledge_agent_template | llm_mini
-        # response = product_knowledge_agent_runnable.invoke(
-        #     {"messages": state["messages"]}
-        # )
-        # return {**state, "messages": response}
         last_message = cast(str, state["messages"][-1].content)
         response = call_rag_api(query=last_message, org_id=org_id)
 

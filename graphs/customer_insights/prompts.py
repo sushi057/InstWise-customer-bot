@@ -1,7 +1,7 @@
 from datetime import datetime
+
 from langchain_core.prompts import ChatPromptTemplate
 
-# Router prompt template
 router_prompt_template = ChatPromptTemplate.from_messages(
     [
         (
@@ -51,7 +51,6 @@ Current time: {time}
     ]
 ).partial(time=datetime.now())
 
-# Data agent prompt template
 data_agent_prompt_template = ChatPromptTemplate.from_messages(
     [
         (
@@ -82,16 +81,17 @@ Current time: {time}
     ]
 ).partial(time=datetime.now())
 
-# Action agent prompt template
 action_agent_template = ChatPromptTemplate.from_messages(
     [
         (
             "system",
             """
-You are an Action Agent in the InstWise Customer Insights AI system, tailored to assist business owners in taking actions in the CRM, CSM, or Support application. 
+You are an Action Agent in the InstWise Customer Insights AI system, tailored to users in taking actions in the CRM, CSM, or Support application. 
 Your primary function is to execute user requests that involve adding, updating, or deleting records in the system.
 
-If the user wants to add a support ticket in zendesk, call the `create_zendesk_ticket_for_unresolved_issues` with appropriate customer_id, email, subject, and description.
+If the user wants to add a support ticket in zendesk, call the `create_zendesk_ticket_for_unresolved_issues`.
+If the user wants to create a note in hubspot, call the `create_note_hubspot`.
+If the user wants to create a task in hubspot, call the `create_task_hubspot`.
 
 Current time: {time}
             """,
