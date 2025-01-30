@@ -1,7 +1,8 @@
 import os
+
 import requests
-from fastapi import HTTPException
 from dotenv import load_dotenv
+from fastapi import HTTPException
 
 # Load Backend APi
 load_dotenv()

@@ -1,17 +1,19 @@
-import os
 import json
-import requests
-from pydantic import BaseModel, EmailStr, Field
-from fastapi import HTTPException, status
-from dotenv import load_dotenv
+import os
 
+import requests
+from dotenv import load_dotenv
+from fastapi import HTTPException, status
 from langchain_core.tools import tool
+from pydantic import BaseModel, EmailStr, Field
+
+from graphs.customer_insights.helpers import fetch_organization_details_by_name
 
 load_dotenv()
 
 
-class Ticket(BaseModel):
-    customer_id: str = Field(..., description="Customers unique ID")
+class TicketModel(BaseModel):
+    company_name: str = Field(..., description="Company name")
     email: EmailStr = Field(..., description="Requester's email")
     subject: str = Field(..., description="Ticket subject")
     description: str = Field(..., min_length=1, description="Ticket description")
@@ -20,6 +22,7 @@ class Ticket(BaseModel):
         json_schema_extra = {
             "example": {
                 "customer_id": "123",
+                "company_name": "Example Company",
                 "email": "customer@example.com",
                 "subject": "Need help with API",
                 "description": "Detailed description of the issue",
@@ -31,11 +34,12 @@ zendesk_domain = os.getenv("ZENDESK_SUBDOMAIN")
 user = f"{os.getenv('ZENDESK_USER', '')}/token"
 password = os.getenv("ZENDESK_TOKEN")
 headers = {"content-type": "application/json"}
+zendesk_url = f"https://{zendesk_domain}.zendesk.com/api/v2/tickets"
 
 
 @tool()
 def create_zendesk_ticket_for_unresolved_issues(
-    ticket_input: Ticket,
+    ticket_input: TicketModel,
 ):
     """Create a ticket in Zendesk for unresolved customer issues."""
     if not zendesk_domain or not user or not password or password is None:
@@ -43,10 +47,15 @@ def create_zendesk_ticket_for_unresolved_issues(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Zendesk credentials are missing. Please check the environment variables.",
         )
+
     try:
-        customer_id = ticket_input.customer_id  # Example customer ID
-        requester_email = ticket_input.email
-        requester_name = ticket_input.email
+        # Fetch organization details for the company name
+        organization_details = fetch_organization_details_by_name(
+            ticket_input.company_name
+        )
+        if not organization_details:
+            raise Exception("Organization not found")
+
         # Prepare the ticket data
         ticket_data = {
             "ticket": {
@@ -56,22 +65,15 @@ def create_zendesk_ticket_for_unresolved_issues(
                 or "Default Description",  # Provide a default if description is missing
                 "priority": "normal",  # Ensure a valid priority value
                 "requester": {
-                    "id": (
-                        customer_id if customer_id else None
-                    ),  # Dynamically set customer ID or use None
-                    "email": (
-                        requester_email if requester_email else "unknown@example.com"
-                    ),  # Ensure a fallback email
-                    "name": (
-                        requester_name if requester_name else "Unknown Requester"
-                    ),  # Ensure a fallback name
+                    "id": organization_details.zendesk_org_id,
+                    "email": ticket_input.email,
+                    "name": ticket_input.email,
                 },
             }
         }
+
         # Convert the ticket data into JSON
         payload = json.dumps(ticket_data)
-        print("zendesk_domain", zendesk_domain)
-        zendesk_url = f"https://{zendesk_domain}.zendesk.com/api/v2/tickets"
         response = requests.post(
             zendesk_url, data=payload, auth=(user, password), headers=headers
         )
