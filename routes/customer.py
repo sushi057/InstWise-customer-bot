@@ -1,7 +1,7 @@
 from typing import cast
 from fastapi import APIRouter, HTTPException
 
-from graphs.customer_insights.tools.DTOs import QueryResponse
+from graphs.customer_insights.tools.models import QueryResponse
 from models.customer import CheckEmailRequest, CheckEmailResponse
 from graphs.customer_insights.tools.tools import execute_sql_query
 

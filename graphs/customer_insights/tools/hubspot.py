@@ -48,7 +48,7 @@ def create_task_hubspot(request: CreateTaskRequest) -> CreateTaskResponse:
                     "types": [
                         {
                             "associationCategory": "HUBSPOT_DEFINED",
-                            "associationTypeId": 190,
+                            "associationTypeId": 192,
                         },
                     ],
                 },
