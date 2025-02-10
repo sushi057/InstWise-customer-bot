@@ -5,3 +5,4 @@
 .vscode/
 notes.md
 graphs/customer_support/prompts/prompts.txt
+.ruff_cache/

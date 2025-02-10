@@ -1,15 +1,17 @@
 import os
+from typing import Annotated, Optional, cast
+
 import boto3
 from dotenv import load_dotenv
-
-from langchain_core.tools import tool
-
+from langchain_core.messages.tool import ToolMessage
 from langchain_core.prompts import PromptTemplate
+from langchain_core.tools import tool
+from langchain_core.tools.base import InjectedToolCallId
 from langchain_openai import ChatOpenAI
+from langgraph.types import Command
 
-from graphs.customer_insights.tools.models import QueryResponse
+from graphs.customer_insights.tools.models import AbstractQueryResponse, QueryResponse
 from utils.helpers import fetch_organization_details
-
 
 load_dotenv()
 
@@ -84,7 +86,10 @@ def execute_sql_query(sql_query):
 
 
 def create_nl2sql_tool(
-    schema_prompt: str, nltosql_prompt: str, abstract_queries_prompt: str
+    schema_prompt: str,
+    nltosql_prompt: str,
+    abstract_queries_prompt: str,
+    from_insights: Optional[bool] = False,
 ):
     """Create extract_database (nl2sql) tool with latest prompts."""
 
@@ -120,30 +125,37 @@ Given the schema: {schema}
 """
         + """
 User Query: {nl_query}
-Updated Query
+Updated Query:
+Final Query:
 """
     )
 
     # Update prompt template to pass database name
-    nl2sql_prompt = PromptTemplate.from_template(nl2sql_prompt_template)
     abstract_query_handler = PromptTemplate.from_template(
         abstract_query_handler_template
     )
+    nl2sql_prompt = PromptTemplate.from_template(nl2sql_prompt_template)
 
     llm = ChatOpenAI(model="gpt-4o", temperature=0.0, max_completion_tokens=512)
-    abstract_query_chain = abstract_query_handler | llm
+    abstract_query_chain = abstract_query_handler | llm.with_structured_output(
+        AbstractQueryResponse
+    )
     nl2sql_chain = nl2sql_prompt | llm
 
     @tool
-    def query_database(nl_query: str):
+    def query_database(tool_call_id: Annotated[str, InjectedToolCallId], nl_query: str):
         """
         Converts a natural language query to SQL and runs the SQL query on the redshift database.
         param nl_query: The natural language query to convert to SQL and run.
         param_type nl_query: str
         """
 
-        abstract_query_response = abstract_query_chain.invoke({"nl_query": nl_query})
-        sql_query = nl2sql_chain.invoke({"nl_query": abstract_query_response.content})
+        abstract_query_response = cast(
+            AbstractQueryResponse, abstract_query_chain.invoke({"nl_query": nl_query})
+        )
+        sql_query = nl2sql_chain.invoke(
+            {"nl_query": abstract_query_response.abstract_query}
+        )
         sql_query = sql_query.content.split(";")  # type: ignore
         print("Using query: ", sql_query)
 
@@ -152,7 +164,25 @@ Updated Query
             query = query.strip()
             if len(query.lower()) > 0:
                 responses.append(execute_sql_query(query))
-        return responses
+
+        # return responses
+        if from_insights:
+            print("Responses from Tool", responses)
+            return Command(
+                update={
+                    "messages": [
+                        ToolMessage(
+                            content="\n\n".join(
+                                [response.model_dump_json() for response in responses]
+                            ),
+                            tool_call_id=tool_call_id,
+                        )
+                    ],
+                    "final_query": abstract_query_response.final_query,
+                }
+            )
+        else:
+            return responses
 
     return query_database
 

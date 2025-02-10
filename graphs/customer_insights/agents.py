@@ -50,6 +50,7 @@ def create_internal_workflow_agents(org_id: str):
         schema_prompt=internal_workflow_prompts["schema"],
         nltosql_prompt=internal_workflow_prompts["nltosql_prompt"],
         abstract_queries_prompt=internal_workflow_prompts["abstract_queries_prompt"],
+        from_insights=True,
     )
 
     def action_agent(state: AgentStateGraph):
@@ -67,8 +68,14 @@ def create_internal_workflow_agents(org_id: str):
         data_agent_runnable = data_agent_prompt_template | llm.bind_tools(
             [query_database], parallel_tool_calls=False
         )
-        response = data_agent_runnable.invoke({"messages": state["messages"]})
-        return {**state, "messages": response}
+        response = data_agent_runnable.invoke(
+            {
+                "messages": state["messages"],
+                "final_query": state.get("final_query", None),
+            }
+        )
+
+        return {**state, "messages": response, "final_query": None}
 
     def product_knowledge_agent(state: AgentStateGraph):
         last_message = cast(str, state["messages"][-1].content)

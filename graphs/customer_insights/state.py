@@ -1,4 +1,4 @@
-from typing import Annotated, TypedDict
+from typing import Annotated, TypedDict, Optional
 from langchain_core.messages import AnyMessage
 from langgraph.graph.message import add_messages
 
@@ -11,3 +11,4 @@ class AgentStateGraph(TypedDict):
     """
 
     messages: Annotated[list[AnyMessage], add_messages]
+    final_query: Annotated[Optional[str], "The final query that the user has asked."]
