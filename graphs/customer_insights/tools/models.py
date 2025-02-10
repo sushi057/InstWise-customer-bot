@@ -7,6 +7,13 @@ class QueryRequest(BaseModel):
     query: str
 
 
+class AbstractQueryResponse(BaseModel):
+    """Response for abstract query"""
+
+    abstract_query: str = Field(..., description="Transformed abstract query")
+    final_query: str = Field(..., description="Final query based on user's query")
+
+
 class QueryResponse(BaseModel):
     table_sources: Optional[str]
     result_set: Optional[List]
