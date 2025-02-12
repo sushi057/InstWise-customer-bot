@@ -27,7 +27,7 @@ def create_agents(org_id: str):
     prompts = create_prompts(org_id)
 
     # Create NL2SQL tool
-    call_query_database = create_nl2sql_tool(
+    call_query_database, _ = create_nl2sql_tool(
         schema_prompt=prompts["schema_prompt"],
         nltosql_prompt=prompts["nltosql_prompt"],
         abstract_queries_prompt=prompts["abstract_queries_prompt"],
@@ -93,15 +93,7 @@ def create_agents(org_id: str):
         # Fetch customer info with the customer_email from the database
         try:
             response = call_query_database.invoke(
-                # Invoke tool with standard ToolCall input
-                input={
-                    "args": {
-                        "nl_query": f"Fetch customer details with the domain {customer_email.split('@')[1]}"
-                    },
-                    "id": "123",
-                    "name": "fetch_user_info",
-                    "type": "tool_call",
-                },
+                f"Fetch customer details with the domain {customer_email.split('@')[1]}"
             )
 
             # Fetch customer info for given email and update customer_info in state

@@ -67,7 +67,7 @@ async def send_email(request: GenerateEmailsRequest):
     """
     try:
         prompts = fetch_organization_details(request.org_id)["org"]
-        query_database = create_nl2sql_tool(
+        query_database, _ = create_nl2sql_tool(
             schema_prompt=prompts["schema_prompt"],
             nltosql_prompt=prompts["nltosql_prompt"],
             abstract_queries_prompt=prompts["abstract_refinement_prompt"],
