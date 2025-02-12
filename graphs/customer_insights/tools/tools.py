@@ -1,17 +1,13 @@
 import os
-from typing import Annotated, Optional, cast
+from typing import cast
 
 import boto3
 from dotenv import load_dotenv
-from langchain_core.messages.tool import ToolMessage
 from langchain_core.prompts import PromptTemplate
 from langchain_core.tools import tool
-from langchain_core.tools.base import InjectedToolCallId
 from langchain_openai import ChatOpenAI
-from langgraph.types import Command
 
-from graphs.customer_insights.tools.models import (AbstractQueryResponse,
-                                                   QueryResponse)
+from graphs.customer_insights.tools.models import AbstractQueryResponse, QueryResponse
 from utils.helpers import fetch_organization_details
 
 load_dotenv()
@@ -90,7 +86,6 @@ def create_nl2sql_tool(
     schema_prompt: str,
     nltosql_prompt: str,
     abstract_queries_prompt: str,
-    from_insights: Optional[bool] = False,
 ):
     """Create extract_database (nl2sql) tool with latest prompts."""
 
@@ -146,7 +141,7 @@ Final Query:
     nl2sql_chain = nl2sql_prompt | llm
 
     @tool
-    def query_database(tool_call_id: Annotated[str, InjectedToolCallId], nl_query: str):
+    def query_database(nl_query: str):
         """
         Converts a natural language query to SQL and runs the SQL query on the redshift database.
         param nl_query: The natural language query to convert to SQL and run.
@@ -168,47 +163,20 @@ Final Query:
             if len(query.lower()) > 0:
                 responses.append(execute_sql_query(query))
 
-        # return responses
-        if from_insights:
-            print("Responses from Tool", responses)
-            return Command(
-                update={
-                    "messages": [
-                        ToolMessage(
-                            content="\n\n".join(
-                                [response.model_dump_json() for response in responses]
-                            ),
-                            tool_call_id=tool_call_id,
-                        )
-                    ],
-                    "final_query": abstract_query_response.final_query,
-                }
-            )
-        else:
-            return responses
+        return responses
 
-    return query_database
+    return query_database, abstract_query_chain
 
 
 if __name__ == "__main__":
     user_query = input("Enter your query: ")
     prompts = fetch_organization_details("66158fe71bfe10b58cb23eea")["org"]
 
-    query_database = create_nl2sql_tool(
+    query_database, _ = create_nl2sql_tool(
         schema_prompt=prompts["schema_prompt"],
         nltosql_prompt=prompts["nltosql_prompt"],
         abstract_queries_prompt=prompts["abstract_refinement_prompt"],
     )
-    print(
-        query_database.invoke(
-            input={
-                "args": {
-                    "nl_query": user_query,
-                },
-                "id": "123",
-                "name": "query_database",
-                "type": "tool_call",
-            },
-        )
-    )
+
+    print(query_database.invoke(user_query))
     # print(execute_sql_query(user_query))
