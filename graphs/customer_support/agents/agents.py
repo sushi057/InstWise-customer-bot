@@ -1,31 +1,24 @@
 from typing import Literal, cast
-from langgraph.types import Command, interrupt
+
 from langchain_core.messages import AIMessage
 from langchain_core.runnables import RunnableConfig
+from langgraph.types import Command, interrupt
 
 from config.config import set_customer_info
-from graphs.customer_insights.tools.tools import create_nl2sql_tool
-from graphs.customer_support.states.state import CustomerInfo
-
 from config.openai_model import get_openai_model
-from graphs.customer_support.states.state import GraphState
-from graphs.customer_support.prompts.prompts import create_prompts
-from graphs.customer_support.tools.agent_routes import (
-    CompleteOrEscalate,
-    ToFollowUpAgent,
-    ToSolutionAgent,
-)
-from graphs.customer_support.tools.tools import (
-    solution_rag_call,
-    recommend_features,
-    upsell_features,
-    collect_feedback,
-)
-from graphs.customer_support.tools.zendesk import (
-    create_zendesk_ticket_for_unresolved_issues,
-)
-
+from graphs.customer_insights.tools.tools import create_nl2sql_tool
 from graphs.customer_support.helpers.helpers import get_valid_email
+from graphs.customer_support.prompts.prompts import create_prompts
+from graphs.customer_support.states.state import CustomerInfo, GraphState
+from graphs.customer_support.tools.agent_routes import (CompleteOrEscalate,
+                                                        ToFollowUpAgent,
+                                                        ToSolutionAgent)
+from graphs.customer_support.tools.tools import (collect_feedback,
+                                                 recommend_features,
+                                                 solution_rag_call,
+                                                 upsell_features)
+from graphs.customer_support.tools.zendesk import \
+    create_zendesk_ticket_for_unresolved_issues
 
 
 def create_agents(org_id: str):
@@ -34,7 +27,7 @@ def create_agents(org_id: str):
     prompts = create_prompts(org_id)
 
     # Create NL2SQL tool
-    call_query_database = create_nl2sql_tool(
+    call_query_database, _ = create_nl2sql_tool(
         schema_prompt=prompts["schema_prompt"],
         nltosql_prompt=prompts["nltosql_prompt"],
         abstract_queries_prompt=prompts["abstract_queries_prompt"],

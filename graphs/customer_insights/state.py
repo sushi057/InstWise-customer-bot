@@ -11,4 +11,3 @@ class AgentStateGraph(TypedDict):
     """
 
     messages: Annotated[list[AnyMessage], add_messages]
-    final_query: Annotated[Optional[str], "The final query that the user has asked."]

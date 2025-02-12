@@ -6,19 +6,14 @@ from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field
 
 from graphs.customer_insights.helpers import create_internal_workflow_prompts
-from graphs.customer_insights.prompts import (
-    action_agent_template,
-    data_agent_prompt_template,
-)
+from graphs.customer_insights.prompts import (action_agent_template,
+                                              data_agent_prompt_template)
 from graphs.customer_insights.state import AgentStateGraph
-from graphs.customer_insights.tools.hubspot import (
-    create_note_hubspot,
-    create_task_hubspot,
-)
+from graphs.customer_insights.tools.hubspot import (create_note_hubspot,
+                                                    create_task_hubspot)
 from graphs.customer_insights.tools.tools import create_nl2sql_tool
-from graphs.customer_support.tools.zendesk import (
-    create_zendesk_ticket_for_unresolved_issues,
-)
+from graphs.customer_support.tools.zendesk import \
+    create_zendesk_ticket_for_unresolved_issues
 from utils.helpers import call_rag_api
 
 load_dotenv()
@@ -46,11 +41,10 @@ def create_internal_workflow_agents(org_id: str):
 
     # Load prompts
     internal_workflow_prompts = create_internal_workflow_prompts(org_id=org_id)
-    query_database = create_nl2sql_tool(
+    query_database, abstract_query_chain = create_nl2sql_tool(
         schema_prompt=internal_workflow_prompts["schema"],
         nltosql_prompt=internal_workflow_prompts["nltosql_prompt"],
         abstract_queries_prompt=internal_workflow_prompts["abstract_queries_prompt"],
-        from_insights=True,
     )
 
     def action_agent(state: AgentStateGraph):
@@ -65,13 +59,18 @@ def create_internal_workflow_agents(org_id: str):
     def data_agent(state: AgentStateGraph):
         """This agent will draw insights from the data based on the user query."""
 
+        final_query = None
+        if isinstance(state["messages"][-1], AIMessage):
+            res = abstract_query_chain.invoke(state["messages"][-2].content)  # type: ignore
+            final_query = res.final_query  # type: ignore
+
         data_agent_runnable = data_agent_prompt_template | llm.bind_tools(
             [query_database], parallel_tool_calls=False
         )
         response = data_agent_runnable.invoke(
             {
                 "messages": state["messages"],
-                "final_query": state.get("final_query", None),
+                "final_query": final_query,
             }
         )
 
