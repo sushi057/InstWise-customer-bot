@@ -1,31 +1,24 @@
 from typing import Literal, cast
-from langgraph.types import Command, interrupt
+
 from langchain_core.messages import AIMessage
 from langchain_core.runnables import RunnableConfig
+from langgraph.types import Command, interrupt
 
 from config.config import set_customer_info
-from graphs.customer_insights.tools.tools import create_nl2sql_tool
-from graphs.customer_support.states.state import CustomerInfo
-
 from config.openai_model import get_openai_model
-from graphs.customer_support.states.state import GraphState
-from graphs.customer_support.prompts.prompts import create_prompts
-from graphs.customer_support.tools.agent_routes import (
-    CompleteOrEscalate,
-    ToFollowUpAgent,
-    ToSolutionAgent,
-)
-from graphs.customer_support.tools.tools import (
-    solution_rag_call,
-    recommend_features,
-    upsell_features,
-    collect_feedback,
-)
-from graphs.customer_support.tools.zendesk import (
-    create_zendesk_ticket_for_unresolved_issues,
-)
-
+from graphs.customer_insights.tools.tools import create_nl2sql_tool
 from graphs.customer_support.helpers.helpers import get_valid_email
+from graphs.customer_support.prompts.prompts import create_prompts
+from graphs.customer_support.states.state import CustomerInfo, GraphState
+from graphs.customer_support.tools.agent_routes import (CompleteOrEscalate,
+                                                        ToFollowUpAgent,
+                                                        ToSolutionAgent)
+from graphs.customer_support.tools.tools import (collect_feedback,
+                                                 recommend_features,
+                                                 solution_rag_call,
+                                                 upsell_features)
+from graphs.customer_support.tools.zendesk import \
+    create_zendesk_ticket_for_unresolved_issues
 
 
 def create_agents(org_id: str):
@@ -100,7 +93,15 @@ def create_agents(org_id: str):
         # Fetch customer info with the customer_email from the database
         try:
             response = call_query_database.invoke(
-                f"Fetch customer details with the domain {customer_email.split('@')[1]}"
+                # Invoke tool with standard ToolCall input
+                input={
+                    "args": {
+                        "nl_query": f"Fetch customer details with the domain {customer_email.split('@')[1]}"
+                    },
+                    "id": "123",
+                    "name": "fetch_user_info",
+                    "type": "tool_call",
+                },
             )
 
             # Fetch customer info for given email and update customer_info in state

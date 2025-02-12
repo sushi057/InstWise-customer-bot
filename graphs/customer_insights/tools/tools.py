@@ -10,7 +10,8 @@ from langchain_core.tools.base import InjectedToolCallId
 from langchain_openai import ChatOpenAI
 from langgraph.types import Command
 
-from graphs.customer_insights.tools.models import AbstractQueryResponse, QueryResponse
+from graphs.customer_insights.tools.models import (AbstractQueryResponse,
+                                                   QueryResponse)
 from utils.helpers import fetch_organization_details
 
 load_dotenv()
@@ -124,6 +125,8 @@ Given the schema: {schema}
 
 """
         + """
+**If the user_query does not have it's respective final query, return original user query as the final query.**
+
 User Query: {nl_query}
 Updated Query:
 Final Query:
@@ -196,4 +199,16 @@ if __name__ == "__main__":
         nltosql_prompt=prompts["nltosql_prompt"],
         abstract_queries_prompt=prompts["abstract_refinement_prompt"],
     )
-    print(query_database.invoke(user_query))
+    print(
+        query_database.invoke(
+            input={
+                "args": {
+                    "nl_query": user_query,
+                },
+                "id": "123",
+                "name": "query_database",
+                "type": "tool_call",
+            },
+        )
+    )
+    # print(execute_sql_query(user_query))
