@@ -169,14 +169,18 @@ Final Query:
 
 
 if __name__ == "__main__":
-    user_query = input("Enter your query: ")
-    prompts = fetch_organization_details("66158fe71bfe10b58cb23eea")["org"]
+    while True:
+        user_query = input("Enter your query: ")
+        if user_query in ["q", "quit"]:
+            break
 
-    query_database, _ = create_nl2sql_tool(
-        schema_prompt=prompts["schema_prompt"],
-        nltosql_prompt=prompts["nltosql_prompt"],
-        abstract_queries_prompt=prompts["abstract_refinement_prompt"],
-    )
+        prompts = fetch_organization_details("66158fe71bfe10b58cb23eea")["org"]
 
-    print(query_database.invoke(user_query))
-    # print(execute_sql_query(user_query))
+        query_database, _ = create_nl2sql_tool(
+            schema_prompt=prompts["schema_prompt"],
+            nltosql_prompt=prompts["nltosql_prompt"],
+            abstract_queries_prompt=prompts["abstract_refinement_prompt"],
+        )
+
+        print(query_database.invoke(user_query))
+        # print(execute_sql_query(user_query))

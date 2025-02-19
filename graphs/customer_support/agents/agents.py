@@ -5,25 +5,30 @@ from langchain_core.runnables import RunnableConfig
 from langgraph.types import Command, interrupt
 
 from config.config import set_customer_info
-from config.openai_model import get_openai_model
+from config.init_model import init_model
 from graphs.customer_insights.tools.tools import create_nl2sql_tool
 from graphs.customer_support.helpers.helpers import get_valid_email
 from graphs.customer_support.prompts.prompts import create_prompts
 from graphs.customer_support.states.state import CustomerInfo, GraphState
-from graphs.customer_support.tools.agent_routes import (CompleteOrEscalate,
-                                                        ToFollowUpAgent,
-                                                        ToSolutionAgent)
-from graphs.customer_support.tools.tools import (collect_feedback,
-                                                 recommend_features,
-                                                 solution_rag_call,
-                                                 upsell_features)
-from graphs.customer_support.tools.zendesk import \
-    create_zendesk_ticket_for_unresolved_issues
+from graphs.customer_support.tools.agent_routes import (
+    CompleteOrEscalate,
+    ToFollowUpAgent,
+    ToSolutionAgent,
+)
+from graphs.customer_support.tools.tools import (
+    collect_feedback,
+    recommend_features,
+    solution_rag_call,
+    upsell_features,
+)
+from graphs.customer_support.tools.zendesk import (
+    create_zendesk_ticket_for_unresolved_issues,
+)
 
 
 def create_agents(org_id: str):
     """Create agents for the customer support graph"""
-    llm = get_openai_model(model="gpt-4o")
+    llm = init_model(fully_specified_name="gpt-4o")
     prompts = create_prompts(org_id)
 
     # Create NL2SQL tool
@@ -109,6 +114,7 @@ def create_agents(org_id: str):
                     }
                 )
 
+                print(f"Customer Info: {customer_info}")
                 # Update customer info and internal user type in graph state
                 return Command(
                     goto="primary_assistant",

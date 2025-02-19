@@ -19,55 +19,6 @@ feedback table: [feedback_id, created_at, updated_at, user_email, feedback_descr
 customer_health: [company_id, customer_name, opened_deals, closed_deals, lost_deals, no_conversations, unique_features, overall_features, number_of_logins, last_login, total_ticket_count, open_ticket_count, escalated_ticket_count, closed_ticket_count]    
 """
 
-nl2sql_prompt_template = (
-    f"""Given the following schema, convert the following natural language query to SQL
-Schema: 
-{schema}
-
-Guidelines:
-1. Perform table join carefully and use the appropriate column names and appropriate conditions.
-2. Dates and time are in ISO format.
-3. Do not add new lines inside the queries.
-4. Make sure you use correct column and table names as given in the schema.
-5. Do not perform data type casting on columns.
-6. The words "Company", "Organization", "customer", and "companies" are used interchangeably.
-7. If a query requires specific columns, make sure to include only these columns in the SELECT clause.
-8. If a query requires directly retrieving data from multiple tables, return separate queries, one for each table. Separate the queries with a semicolon. 
-    precede each query with a comment that describes which table it is pulling from. If it was pullling from multiple tables precede the single query with "Multiple tables::".       
-        
-Natural Language Query: Show me the first 2 companies separately
-SQL Query: companies:: SELECT * FROM reporting.companies LIMIT 2;     
-
-Natural Language Query: Show me the top companies that have highest number of deals separately
-SQL Query: Multiple tables:: SELECT c.company_id, c.name, c.domain, COUNT(d.deal_id) AS num_deals FROM reporting.companies AS c
-JOIN reporting.deals AS d
-ON c.name = d.company_name
-GROUP BY c.company_id, c.name, c.domain
-ORDER BY num_deals DESC
-LIMIT 10;
-
-Natural Language Query: Show me list of contacts, deals and open support tickets for Hyatt separately 
-SQL Query: contacts:: SELECT * FROM reporting.contacts WHERE company_name = 'Hyatt'; deals:: SELECT * FROM reporting.deals WHERE company_name = 'Hyatt'; tickets:: SELECT * FROM reporting.tickets WHERE company_name = 'Hyatt' AND status = 'open';
-
-Natural Language Query: Show me the health of the Hyatt
-SQL Query: customer_health:: SELECT * FROM reporting.customer_health WHERE customer_name = 'Hyatt'
-
-Natural Language Query: Show me the list of contacts for Hyatt
-SQL Query: contacts:: SELECT contacts.first_name, contacts.last_name, contacts.email FROM reporting.contacts WHERE company_name = 'Hyatt';
-
-Natural Language Query: Fetch customer name where domain is hyatt.com
-SQL Query: companies:: SELECT * FROM reporting.companies WHERE domain = 'hyatt.com';
-
-Natural Language Query: Show login trend for Hilton by month.
-SQL Query: "customer_logins:: SELECT DATE_TRUNC('month', login_date) AS month, COUNT(login_id) AS login_count FROM reporting.customer_logins WHERE company_name = 'Hilton' GROUP BY month ORDER BY month
-
-Natural Language Query: Show me the top 5 companies that has highest amount of pending deals
-Multiple tables:: SELECT c.company_id, c.name, c.domain, SUM(d.amount) AS total_pending_amount FROM reporting.companies AS c JOIN reporting.deals AS d ON c.name = d.company_name WHERE d.dealstage <> 'closedwon' or d.dealstage <> 'closedlost' GROUP BY c.company_id, c.name, c.domain ORDER BY total_pending_amount DESC LIMIT 5;
-"""
-    + """Natural Language Query: {nl_query} separately
-SQL Query:"""
-)
-
 abstract_query_handler_template = (
     f"""
 Given the schema: {schema} """
@@ -131,4 +82,53 @@ Updated Query: Get all the information related to Hilton that has notes, meeting
 
 User Query: {nl_query}
 Updated Query:"""
+)
+
+nl2sql_prompt_template = (
+    f"""Given the following schema, convert the following natural language query to SQL
+Schema: 
+{schema}
+
+Guidelines:
+1. Perform table join carefully and use the appropriate column names and appropriate conditions.
+2. Dates and time are in ISO format.
+3. Do not add new lines inside the queries.
+4. Make sure you use correct column and table names as given in the schema.
+5. Do not perform data type casting on columns.
+6. The words "Company", "Organization", "customer", and "companies" are used interchangeably.
+7. If a query requires specific columns, make sure to include only these columns in the SELECT clause.
+8. If a query requires directly retrieving data from multiple tables, return separate queries, one for each table. Separate the queries with a semicolon. 
+    precede each query with a comment that describes which table it is pulling from. If it was pullling from multiple tables precede the single query with "Multiple tables::".       
+        
+Natural Language Query: Show me the first 2 companies separately
+SQL Query: companies:: SELECT * FROM reporting.companies LIMIT 2;     
+
+Natural Language Query: Show me the top companies that have highest number of deals separately
+SQL Query: Multiple tables:: SELECT c.company_id, c.name, c.domain, COUNT(d.deal_id) AS num_deals FROM reporting.companies AS c
+JOIN reporting.deals AS d
+ON c.name = d.company_name
+GROUP BY c.company_id, c.name, c.domain
+ORDER BY num_deals DESC
+LIMIT 10;
+
+Natural Language Query: Show me list of contacts, deals and open support tickets for Hyatt separately 
+SQL Query: contacts:: SELECT * FROM reporting.contacts WHERE company_name = 'Hyatt'; deals:: SELECT * FROM reporting.deals WHERE company_name = 'Hyatt'; tickets:: SELECT * FROM reporting.tickets WHERE company_name = 'Hyatt' AND status = 'open';
+
+Natural Language Query: Show me the health of the Hyatt
+SQL Query: customer_health:: SELECT * FROM reporting.customer_health WHERE customer_name = 'Hyatt'
+
+Natural Language Query: Show me the list of contacts for Hyatt
+SQL Query: contacts:: SELECT contacts.first_name, contacts.last_name, contacts.email FROM reporting.contacts WHERE company_name = 'Hyatt';
+
+Natural Language Query: Fetch customer name where domain is hyatt.com
+SQL Query: companies:: SELECT * FROM reporting.companies WHERE domain = 'hyatt.com';
+
+Natural Language Query: Show login trend for Hilton by month.
+SQL Query: "customer_logins:: SELECT DATE_TRUNC('month', login_date) AS month, COUNT(login_id) AS login_count FROM reporting.customer_logins WHERE company_name = 'Hilton' GROUP BY month ORDER BY month
+
+Natural Language Query: Show me the top 5 companies that has highest amount of pending deals
+Multiple tables:: SELECT c.company_id, c.name, c.domain, SUM(d.amount) AS total_pending_amount FROM reporting.companies AS c JOIN reporting.deals AS d ON c.name = d.company_name WHERE d.dealstage <> 'closedwon' or d.dealstage <> 'closedlost' GROUP BY c.company_id, c.name, c.domain ORDER BY total_pending_amount DESC LIMIT 5;
+"""
+    + """Natural Language Query: {nl_query} separately
+SQL Query:"""
 )

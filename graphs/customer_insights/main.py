@@ -1,6 +1,7 @@
 import uuid
-from langgraph.checkpoint.memory import MemorySaver
+
 from langchain_core.runnables import RunnableConfig
+from langgraph.checkpoint.memory import MemorySaver
 
 from graphs.customer_insights.graph import create_insights_graph
 from graphs.customer_insights.helpers import visualize_graph

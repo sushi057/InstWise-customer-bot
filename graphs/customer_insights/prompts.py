@@ -24,22 +24,27 @@ Examples:
 - "Cannot add customer"
 
 2. ACTION AGENT:
-- Requests to perform actions
-- Create/update tickets
-- Send emails
-- Schedule tasks
+
+- Requests to perform the following actions.
+    - Create/Add
+    - Update/Modify
+    - Send
+- These are commands that *do* something that changes the state of the data in the system.
 Examples:
 - "Create a task in CRM"
 - "Create a ticket for this issue"
 - "Send email to customer"
-- "Update this record"
+- "Add notes for Hilton"
+- "Update meeting minutes"
 
 3. DATA AGENT:
 - Any query pertaining to a customer 
-- Data analysis requests
+- Data analysis requests (looking for trends, insights, etc.)
 - Report generation
 - Metrics/statistics queries
 - Historical data
+- Requests for data, items needing attention.
+
 Examples:
 - "Is there anything I need to pay attention for Hilton?"
 - "Show me sales data"

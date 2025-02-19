@@ -1,16 +1,19 @@
-from typing import Optional, Literal
-from pydantic import EmailStr
+from typing import Literal, Optional
+
 from fastapi import FastAPI
 from langchain_core.runnables import RunnableConfig
 from langgraph.errors import GraphRecursionError
+from pydantic import EmailStr
 
-from routes import customer, outreach
 from config.config import CustomerInfo, get_customer_info, set_customer_info
+from graphs.customer_insights.graph import create_insights_graph
 from graphs.customer_support.graph.graph import create_support_graph
 from graphs.customer_support.helpers.helpers import get_session_id
-from graphs.customer_insights.graph import create_insights_graph
+from graphs.task_agent.agents import create_task_agent
+from graphs.task_agent.models import Task
+from models.task_agent import AskTaskAgentRequest, AskTaskAgentResponse
+from routes import customer, outreach
 from utils.helpers import call_rag_api
-
 
 app = FastAPI()
 
@@ -96,7 +99,6 @@ async def ask_public_chat(
     query: str,
     org_id: str,
     session_id: Optional[str] = None,
-    customer_id: Optional[str] = None,
     user_email: Optional[str] = None,
 ):
     """
@@ -151,3 +153,17 @@ async def ask_public_chat(
         "customer_id": get_customer_info().get("customer_id"),
         "user_email": get_customer_info().get("customer_email"),
     }
+
+
+@app.post("/task-agent/{task_name}")
+async def ask_task_agent(request: AskTaskAgentRequest):
+    """
+    Task Agent API created based on the given task name.
+
+    """
+    task_agent = create_task_agent(
+        Task(org_id=request.org_id, task_name=request.task_name)
+    )
+
+    response = task_agent.invoke({})
+    return response
