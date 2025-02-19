@@ -8,10 +8,13 @@ from langgraph.prebuilt import tools_condition
 from langsmith import traceable
 
 from graphs.customer_insights.agents import RouterAgentOutput  # data_agent
-from graphs.customer_insights.agents import (action_agent_tools,
-                                             create_internal_workflow_agents)
+from graphs.customer_insights.agents import (
+    action_agent_tools,
+    create_internal_workflow_agents,
+)
 from graphs.customer_insights.helpers import create_tool_node_with_fallback
 from graphs.customer_insights.prompts import router_prompt_template
+
 # from graphs.customer_insights.tools.tools import query_database
 from graphs.customer_insights.state import AgentStateGraph
 
@@ -27,6 +30,8 @@ def route_function(state: AgentStateGraph):
     router_runnable = router_prompt_template | llm_mini.with_structured_output(
         RouterAgentOutput
     )
+
+    # @traceable(run_type="chain", name="Router Function")
     response = cast(
         RouterAgentOutput, router_runnable.invoke({"messages": state["messages"]})
     )

@@ -4,11 +4,11 @@ import requests
 from dotenv import load_dotenv
 from fastapi import HTTPException
 
-# Load Backend APi
 load_dotenv()
+
 instwise_backend_url = os.environ["INSTWISE_BACKEND_URL"]
 instwise_secret_key = os.environ["INSTWISE_SECRET_KEY"]
-# setting_api_key = os.environ["SETTING_API_KEY"]
+
 rag_api_url = os.getenv("RAG_API_URL", "")
 rag_api_headers = {"X-API-KEY": f"{os.getenv('X_API_KEY')}"}
 
@@ -20,6 +20,7 @@ def fetch_organization_details(org_id: str):
 
     try:
         response = requests.get(url, headers=headers)
+        response.raise_for_status
         return response.json()
     except requests.exceptions.HTTPError as e:
         # Better error handling
