@@ -15,11 +15,11 @@ def create_task_agent(task: Task):
 
     task_agent_prompts = create_task_agent_prompts(task)
 
-    prompts = fetch_organization_details(task.org_id)["org"]
+    prompts = fetch_organization_details(task.org_id)
     query_database, _ = create_nl2sql_tool(
-        schema_prompt=prompts["schema_prompt"],
-        nltosql_prompt=prompts["nltosql_prompt"],
-        abstract_queries_prompt=prompts["abstract_refinement_prompt"],
+        schema_prompt=prompts.schema_prompt,
+        nltosql_prompt=prompts.nltosql_prompt,
+        abstract_queries_prompt=prompts.abstract_refinement_prompt,
     )
 
     current_task_data = query_database.invoke(

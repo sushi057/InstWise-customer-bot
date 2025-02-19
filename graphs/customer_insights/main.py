@@ -1,12 +1,10 @@
 import uuid
 
 from langchain_core.runnables import RunnableConfig
-from langgraph.checkpoint.memory import MemorySaver
 
 from graphs.customer_insights.graph import create_insights_graph
 from graphs.customer_insights.helpers import visualize_graph
 
-memory = MemorySaver()
 graph = create_insights_graph(org_id="66158fe71bfe10b58cb23eea")
 
 visualize_graph(graph)

@@ -6,13 +6,16 @@ from dotenv import load_dotenv
 from langchain_core.prompts import PromptTemplate
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
+from langsmith import traceable
 
-from graphs.customer_insights.tools.models import AbstractQueryResponse, QueryResponse
+from graphs.customer_insights.tools.models import (AbstractQueryResponse,
+                                                   QueryResponse)
 from utils.helpers import fetch_organization_details
 
 load_dotenv()
 
 
+@traceable(run_type="tool", name="execute_sql_query")
 def execute_sql_query(sql_query):
     """
     Runs a SQL query on the redshift database and returns the results.
@@ -174,12 +177,12 @@ if __name__ == "__main__":
         if user_query in ["q", "quit"]:
             break
 
-        prompts = fetch_organization_details("66158fe71bfe10b58cb23eea")["org"]
+        prompts = fetch_organization_details("66158fe71bfe10b58cb23eea")
 
         query_database, _ = create_nl2sql_tool(
-            schema_prompt=prompts["schema_prompt"],
-            nltosql_prompt=prompts["nltosql_prompt"],
-            abstract_queries_prompt=prompts["abstract_refinement_prompt"],
+            schema_prompt=prompts.schema_prompt,
+            nltosql_prompt=prompts.nltosql_prompt,
+            abstract_queries_prompt=prompts.abstract_refinement_prompt,
         )
 
         print(query_database.invoke(user_query))

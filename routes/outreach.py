@@ -6,18 +6,12 @@ from fastapi import APIRouter, HTTPException
 from langchain_openai import ChatOpenAI
 
 from graphs.customer_insights.tools.tools import create_nl2sql_tool
-from models.outreach import (
-    CustomerListWithNegativeSentiments,
-    GenerateEmailReplyRequest,
-    GenerateEmailReplyResponse,
-    GenerateEmailsRequest,
-    GenerateEmailsResponse,
-    PersonalizedEmailsList,
-)
-from prompts.outreach import (
-    customers_with_negative_sentiments_prompt,
-    personalized_emails_prompt,
-)
+from models.outreach import (CustomerListWithNegativeSentiments,
+                             GenerateEmailReplyRequest,
+                             GenerateEmailReplyResponse, GenerateEmailsRequest,
+                             GenerateEmailsResponse, PersonalizedEmailsList)
+from prompts.outreach import (customers_with_negative_sentiments_prompt,
+                              personalized_emails_prompt)
 from utils.helpers import fetch_organization_details
 
 router = APIRouter(tags=["outreach"])
@@ -66,11 +60,11 @@ async def send_email(request: GenerateEmailsRequest):
     Generate personalized outreach emails for the customers with overall negative sentiments.
     """
     try:
-        prompts = fetch_organization_details(request.org_id)["org"]
+        prompts = fetch_organization_details(request.org_id)
         query_database, _ = create_nl2sql_tool(
-            schema_prompt=prompts["schema_prompt"],
-            nltosql_prompt=prompts["nltosql_prompt"],
-            abstract_queries_prompt=prompts["abstract_refinement_prompt"],
+            schema_prompt=prompts.schema_prompt,
+            nltosql_prompt=prompts.nltosql_prompt,
+            abstract_queries_prompt=prompts.abstract_refinement_prompt,
         )
 
         fetch_sentiment_query = "Fetch everything in tickets, tickets comments, conversation and feedbacks for 5 customers."

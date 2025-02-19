@@ -1,7 +1,5 @@
 from graphs.customer_insights.tools.prompts import (
-    nl2sql_prompt_template,
-    abstract_query_handler_template,
-)
+    abstract_query_handler_template, nl2sql_prompt_template)
 
 organization_details = {
     "org": {

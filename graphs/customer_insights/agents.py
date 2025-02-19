@@ -1,48 +1,25 @@
-from typing import Annotated, Literal, cast, Callable, List, TypedDict
+from typing import cast
 
 from dotenv import load_dotenv
 from langchain_core.messages import AIMessage, ToolMessage
 from langchain_openai import ChatOpenAI
-from pydantic import BaseModel, Field
 
 from graphs.customer_insights.helpers import create_internal_workflow_prompts
-from graphs.customer_insights.prompts import (
-    action_agent_template,
-    data_agent_prompt_template,
-)
+from graphs.customer_insights.models import InternalWorkflowAgents
+from graphs.customer_insights.prompts import (action_agent_template,
+                                              data_agent_prompt_template)
 from graphs.customer_insights.state import AgentStateGraph
-from graphs.customer_insights.tools.hubspot import (
-    create_note_hubspot,
-    create_task_hubspot,
-)
+from graphs.customer_insights.tools.hubspot import (create_note_hubspot,
+                                                    create_task_hubspot)
 from graphs.customer_insights.tools.tools import create_nl2sql_tool
-from graphs.customer_support.tools.zendesk import (
-    create_zendesk_ticket_for_unresolved_issues,
-)
+from graphs.customer_support.tools.zendesk import \
+    create_zendesk_ticket_for_unresolved_issues
 from utils.helpers import call_rag_api
 
 load_dotenv()
 
 llm = ChatOpenAI(model="gpt-4o", temperature=0.3)
 llm_mini = ChatOpenAI(model="gpt-4o-mini")
-
-
-class InternalWorkflowAgents(TypedDict):
-    """Internal workflow agents dictionary."""
-
-    query_database: Callable
-    action_agent: Callable
-    action_agent_tools: List[Callable]
-    data_agent: Callable
-    product_knowledge_agent: Callable
-
-
-class RouterAgentOutput(BaseModel):
-    route: Annotated[
-        Literal["data_agent", "action_agent", "product_knowledge_agent"],
-        Field(description="The agent to route the user query to."),
-    ]
-
 
 action_agent_tools = [
     create_zendesk_ticket_for_unresolved_issues,

@@ -1,6 +1,8 @@
-from typing import Literal, TypedDict, Annotated, Optional
+from typing import Annotated, Literal, Optional, TypedDict
+
 from langgraph.graph.message import AnyMessage, add_messages
-from pydantic import BaseModel
+
+from graphs.customer_support.models.customer_info import CustomerInfo
 
 
 def update_dialog_stack(left: list[str], right: Optional[str]) -> list[str]:
@@ -12,14 +14,9 @@ def update_dialog_stack(left: list[str], right: Optional[str]) -> list[str]:
     return left + [right]
 
 
-class CustomerInfo(BaseModel):
-    customer_id: str
-    customer_email: str
-    company_name: str
-    start_date: str
-
-
 class GraphState(TypedDict):
+    """State of the graph"""
+
     messages: Annotated[list[AnyMessage], add_messages]
     customer_info: CustomerInfo
     pending_issues: list[str]

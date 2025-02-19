@@ -1,14 +1,11 @@
 from typing import Literal
 
-from langgraph.prebuilt import tools_condition
 from langgraph.graph import END
-from langchain_core.runnables import RunnableConfig
+from langgraph.prebuilt import tools_condition
 
 from graphs.customer_support.states.state import GraphState
-from graphs.customer_support.tools.agent_routes import (
-    ToSolutionAgent,
-    ToFollowUpAgent,
-)
+from graphs.customer_support.tools.agent_routes import (ToFollowUpAgent,
+                                                        ToSolutionAgent)
 
 
 def route_primary_assistant(
@@ -52,9 +49,9 @@ def route_followup_agent(
         return "human_node"
 
 
-def route_entry_point(state: GraphState, config: RunnableConfig):
+def route_entry_point(state: GraphState):
     """
-    Set entry points based on wether the customer has been verified.
+    Set entry points based on whether the customer has been verified.
     """
     if state.get("customer_info"):
         dialog_state = state.get("dialog_state")
