@@ -4,8 +4,7 @@ from langgraph.graph import END
 from langgraph.prebuilt import tools_condition
 
 from graphs.customer_support.states.state import GraphState
-from graphs.customer_support.tools.agent_routes import (ToFollowUpAgent,
-                                                        ToSolutionAgent)
+from graphs.customer_support.tools.agent_routes import ToFollowUpAgent, ToSolutionAgent
 
 
 def route_primary_assistant(

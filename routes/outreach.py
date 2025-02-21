@@ -6,12 +6,18 @@ from fastapi import APIRouter, HTTPException
 from langchain_openai import ChatOpenAI
 
 from graphs.customer_insights.tools.nltosql_tool import create_nltosql_tool
-from models.outreach import (CustomerListWithNegativeSentiments,
-                             GenerateEmailReplyRequest,
-                             GenerateEmailReplyResponse, GenerateEmailsRequest,
-                             GenerateEmailsResponse, PersonalizedEmailsList)
-from prompts.outreach import (customers_with_negative_sentiments_prompt,
-                              personalized_emails_prompt)
+from models.outreach import (
+    CustomerListWithNegativeSentiments,
+    GenerateEmailReplyRequest,
+    GenerateEmailReplyResponse,
+    GenerateEmailsRequest,
+    GenerateEmailsResponse,
+    PersonalizedEmailsList,
+)
+from prompts.outreach import (
+    customers_with_negative_sentiments_prompt,
+    personalized_emails_prompt,
+)
 from utils.helpers import fetch_organization_details
 
 router = APIRouter(tags=["outreach"])

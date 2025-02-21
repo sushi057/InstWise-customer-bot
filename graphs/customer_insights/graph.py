@@ -7,8 +7,10 @@ from langgraph.graph.graph import CompiledGraph
 from langgraph.prebuilt import tools_condition
 from langsmith import traceable
 
-from graphs.customer_insights.agents import (action_agent_tools,
-                                             create_internal_workflow_agents)
+from graphs.customer_insights.agents import (
+    action_agent_tools,
+    create_internal_workflow_agents,
+)
 from graphs.customer_insights.helpers import create_tool_node_with_fallback
 from graphs.customer_insights.models import RouterAgentOutput
 from graphs.customer_insights.prompts import router_prompt_template
