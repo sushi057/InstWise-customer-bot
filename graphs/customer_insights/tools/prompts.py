@@ -1,10 +1,12 @@
 import os
+
 from dotenv import load_dotenv
 
 load_dotenv()
 
 schema = f"""Database name: {os.getenv("DATABASE_NAME")}
-companies table: [company_id,  name,  domain,  is_active,  start_date,  end_date ]
+
+companies table: [company_id,  name,  domain,  is_active,  start_date,  end_date]
 contacts table: [contact_id,  first_name,  last_name,  email,  company_name,  created_date]
 deals table: [deal_id,  dealname,  amount,  dealstage,  company_name,  created_at,  closedate]
 tickets table: [ticket_id,  subject,  priority,  status,  company_name,  created_at,  assignee_id,  requester_id,  submitter_id,  description,  ticket_type,  tags,  satisfaction_rating,  due_at,  updated_at, comment, comment_date]
@@ -17,6 +19,7 @@ customer_logins table: [login_id, created_at, updated_at, login_date, email, com
 customer_conversations table: [conversation_id, created_at, updated_at, conversation_session, question, answer, session_order, user_id, start_date, end_date]
 feedback table: [feedback_id, created_at, updated_at, user_email, feedback_description, reported_query, rating, start_date, end_date]
 customer_health: [company_id, customer_name, opened_deals, closed_deals, lost_deals, no_conversations, unique_features, overall_features, number_of_logins, last_login, total_ticket_count, open_ticket_count, escalated_ticket_count, closed_ticket_count]    
+
 """
 
 abstract_query_handler_template = (
@@ -84,7 +87,7 @@ User Query: {nl_query}
 Updated Query:"""
 )
 
-nl2sql_prompt_template = (
+nltosql_prompt_template = (
     f"""Given the following schema, convert the following natural language query to SQL
 Schema: 
 {schema}

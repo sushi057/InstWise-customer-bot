@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 from graphs.customer_insights.models import InternalWorkflowPrompts
 from graphs.customer_insights.tools.models import QueryResponse
-from graphs.customer_insights.tools.tools import execute_sql_query
+from graphs.customer_insights.tools.nltosql_tool import execute_sql_query
 from utils.helpers import fetch_organization_details
 
 

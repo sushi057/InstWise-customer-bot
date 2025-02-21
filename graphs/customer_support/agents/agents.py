@@ -6,7 +6,7 @@ from langgraph.types import Command
 
 from config.config import set_customer_info
 from config.init_model import init_model
-from graphs.customer_insights.tools.tools import create_nl2sql_tool
+from graphs.customer_insights.tools.nltosql_tool import create_nltosql_tool
 from graphs.customer_support.helpers.helpers import get_valid_email
 from graphs.customer_support.models.types import SupportWorkflowAgents
 from graphs.customer_support.prompts.prompts import create_prompts
@@ -29,7 +29,7 @@ def create_support_workflow_agents(org_id: str) -> SupportWorkflowAgents:
     prompts = create_prompts(org_id)
 
     # Create NL2SQL tool
-    call_query_database, _ = create_nl2sql_tool(
+    call_query_database, _ = create_nltosql_tool(
         schema_prompt=prompts["schema_prompt"],
         nltosql_prompt=prompts["nltosql_prompt"],
         abstract_queries_prompt=prompts["abstract_queries_prompt"],

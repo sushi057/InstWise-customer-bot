@@ -5,7 +5,7 @@ import requests
 from fastapi import APIRouter, HTTPException
 from langchain_openai import ChatOpenAI
 
-from graphs.customer_insights.tools.tools import create_nl2sql_tool
+from graphs.customer_insights.tools.nltosql_tool import create_nltosql_tool
 from models.outreach import (CustomerListWithNegativeSentiments,
                              GenerateEmailReplyRequest,
                              GenerateEmailReplyResponse, GenerateEmailsRequest,
@@ -61,7 +61,7 @@ async def send_email(request: GenerateEmailsRequest):
     """
     try:
         prompts = fetch_organization_details(request.org_id)
-        query_database, _ = create_nl2sql_tool(
+        query_database, _ = create_nltosql_tool(
             schema_prompt=prompts.schema_prompt,
             nltosql_prompt=prompts.nltosql_prompt,
             abstract_queries_prompt=prompts.abstract_refinement_prompt,

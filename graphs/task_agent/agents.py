@@ -1,7 +1,7 @@
 # from langsmith import traceable
 
 from config.init_model import init_model
-from graphs.customer_insights.tools.tools import create_nl2sql_tool
+from graphs.customer_insights.tools.nltosql_tool import create_nltosql_tool
 from graphs.task_agent.models import Task
 from graphs.task_agent.prompts import create_task_agent_prompts
 from graphs.task_agent.tools.send_email import send_email
@@ -16,7 +16,7 @@ def create_task_agent(task: Task):
     task_agent_prompts = create_task_agent_prompts(task)
 
     prompts = fetch_organization_details(task.org_id)
-    query_database, _ = create_nl2sql_tool(
+    query_database, _ = create_nltosql_tool(
         schema_prompt=prompts.schema_prompt,
         nltosql_prompt=prompts.nltosql_prompt,
         abstract_queries_prompt=prompts.abstract_refinement_prompt,
