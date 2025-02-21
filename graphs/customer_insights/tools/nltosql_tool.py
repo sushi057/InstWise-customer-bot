@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from langchain_core.prompts import PromptTemplate
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
+from langsmith import traceable
 
 from graphs.customer_insights.tools.models import AbstractQueryResponse, QueryResponse
 from utils.helpers import fetch_organization_details
@@ -13,6 +14,7 @@ from utils.helpers import fetch_organization_details
 load_dotenv()
 
 
+@traceable(run_type="tool", name="execute_sql_query")
 def execute_sql_query(sql_query):
     """
     Runs a SQL query on the redshift database and returns the results.
@@ -79,15 +81,20 @@ def execute_sql_query(sql_query):
         return response
 
     except Exception as e:
-        return f"An error occurred: {e}"
+        raise Exception(f"Error executing query: {e}")
 
 
-def create_nl2sql_tool(
+def create_nltosql_tool(
     schema_prompt: str,
     nltosql_prompt: str,
     abstract_queries_prompt: str,
 ):
-    """Create extract_database (nl2sql) tool with latest prompts."""
+    """Create extract_database (nltosql) tool with latest prompts.
+
+    Returns:
+        - query_database tool
+        - abstract query chain
+    """
 
     # schema for the database
     schema = (
@@ -96,8 +103,8 @@ Database Name: {os.getenv("DATABASE_NAME")}
 """
     ) + schema_prompt
 
-    # nl2sql_prompt_template
-    nl2sql_prompt_template = (
+    # nltosql_prompt_template
+    nltosql_prompt_template = (
         f"""
 Given the following schema, convert the following natural language query to SQL
 Schema:
@@ -132,13 +139,13 @@ Final Query:
     abstract_query_handler = PromptTemplate.from_template(
         abstract_query_handler_template
     )
-    nl2sql_prompt = PromptTemplate.from_template(nl2sql_prompt_template)
+    nltosql_prompt_handler = PromptTemplate.from_template(nltosql_prompt_template)
 
     llm = ChatOpenAI(model="gpt-4o", temperature=0.0, max_completion_tokens=512)
     abstract_query_chain = abstract_query_handler | llm.with_structured_output(
         AbstractQueryResponse
     )
-    nl2sql_chain = nl2sql_prompt | llm
+    nltosql_chain = nltosql_prompt_handler | llm
 
     @tool
     def query_database(nl_query: str):
@@ -151,7 +158,7 @@ Final Query:
         abstract_query_response = cast(
             AbstractQueryResponse, abstract_query_chain.invoke({"nl_query": nl_query})
         )
-        sql_query = nl2sql_chain.invoke(
+        sql_query = nltosql_chain.invoke(
             {"nl_query": abstract_query_response.abstract_query}
         )
         sql_query = sql_query.content.split(";")  # type: ignore
@@ -174,13 +181,14 @@ if __name__ == "__main__":
         if user_query in ["q", "quit"]:
             break
 
-        prompts = fetch_organization_details("66158fe71bfe10b58cb23eea")["org"]
+        prompts = fetch_organization_details("66158fe71bfe10b58cb23eea")
 
-        query_database, _ = create_nl2sql_tool(
-            schema_prompt=prompts["schema_prompt"],
-            nltosql_prompt=prompts["nltosql_prompt"],
-            abstract_queries_prompt=prompts["abstract_refinement_prompt"],
+        query_database, _ = create_nltosql_tool(
+            schema_prompt=prompts.schema_prompt,
+            nltosql_prompt=prompts.nltosql_prompt,
+            abstract_queries_prompt=prompts.abstract_refinement_prompt,
         )
 
         print(query_database.invoke(user_query))
+
         # print(execute_sql_query(user_query))

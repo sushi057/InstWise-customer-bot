@@ -1,9 +1,10 @@
 from typing import cast
+
 from fastapi import APIRouter, HTTPException
 
 from graphs.customer_insights.tools.models import QueryResponse
+from graphs.customer_insights.tools.nltosql_tool import execute_sql_query
 from models.customer import CheckEmailRequest, CheckEmailResponse
-from graphs.customer_insights.tools.tools import execute_sql_query
 
 router = APIRouter(tags=["customer"])
 

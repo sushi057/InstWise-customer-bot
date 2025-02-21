@@ -2,12 +2,13 @@ from typing import Literal, cast
 
 from langchain_core.messages import AIMessage
 from langchain_core.runnables import RunnableConfig
-from langgraph.types import Command, interrupt
+from langgraph.types import Command
 
 from config.config import set_customer_info
 from config.init_model import init_model
-from graphs.customer_insights.tools.tools import create_nl2sql_tool
+from graphs.customer_insights.tools.nltosql_tool import create_nltosql_tool
 from graphs.customer_support.helpers.helpers import get_valid_email
+from graphs.customer_support.models.types import SupportWorkflowAgents
 from graphs.customer_support.prompts.prompts import create_prompts
 from graphs.customer_support.states.state import CustomerInfo, GraphState
 from graphs.customer_support.tools.agent_routes import (
@@ -26,13 +27,14 @@ from graphs.customer_support.tools.zendesk import (
 )
 
 
-def create_agents(org_id: str):
+def create_support_workflow_agents(org_id: str) -> SupportWorkflowAgents:
     """Create agents for the customer support graph"""
+
     llm = init_model(fully_specified_name="gpt-4o")
     prompts = create_prompts(org_id)
 
     # Create NL2SQL tool
-    call_query_database, _ = create_nl2sql_tool(
+    call_query_database, _ = create_nltosql_tool(
         schema_prompt=prompts["schema_prompt"],
         nltosql_prompt=prompts["nltosql_prompt"],
         abstract_queries_prompt=prompts["abstract_queries_prompt"],
@@ -40,11 +42,13 @@ def create_agents(org_id: str):
 
     # Define tools for the agents
     primary_assistant_tools = [call_query_database, ToSolutionAgent, ToFollowUpAgent]
+
     solution_tools = [
         solution_rag_call,
         create_zendesk_ticket_for_unresolved_issues,
         CompleteOrEscalate,
     ]
+
     followup_tools = [
         recommend_features,
         upsell_features,
@@ -257,15 +261,6 @@ def create_agents(org_id: str):
         return Command(update={"messages": response})
         # return {**state, "messages": response}
 
-    def human_node(state: GraphState) -> Command[Literal["followup_agent"]]:
-        """
-        Human node that takes user input and routes to the followup agent.
-        """
-        user_input = interrupt(value="")
-        return Command(
-            goto="followup_agent", update={"role": "human", "content": user_input}
-        )
-
     return {
         "fetch_user_info": fetch_user_info,
         "primary_assistant": primary_assistant,
@@ -274,5 +269,4 @@ def create_agents(org_id: str):
         "solution_agent_tools": solution_tools,
         "followup_agent": followup_agent,
         "followup_agent_tools": followup_tools,
-        "human_node": human_node,
     }

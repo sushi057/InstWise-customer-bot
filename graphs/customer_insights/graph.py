@@ -7,15 +7,13 @@ from langgraph.graph.graph import CompiledGraph
 from langgraph.prebuilt import tools_condition
 from langsmith import traceable
 
-from graphs.customer_insights.agents import RouterAgentOutput  # data_agent
 from graphs.customer_insights.agents import (
     action_agent_tools,
     create_internal_workflow_agents,
 )
 from graphs.customer_insights.helpers import create_tool_node_with_fallback
+from graphs.customer_insights.models import RouterAgentOutput
 from graphs.customer_insights.prompts import router_prompt_template
-
-# from graphs.customer_insights.tools.tools import query_database
 from graphs.customer_insights.state import AgentStateGraph
 
 llm_mini = ChatOpenAI(model="gpt-4o-mini")
@@ -24,20 +22,22 @@ llm_mini = ChatOpenAI(model="gpt-4o-mini")
 # Define route function
 @traceable(run_type="tool", name="Router Function")
 def route_function(state: AgentStateGraph):
-    """Route the user query to the appropriate agent."""
+    """Route the user query to the appropriate agent.
 
-    # Only use the user's message for routing, when last agent isnt action or data agent
+    Only use the user's message for routing, when last agent isnt action or data agent
+    """
+
     router_runnable = router_prompt_template | llm_mini.with_structured_output(
         RouterAgentOutput
     )
 
-    # @traceable(run_type="chain", name="Router Function")
     response = cast(
         RouterAgentOutput, router_runnable.invoke({"messages": state["messages"]})
     )
     print(
         f"""===========================================\n\nRouting to {response.route}\n"""
     )
+
     if response.route == "action_agent":  # type: ignore
         return "action_agent"
     elif response.route == "product_knowledge_agent":
@@ -48,6 +48,7 @@ def route_function(state: AgentStateGraph):
 
 def create_insights_graph(org_id: str) -> CompiledGraph:
     """Create graph for insights workflow"""
+
     graph_builder = StateGraph(AgentStateGraph)
 
     # Load agents
@@ -67,7 +68,6 @@ def create_insights_graph(org_id: str) -> CompiledGraph:
 
     # Define edges
     graph_builder.set_conditional_entry_point(
-        # "router",
         route_function,
         {
             "data_agent": "data_agent",

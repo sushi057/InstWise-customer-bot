@@ -3,7 +3,9 @@ from langchain_core.runnables import RunnableLambda
 from langgraph.prebuilt import ToolNode
 from pydantic import BaseModel
 
-from graphs.customer_insights.tools.tools import execute_sql_query
+from graphs.customer_insights.models import InternalWorkflowPrompts
+from graphs.customer_insights.tools.models import QueryResponse
+from graphs.customer_insights.tools.nltosql_tool import execute_sql_query
 from utils.helpers import fetch_organization_details
 
 
@@ -62,7 +64,7 @@ def create_tool_node_with_fallback(tools: list):
     )
 
 
-def create_internal_workflow_prompts(org_id: str):
+def create_internal_workflow_prompts(org_id: str) -> InternalWorkflowPrompts:
     """
     Get updated prompts for the internal workflow based on the organization ID.
 
@@ -74,12 +76,11 @@ def create_internal_workflow_prompts(org_id: str):
     """
     organization_detail = fetch_organization_details(org_id)
 
-    schema = organization_detail["org"]["schema_prompt"]
-    abstract_queries_prompt = organization_detail["org"]["abstract_refinement_prompt"]
-    nltosql_prompt = organization_detail["org"]["nltosql_prompt"]
+    schema = organization_detail.schema_prompt
+    abstract_queries_prompt = organization_detail.abstract_refinement_prompt
+    nltosql_prompt = organization_detail.nltosql_prompt
 
     return {
-        # "data_agent_prompt": data_agent_prompt,
         "schema": schema,
         "abstract_queries_prompt": abstract_queries_prompt,
         "nltosql_prompt": nltosql_prompt,
@@ -94,11 +95,11 @@ def fetch_organization_details_by_name(customer_name: str):
         sql_query = f"SELECT company_id, zendesk_org_id, hubspot_company_id FROM reporting.companies WHERE name = '{customer_name}'"
         response = execute_sql_query(sql_query)
 
-        if response.result_set:
+        if isinstance(response, QueryResponse) and response.result_set:
             return OrganizationDetails(
                 company_id=response.result_set[0]["company_id"],
                 zendesk_org_id=response.result_set[0]["zendesk_org_id"],
                 hubspot_company_id=response.result_set[0]["hubspot_company_id"],
             )
     except Exception as e:
-        raise Exception(f"Error fetchign organization details by name: {e}")
+        raise Exception(f"Error fetching organization details by name: {e}")

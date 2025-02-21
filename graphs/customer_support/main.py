@@ -1,4 +1,5 @@
 import uuid
+
 from langchain_core.runnables import RunnableConfig
 
 from graphs.customer_support.graph.graph import create_support_graph
@@ -13,7 +14,9 @@ config = RunnableConfig(
     }
 )
 
+
 graph = create_support_graph("66158fe71bfe10b58cb23eea")
+
 visualize_graph(graph)
 
 while True:
