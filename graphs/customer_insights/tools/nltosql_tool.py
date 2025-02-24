@@ -10,7 +10,6 @@ from langsmith import traceable
 
 from graphs.customer_insights.tools.helpers import create_nltosql_prompts
 from graphs.customer_insights.tools.models import (AbstractQueryResponse,
-                                                   CreateNLTOSQLToolArgs,
                                                    QueryResponse)
 from utils.helpers import fetch_organization_details
 
@@ -100,7 +99,15 @@ def create_execute_sql_query_function(workgroup_name: str, database_name: str):
     return execute_sql_query
 
 
-def create_nltosql_tool(prompts: dict, redshift_config: dict):
+def create_nltosql_tool(
+    *,
+    database_name: str,
+    redshift_work_space: str,
+    redshift_db: str,
+    schema_prompt: str,
+    nltosql_prompt: str,
+    abstract_queries_prompt: str,
+):
     """Create extract_database (nltosql) tool with latest prompts.
 
     Args:
@@ -117,26 +124,21 @@ def create_nltosql_tool(prompts: dict, redshift_config: dict):
     """
 
     try:
-        if (
-            not redshift_config["database_name"]
-            or not redshift_config["redshift_work_space"]
-            or not redshift_config["redshift_db"]
-        ):
+        if not database_name or not redshift_work_space or not redshift_db:
             raise Exception(
                 "Database name, redshift work space and redshift db are required."
             )
 
         execute_sql_query = create_execute_sql_query_function(
-            workgroup_name=redshift_config["redshift_work_space"],
-            database_name=redshift_config["redshift_db"],
+            workgroup_name=redshift_work_space, database_name=redshift_db
         )
 
         final_prompts = create_nltosql_prompts(
             {
-                "schema_prompt": prompts["schema_prompt"],
-                "nltosql_prompt": prompts["nltosql_prompt"],
-                "abstract_queries_prompt": prompts["abstract_queries_prompt"],
-                "database_name": redshift_config["database_name"],
+                "schema_prompt": schema_prompt,
+                "nltosql_prompt": nltosql_prompt,
+                "abstract_queries_prompt": abstract_queries_prompt,
+                "database_name": database_name,
             }
         )
 

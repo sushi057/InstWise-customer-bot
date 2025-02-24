@@ -1,5 +1,7 @@
-from graphs.customer_insights.tools.models import (CreateNLTOSQLPromptsArgs,
-                                                   NLTOSQLPrompts)
+from graphs.customer_insights.tools.models import (
+    CreateNLTOSQLPromptsArgs,
+    NLTOSQLPrompts,
+)
 
 
 def create_nltosql_prompts(

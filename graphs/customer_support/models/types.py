@@ -21,6 +21,3 @@ class SupportWorkflowPrompts(TypedDict):
     primary_assistant_prompt: ChatPromptTemplate
     solution_prompt: ChatPromptTemplate
     followup_prompt: ChatPromptTemplate
-    schema_prompt: str
-    nltosql_prompt: str
-    abstract_queries_prompt: str
