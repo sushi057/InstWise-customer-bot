@@ -1,11 +1,9 @@
 from typing import cast
 
 from dotenv import load_dotenv
-from fastapi import Depends
 from langchain_core.messages import AIMessage, ToolMessage
 from langchain_openai import ChatOpenAI
 
-from graphs.customer_insights.helpers import create_internal_workflow_prompts
 from graphs.customer_insights.models import InternalWorkflowAgents
 from graphs.customer_insights.prompts import (
     action_agent_template,
@@ -16,12 +14,10 @@ from graphs.customer_insights.tools.hubspot import (
     create_note_hubspot,
     create_task_hubspot,
 )
-from graphs.customer_insights.tools.nltosql_tool import create_nltosql_tool
 from graphs.customer_support.tools.zendesk import (
     create_zendesk_ticket_for_unresolved_issues,
 )
-from main import get_session_state
-from state.session import SessionState
+from session.session import SessionState
 from utils.helpers import call_rag_api
 
 load_dotenv()
@@ -37,18 +33,9 @@ action_agent_tools = [
 
 
 def create_internal_workflow_agents(
-    org_id: str, session_state: SessionState = Depends(get_session_state)
+    session_state: SessionState,
 ) -> InternalWorkflowAgents:
     """Create agents and tools for the internal workflow."""
-
-    # Load prompts
-    # internal_workflow_prompts = create_internal_workflow_prompts(org_id=org_id)
-
-    # query_database, abstract_query_chain = create_nltosql_tool(
-    #     schema_prompt=internal_workflow_prompts["schema"],
-    #     nltosql_prompt=internal_workflow_prompts["nltosql_prompt"],
-    #     abstract_queries_prompt=internal_workflow_prompts["abstract_queries_prompt"],
-    # )
 
     query_database = session_state.nltosql_tool
     abstract_query_chain = session_state.abstract_query_chain
@@ -84,7 +71,7 @@ def create_internal_workflow_agents(
 
     def product_knowledge_agent(state: AgentStateGraph):
         last_message = cast(str, state["messages"][-1].content)
-        response = call_rag_api(query=last_message, org_id=org_id)
+        response = call_rag_api(query=last_message, org_id=session_state.org_id)
 
         return {**state, "messages": AIMessage(content=response)}
 

@@ -8,12 +8,13 @@ from graphs.customer_support.agents.agents import create_support_workflow_agents
 from graphs.customer_support.graph.routes import route_entry_point
 from graphs.customer_support.helpers.helpers import create_tool_node_with_fallback
 from graphs.customer_support.states.state import GraphState
+from session.session import SessionState
 
 
-def create_support_graph(org_id: str) -> CompiledGraph:
+def create_support_graph(session_state: SessionState) -> CompiledGraph:
     """Create the customer support graph"""
 
-    agents = create_support_workflow_agents(org_id=org_id)
+    agents = create_support_workflow_agents(session_state)
 
     builder = StateGraph(GraphState)
 

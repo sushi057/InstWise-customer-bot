@@ -4,6 +4,7 @@ import os
 import requests
 from dotenv import load_dotenv
 from fastapi import HTTPException, status
+from langchain_core.runnables.config import RunnableConfig
 from langchain_core.tools import tool
 from pydantic import BaseModel, EmailStr, Field
 
@@ -39,7 +40,7 @@ zendesk_url = f"https://{zendesk_domain}.zendesk.com/api/v2/tickets"
 
 @tool()
 def create_zendesk_ticket_for_unresolved_issues(
-    ticket_input: TicketModel,
+    ticket_input: TicketModel, config: RunnableConfig
 ):
     """Create a ticket in Zendesk for unresolved customer issues."""
     if not zendesk_domain or not user or not password or password is None:
@@ -51,7 +52,8 @@ def create_zendesk_ticket_for_unresolved_issues(
     try:
         # Fetch organization details for the company name
         organization_details = fetch_organization_details_by_name(
-            ticket_input.company_name
+            ticket_input.company_name,
+            config["configurable"]["session_state"],
         )
         if not organization_details:
             raise Exception("Organization not found")
@@ -121,16 +123,3 @@ async def get_all_tickets():
             status_code=response.status_code,
             detail=f"Failed to fetch tickets: {response.text}",
         )
-
-
-# if __name__ == "__main__":
-#     print(
-#         create_zendesk_ticket_for_unresolved_issues(
-#             Ticket(
-#                 customer_id="32489327711124",
-#                 email="sarah@hilton.com",
-#                 subject="Need help with API",
-#                 description="Detailed description of the issue",
-#             )
-#         )
-#     )

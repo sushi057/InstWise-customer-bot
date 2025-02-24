@@ -1,13 +1,11 @@
 from typing import Literal, cast
 
-from fastapi import Depends
 from langchain_core.messages import AIMessage
 from langchain_core.runnables import RunnableConfig
 from langgraph.types import Command
 
 from config.config import set_customer_info
 from config.init_model import init_model
-from graphs.customer_insights.tools.nltosql_tool import create_nltosql_tool
 from graphs.customer_support.helpers.helpers import get_valid_email
 from graphs.customer_support.models.types import SupportWorkflowAgents
 from graphs.customer_support.prompts.prompts import create_prompts
@@ -26,25 +24,17 @@ from graphs.customer_support.tools.tools import (
 from graphs.customer_support.tools.zendesk import (
     create_zendesk_ticket_for_unresolved_issues,
 )
-from main import get_session_state
-from state.session import SessionState
+from session.session import SessionState
 
 
 def create_support_workflow_agents(
-    org_id: str, session_state: SessionState = Depends(get_session_state)
+    session_state: SessionState,
 ) -> SupportWorkflowAgents:
     """Create agents for the customer support graph"""
 
-    llm = init_model(fully_specified_name="gpt-4o")
-    prompts = create_prompts(org_id)
+    llm = init_model("gpt-4o")
 
-    # Create NL2SQL tool
-    # query_database, _ = create_nltosql_tool(
-    #     schema_prompt=prompts["schema_prompt"],
-    #     nltosql_prompt=prompts["nltosql_prompt"],
-    #     abstract_queries_prompt=prompts["abstract_queries_prompt"],
-    # )
-
+    prompts = create_prompts(session_state)
     query_database = session_state.nltosql_tool
 
     # Define tools for the agents
@@ -150,10 +140,7 @@ def create_support_workflow_agents(
                 )
         except Exception as e:
             raise e
-            # return {
-            #     "message": "An error occurred while fetching user info",
-            #     "error": str(e),
-            # }
+        # }
 
     def primary_assistant(
         state: GraphState,
@@ -172,7 +159,7 @@ def create_support_workflow_agents(
         response = primary_assistant_runnable.invoke(state)
 
         # Add tool message for routing to the Solution Agent or Follow-up Agent
-        if response.tool_calls:
+        if response.tool_calls:  # type: ignore
             if response.tool_calls[0]["name"] == "ToSolutionAgent":
                 tool_call_id = response.tool_calls[-1]["id"]
                 tool_message = {
@@ -250,6 +237,7 @@ def create_support_workflow_agents(
         followup_runnable = prompts["followup_prompt"] | llm.bind_tools(followup_tools)
 
         response = followup_runnable.invoke(state)
+
         if response.tool_calls:
             if response.tool_calls[0]["name"] == CompleteOrEscalate.name:
                 tool_message = {
@@ -266,7 +254,6 @@ def create_support_workflow_agents(
                     goto="followup_agent_tools", update={"messages": response}
                 )
         return Command(update={"messages": response})
-        # return {**state, "messages": response}
 
     return {
         "fetch_user_info": fetch_user_info,

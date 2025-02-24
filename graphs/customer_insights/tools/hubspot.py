@@ -3,15 +3,14 @@ from datetime import datetime
 
 import requests
 from dotenv import load_dotenv
+from langchain_core.runnables.config import RunnableConfig
 from langchain_core.tools import tool
 
 from graphs.customer_insights.helpers import fetch_organization_details_by_name
-from graphs.customer_insights.tools.models import (
-    CreateNoteRequest,
-    CreateNoteResponse,
-    CreateTaskRequest,
-    CreateTaskResponse,
-)
+from graphs.customer_insights.tools.models import (CreateNoteRequest,
+                                                   CreateNoteResponse,
+                                                   CreateTaskRequest,
+                                                   CreateTaskResponse)
 
 # Load environment variables
 load_dotenv()
@@ -23,14 +22,17 @@ hubspot_headers = {
 
 
 @tool
-def create_task_hubspot(request: CreateTaskRequest) -> CreateTaskResponse:
+def create_task_hubspot(
+    request: CreateTaskRequest, config: RunnableConfig
+) -> CreateTaskResponse:
     """
     Creates task in hubspot.
     """
     try:
-        # Fetch organiztaion details for the company name
+        # Fetch organization details for the company name
         organization_details = fetch_organization_details_by_name(
-            customer_name=request.company_name
+            customer_name=request.company_name,
+            session_state=config["configurable"]["session_state"],
         )
 
         if not organization_details:
@@ -75,15 +77,19 @@ def create_task_hubspot(request: CreateTaskRequest) -> CreateTaskResponse:
 
 
 @tool
-def create_note_hubspot(request: CreateNoteRequest) -> CreateNoteResponse:
+def create_note_hubspot(
+    request: CreateNoteRequest, config: RunnableConfig
+) -> CreateNoteResponse:
     """
     Creates note in hubspot.
     """
     try:
         # Fetch organiztaion details for the company name
         organization_details = fetch_organization_details_by_name(
-            customer_name=request.company_name
+            customer_name=request.company_name,
+            session_state=config["configurable"]["session_state"],
         )
+
         if not organization_details:
             raise Exception("Organization not found")
 
@@ -113,6 +119,7 @@ def create_note_hubspot(request: CreateNoteRequest) -> CreateNoteResponse:
             headers=hubspot_headers,
             json=json_data,
         ).json()
+
         print(response)
 
         return CreateNoteResponse(

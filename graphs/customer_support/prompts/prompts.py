@@ -5,14 +5,14 @@ from dotenv import load_dotenv
 from langchain.prompts import ChatPromptTemplate
 
 from graphs.customer_support.models.types import SupportWorkflowPrompts
-from utils.helpers import fetch_organization_details
+from session.session import SessionState
 
 load_dotenv()
 DEV_ENV = os.getenv("DEV_ENV", "prod")
 
 
-def create_prompts(org_id: str) -> SupportWorkflowPrompts:
-    organization_detail = fetch_organization_details(org_id)
+def create_prompts(session_state: SessionState) -> SupportWorkflowPrompts:
+    organization_detail = session_state.org_details
 
     primary_assistant_prompt = ChatPromptTemplate.from_messages(
         [
@@ -45,7 +45,4 @@ def create_prompts(org_id: str) -> SupportWorkflowPrompts:
         "primary_assistant_prompt": primary_assistant_prompt,
         "solution_prompt": solution_prompt,
         "followup_prompt": followup_prompt,
-        "schema_prompt": organization_detail.schema_prompt,
-        "nltosql_prompt": organization_detail.nltosql_prompt,
-        "abstract_queries_prompt": organization_detail.abstract_refinement_prompt,
     }

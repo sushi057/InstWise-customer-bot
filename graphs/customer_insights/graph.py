@@ -15,6 +15,7 @@ from graphs.customer_insights.helpers import create_tool_node_with_fallback
 from graphs.customer_insights.models import RouterAgentOutput
 from graphs.customer_insights.prompts import router_prompt_template
 from graphs.customer_insights.state import AgentStateGraph
+from session.session import SessionState
 
 llm_mini = ChatOpenAI(model="gpt-4o-mini")
 
@@ -46,13 +47,13 @@ def route_function(state: AgentStateGraph):
         return "data_agent"
 
 
-def create_insights_graph(org_id: str) -> CompiledGraph:
+def create_insights_graph(session_state: SessionState) -> CompiledGraph:
     """Create graph for insights workflow"""
 
     graph_builder = StateGraph(AgentStateGraph)
 
     # Load agents
-    agents = create_internal_workflow_agents(org_id=org_id)
+    agents = create_internal_workflow_agents(session_state)
 
     # Define nodes
     graph_builder.add_node("data_agent", agents["data_agent"])
