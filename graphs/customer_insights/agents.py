@@ -1,6 +1,7 @@
 from typing import cast
 
 from dotenv import load_dotenv
+from fastapi import Depends
 from langchain_core.messages import AIMessage, ToolMessage
 from langchain_openai import ChatOpenAI
 
@@ -19,6 +20,8 @@ from graphs.customer_insights.tools.nltosql_tool import create_nltosql_tool
 from graphs.customer_support.tools.zendesk import (
     create_zendesk_ticket_for_unresolved_issues,
 )
+from main import get_session_state
+from state.session import SessionState
 from utils.helpers import call_rag_api
 
 load_dotenv()
@@ -33,16 +36,22 @@ action_agent_tools = [
 ]
 
 
-def create_internal_workflow_agents(org_id: str) -> InternalWorkflowAgents:
+def create_internal_workflow_agents(
+    org_id: str, session_state: SessionState = Depends(get_session_state)
+) -> InternalWorkflowAgents:
     """Create agents and tools for the internal workflow."""
 
     # Load prompts
-    internal_workflow_prompts = create_internal_workflow_prompts(org_id=org_id)
-    query_database, abstract_query_chain = create_nltosql_tool(
-        schema_prompt=internal_workflow_prompts["schema"],
-        nltosql_prompt=internal_workflow_prompts["nltosql_prompt"],
-        abstract_queries_prompt=internal_workflow_prompts["abstract_queries_prompt"],
-    )
+    # internal_workflow_prompts = create_internal_workflow_prompts(org_id=org_id)
+
+    # query_database, abstract_query_chain = create_nltosql_tool(
+    #     schema_prompt=internal_workflow_prompts["schema"],
+    #     nltosql_prompt=internal_workflow_prompts["nltosql_prompt"],
+    #     abstract_queries_prompt=internal_workflow_prompts["abstract_queries_prompt"],
+    # )
+
+    query_database = session_state.nltosql_tool
+    abstract_query_chain = session_state.abstract_query_chain
 
     def action_agent(state: AgentStateGraph):
         """This agent will execute actions in the CRM, CSM, or Support application."""

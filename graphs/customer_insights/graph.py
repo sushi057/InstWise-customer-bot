@@ -30,10 +30,10 @@ def route_function(state: AgentStateGraph):
     router_runnable = router_prompt_template | llm_mini.with_structured_output(
         RouterAgentOutput
     )
-
     response = cast(
         RouterAgentOutput, router_runnable.invoke({"messages": state["messages"]})
     )
+
     print(
         f"""===========================================\n\nRouting to {response.route}\n"""
     )

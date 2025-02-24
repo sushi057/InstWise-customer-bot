@@ -1,9 +1,9 @@
-from typing import Literal, Optional
+from typing import Any, Literal, Optional
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI, Header
 from langchain_core.runnables import RunnableConfig
-from langgraph.errors import GraphRecursionError
-from pydantic import EmailStr
+from langgraph.errors import (EmailStr, GraphRecursionError, from, import,
+                              pydantic)
 
 from config.config import CustomerInfo, get_customer_info, set_customer_info
 from graphs.customer_insights.graph import create_insights_graph
@@ -11,8 +11,9 @@ from graphs.customer_support.graph.graph import create_support_graph
 from graphs.customer_support.helpers.helpers import get_session_id
 from graphs.task_agent.agents import create_task_agent
 from graphs.task_agent.models import Task
-from models.task_agent import AskTaskAgentRequest, AskTaskAgentResponse
+from models.task_agent import AskTaskAgentRequest
 from routes import customer, outreach
+from state.session import SessionState
 from utils.helpers import call_rag_api
 
 app = FastAPI()
@@ -23,6 +24,34 @@ app.include_router(outreach.router, prefix="/outreach", tags=["outreach"])
 
 session_graph_cache = {"session_id": "", "graph": None, "customer_id": ""}
 customer_info = {"customer_info": None}
+
+_session_state_cache: dict[tuple[str, str], SessionState] = {}
+
+
+async def get_session_state(
+    org_id_header: str = Header(..., alias="org_id"),
+    session_id_header: str = Header(..., alias="session_id"),
+) -> SessionState:
+    """Dependency to get or create a SessionState object for the current session."""
+
+    session_id = session_id_header
+    org_id = org_id_header
+    cache_key = (org_id, session_id)
+
+    if cache_key in _session_state_cache:
+        print(
+            f"SessionState found in cache for session_id: {session_id}, org_id: {org_id}"
+        )
+        return _session_state_cache[cache_key]
+    else:
+        new_session_state = SessionState(org_id=org_id, session_id=session_id)
+        _session_state_cache[cache_key] = new_session_state
+
+        print(
+            f"New SessionState created for session_id: {session_id}, org_id: {org_id}"
+        )
+
+        return new_session_state
 
 
 @app.get("/", status_code=200)
@@ -38,6 +67,7 @@ async def ask_support(
     customer_id: str,  # 0000
     api_type: Literal["support", "insights"],
     session_id: Optional[str] = None,
+    session_state: SessionState = Depends(get_session_state),
 ):
     """
     Private Chat API for customer support and customer insights.
@@ -65,6 +95,7 @@ async def ask_support(
             "session_id": session_graph_cache["session_id"],
             "customer_id": customer_id,
         }
+
     graph = session_graph_cache["graph"]
 
     config = RunnableConfig(

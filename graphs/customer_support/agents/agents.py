@@ -1,5 +1,6 @@
 from typing import Literal, cast
 
+from fastapi import Depends
 from langchain_core.messages import AIMessage
 from langchain_core.runnables import RunnableConfig
 from langgraph.types import Command
@@ -25,23 +26,29 @@ from graphs.customer_support.tools.tools import (
 from graphs.customer_support.tools.zendesk import (
     create_zendesk_ticket_for_unresolved_issues,
 )
+from main import get_session_state
+from state.session import SessionState
 
 
-def create_support_workflow_agents(org_id: str) -> SupportWorkflowAgents:
+def create_support_workflow_agents(
+    org_id: str, session_state: SessionState = Depends(get_session_state)
+) -> SupportWorkflowAgents:
     """Create agents for the customer support graph"""
 
     llm = init_model(fully_specified_name="gpt-4o")
     prompts = create_prompts(org_id)
 
     # Create NL2SQL tool
-    call_query_database, _ = create_nltosql_tool(
-        schema_prompt=prompts["schema_prompt"],
-        nltosql_prompt=prompts["nltosql_prompt"],
-        abstract_queries_prompt=prompts["abstract_queries_prompt"],
-    )
+    # query_database, _ = create_nltosql_tool(
+    #     schema_prompt=prompts["schema_prompt"],
+    #     nltosql_prompt=prompts["nltosql_prompt"],
+    #     abstract_queries_prompt=prompts["abstract_queries_prompt"],
+    # )
+
+    query_database = session_state.nltosql_tool
 
     # Define tools for the agents
-    primary_assistant_tools = [call_query_database, ToSolutionAgent, ToFollowUpAgent]
+    primary_assistant_tools = [query_database, ToSolutionAgent, ToFollowUpAgent]
 
     solution_tools = [
         solution_rag_call,
@@ -52,7 +59,7 @@ def create_support_workflow_agents(org_id: str) -> SupportWorkflowAgents:
     followup_tools = [
         recommend_features,
         upsell_features,
-        call_query_database,
+        query_database,
         collect_feedback,
         CompleteOrEscalate,
     ]
@@ -101,7 +108,7 @@ def create_support_workflow_agents(org_id: str) -> SupportWorkflowAgents:
 
         # Fetch customer info with the customer_email from the database
         try:
-            response = call_query_database.invoke(
+            response = query_database.invoke(
                 f"Fetch customer details with the domain {customer_email.split('@')[1]}"
             )
 
