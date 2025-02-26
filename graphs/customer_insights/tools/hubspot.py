@@ -7,10 +7,12 @@ from langchain_core.runnables.config import RunnableConfig
 from langchain_core.tools import tool
 
 from graphs.customer_insights.helpers import fetch_organization_details_by_name
-from graphs.customer_insights.tools.models import (CreateNoteRequest,
-                                                   CreateNoteResponse,
-                                                   CreateTaskRequest,
-                                                   CreateTaskResponse)
+from graphs.customer_insights.tools.models import (
+    CreateNoteRequest,
+    CreateNoteResponse,
+    CreateTaskRequest,
+    CreateTaskResponse,
+)
 
 # Load environment variables
 load_dotenv()

@@ -1,10 +1,10 @@
 import os
-import requests
-from pydantic import BaseModel, Field
 
+import requests
+from langchain_core.messages import AIMessage
 from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import tool
-from langchain_core.messages import AIMessage
+from pydantic import BaseModel, Field
 
 # from langchain_core.tools.base import InjectedToolCallId
 # from langgraph.types import Command
@@ -155,6 +155,7 @@ def collect_feedback(
     """
     organization_id = config.get("configurable", {}).get("org_id")
 
+    # Add customer_id
     feedback_data = {
         "query": query,
         "rating": rating,

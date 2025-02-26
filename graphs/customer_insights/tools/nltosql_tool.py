@@ -9,8 +9,7 @@ from langchain_openai import ChatOpenAI
 from langsmith import traceable
 
 from graphs.customer_insights.tools.helpers import create_nltosql_prompts
-from graphs.customer_insights.tools.models import (AbstractQueryResponse,
-                                                   QueryResponse)
+from graphs.customer_insights.tools.models import AbstractQueryResponse, QueryResponse
 from utils.helpers import fetch_organization_details
 
 load_dotenv()
