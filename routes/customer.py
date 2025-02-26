@@ -3,10 +3,8 @@ from typing import cast
 from fastapi import APIRouter, Depends, HTTPException
 
 from graphs.customer_insights.tools.models import QueryResponse
-
-# from graphs.customer_insights.tools.nltosql_tool import execute_sql_query
 from models.customer import CheckEmailRequest, CheckEmailResponse
-from session.cache import get_session_state
+from session.cache import get_session_state_core
 from session.session import SessionState
 
 router = APIRouter(tags=["customer"])
@@ -14,7 +12,8 @@ router = APIRouter(tags=["customer"])
 
 @router.post("/get-customer-by-email", response_model=CheckEmailResponse)
 async def get_customer_by_email(
-    request: CheckEmailRequest, session_state: SessionState = Depends(get_session_state)
+    request: CheckEmailRequest,
+    session_state: SessionState = Depends(get_session_state_core),
 ):
     """
     Check if email exists in the database and return details.
