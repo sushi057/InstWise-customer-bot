@@ -2,19 +2,16 @@ from typing import Literal, Optional
 
 from fastapi import Depends, FastAPI
 from langchain_core.runnables import RunnableConfig
-from langgraph.errors import GraphRecursionError
 from pydantic import EmailStr
 
-from config.config import CustomerInfo, get_customer_info, set_customer_info
-from graphs.customer_insights.graph import create_insights_graph
-from graphs.customer_support.graph.graph import create_support_graph
-from graphs.customer_support.helpers.helpers import get_session_id
-from graphs.task_agent.agents import create_task_agent
-from graphs.task_agent.models import Task
-from models.task_agent import AskTaskAgentRequest
+from config.config import get_customer_info
 from routes import customer, outreach
-from session.cache import get_session_state
-from session.session import SessionState
+from session.cache import (
+    get_private_session_state,
+    get_public_session_state,
+    get_task_session_state,
+)
+from session.session import PrivateSession, PublicSession, TaskSession
 from utils.helpers import call_rag_api
 
 app = FastAPI()
@@ -23,7 +20,6 @@ app = FastAPI()
 app.include_router(customer.router, prefix="/customer", tags=["customer"])
 app.include_router(outreach.router, prefix="/outreach", tags=["outreach"])
 
-session_graph_cache = {"session_id": "", "graph": None, "customer_id": ""}
 customer_info = {"customer_info": None}
 
 
@@ -36,111 +32,85 @@ async def root():
 async def ask_support(
     query: str,
     user_email: EmailStr,  # Optional
-    # org_id: str,
     customer_id: str,  # 0000
     api_type: Literal["support", "insights"],
-    # session_id: Optional[str] = None,
-    session_state: SessionState = Depends(get_session_state),
+    session_state: PrivateSession = Depends(get_private_session_state),
 ):
-    """
-    Private Chat API for customer support and customer insights.
-    The customer_id is 0000 by default for internal users.
-    """
+    """Private Chat API for customer insights workflow."""
 
     session_id = session_state.session_id
     org_id = session_state.org_id
 
-    # Improve this session_id cache design
-    if session_graph_cache["session_id"] != session_id:
-        session_graph_cache["session_id"] = get_session_id()
-
-        set_customer_info(
-            customer_info=CustomerInfo(
-                customer_id=customer_id, customer_email=user_email
-            )
-        )
-
-        # Generate new graph based on the API type
-        if api_type == "insights":
-            session_graph_cache["graph"] = create_insights_graph(session_state)
-
-    if api_type == "support":
-        rag_api_answer = call_rag_api(query=query, org_id=org_id)
-        return {
-            "message": rag_api_answer,
-            "session_id": session_id,
-            "customer_id": customer_id,
-        }
-
-    graph = session_graph_cache["graph"]
-
-    config = RunnableConfig(
-        configurable={
-            "thread_id": session_graph_cache["session_id"],
-            "customer_email": user_email,
-            "org_id": org_id,
-            "internal_user": True,
-            "session_state": session_state,
-        }
-    )
-
-    messages = []
-
     try:
-        async for event in graph.astream(
-            {"messages": [("user", query)]}, config, stream_mode="values"
-        ):
-            event["messages"][-1].pretty_print()
-            messages.append(event["messages"][-1].content)
-    except Exception as e:
-        return {"error": str(e), "session_id": session_id}
+        if api_type == "support":
+            rag_api_answer = call_rag_api(query=query, org_id=org_id)
 
-    return {
-        "message": messages[-1],
-        "session_id": session_graph_cache["session_id"],
-        "customer_id": get_customer_info().get("customer_id"),
-    }
+            return {
+                "message": rag_api_answer,
+                "session_id": session_id,
+                "customer_id": customer_id,
+            }
+        else:
+            graph = session_state.insights_graph
+
+            config = RunnableConfig(
+                configurable={
+                    "thread_id": session_id,
+                    "customer_email": user_email,
+                    "org_id": org_id,
+                    "internal_user": True,
+                    "session_state": session_state,
+                }
+            )
+
+            messages = []
+
+            # Compile all messages from the graph and send the last message
+            # TODO: Implement streaming
+            async for event in graph.astream(
+                {"messages": [("user", query)]}, config, stream_mode="values"
+            ):
+                event["messages"][-1].pretty_print()
+                messages.append(event["messages"][-1].content)
+
+            return {
+                "message": messages[-1],
+                "session_id": session_id,
+                "customer_id": get_customer_info().get("customer_id"),
+            }
+
+    except Exception as e:
+        return {"message": f"Error: {str(e)}", "session_id": session_id}
 
 
 @app.get("/public/ask")
 async def ask_public_chat(
     query: str,
-    # org_id: str,
-    # session_id: Optional[str] = None,
     user_email: Optional[str] = None,
-    session_state: SessionState = Depends(get_session_state),
+    session_state: PublicSession = Depends(get_public_session_state),
 ):
     """
     Chat API for external customers. This API only supports customer_support workflow.
-    Initially, user_email is empty. The customer_id is other than 0000.
+    Initially, user_email is empty.
     """
+
     session_id = session_state.session_id
     org_id = session_state.org_id
 
-    # Checks for a new session and creates a new graph
-    if session_graph_cache["session_id"] != session_id:
-        session_graph_cache["session_id"] = session_id
-        session_graph_cache["graph"] = create_support_graph(session_state)
+    try:
+        graph = session_state.support_graph
 
-        # Set global CustomerInfo to null for a new session
-        set_customer_info(
-            customer_info=CustomerInfo(customer_id=None, customer_email=None)
+        config = RunnableConfig(
+            configurable={
+                "thread_id": session_id,
+                "user_email": user_email,
+                "org_id": org_id,
+                "internal_user": False,
+                "session_state": session_state,
+            }
         )
 
-    graph = session_graph_cache["graph"]
-
-    config = RunnableConfig(
-        configurable={
-            "thread_id": session_graph_cache["session_id"],
-            "user_email": user_email,
-            "org_id": org_id,
-            "internal_user": False,
-            "session_state": session_state,
-        }
-    )
-
-    messages = []
-    try:
+        messages = []
         async for event in graph.astream(
             {
                 "messages": [("user", query)],
@@ -150,33 +120,22 @@ async def ask_public_chat(
         ):
             event["messages"][-1].pretty_print()
             messages.append(event["messages"][-1].content)
-    except GraphRecursionError:
+
         return {
-            "message": "Graph Recursion Error, Please try again.",
+            "message": messages[-1],
             "session_id": session_id,
-            "customer_id": customer_info.get("customer_id"),
+            "customer_id": get_customer_info().get("customer_id"),
+            "user_email": get_customer_info().get("customer_email"),
         }
+
     except Exception as e:
-        return {"error": str(e), "session_id": session_id}
-
-    return {
-        "message": messages[-1],
-        "session_id": session_graph_cache["session_id"],
-        "customer_id": get_customer_info().get("customer_id"),
-        "user_email": get_customer_info().get("customer_email"),
-    }
+        return {"message": f"Error {str(e)}", "session_id": session_id}
 
 
-@app.post("/task-agent/{task_name}")
-async def ask_task_agent(request: AskTaskAgentRequest):
-    """
-    Task Agent API created based on the given task name.
-
-    """
-    task_agent = create_task_agent(
-        Task(org_id=request.org_id, task_name=request.task_name)
-    )
-
+@app.post("/task-agent")
+async def ask_task_agent(session_state: TaskSession = Depends(get_task_session_state)):
+    """Task Agent API created based on the given task name."""
+    task_agent = session_state.task_agent_graph
     response = task_agent.invoke({})
     return response
 
