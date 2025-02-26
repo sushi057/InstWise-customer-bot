@@ -2,8 +2,7 @@ from typing import TypedDict
 
 from langchain_core.prompts import ChatPromptTemplate
 
-from graphs.task_agent.helpers import get_task_agent_details
-from graphs.task_agent.models import Task
+from session.session import TaskSession
 
 
 class TaskAgentPrompts(TypedDict):
@@ -13,12 +12,10 @@ class TaskAgentPrompts(TypedDict):
     current_task_data_prompt: str
 
 
-def create_task_agent_prompts(
-    task: Task,
-) -> TaskAgentPrompts:
+def create_task_agent_prompts(session: TaskSession) -> TaskAgentPrompts:
     """Create prompts for task agent details."""
 
-    task_agent_details = get_task_agent_details(task)
+    task_agent_details = session.task_details
 
     current_task_data_prompt = task_agent_details.taskAgents.data_source
 

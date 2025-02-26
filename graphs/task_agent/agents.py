@@ -1,32 +1,24 @@
 # from langsmith import traceable
 
 from config.init_model import init_model
-from graphs.customer_insights.tools.nltosql_tool import create_nltosql_tool
-from graphs.task_agent.models import Task
 from graphs.task_agent.prompts import create_task_agent_prompts
 from graphs.task_agent.tools.send_email import send_email
-from utils.helpers import fetch_organization_details
+from session.session import TaskSession
 
 
-def create_task_agent(task: Task):
+def create_task_agent(session: TaskSession):
     """Create task agents for given organization and task name."""
 
     llm = init_model(fully_specified_name="gpt-4o")
 
-    task_agent_prompts = create_task_agent_prompts(task)
+    task_agent_prompts = create_task_agent_prompts(session)
 
-    prompts = fetch_organization_details(task.org_id)
-    query_database, _ = create_nltosql_tool(
-        schema_prompt=prompts.schema_prompt,
-        nltosql_prompt=prompts.nltosql_prompt,
-        abstract_queries_prompt=prompts.abstract_refinement_prompt,
-    )
+    query_database = session.nltosql_tool
 
     current_task_data = query_database.invoke(
         task_agent_prompts["current_task_data_prompt"]
     )
 
-    # @traceable(name="task_agent", run_type="chain")
     task_agent_runnable = task_agent_prompts["task_agent_main_prompt"].partial(
         task_data=current_task_data
     ) | llm.bind_tools([send_email])
