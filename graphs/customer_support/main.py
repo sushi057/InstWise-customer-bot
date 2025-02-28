@@ -2,8 +2,8 @@ import uuid
 
 from langchain_core.runnables import RunnableConfig
 
-from graphs.customer_support.graph.graph import create_support_graph
 from graphs.customer_support.helpers.helpers import visualize_graph
+from session.session import PublicSession
 
 thread_id = str(uuid.uuid4())
 config = RunnableConfig(
@@ -14,8 +14,9 @@ config = RunnableConfig(
     }
 )
 
+session_state = PublicSession("66158fe71bfe10b58cb23eea", "123")
 
-graph = create_support_graph("66158fe71bfe10b58cb23eea")
+graph = session_state.support_graph
 
 visualize_graph(graph)
 
