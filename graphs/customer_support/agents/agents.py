@@ -5,7 +5,6 @@ from langchain_core.runnables import RunnableConfig
 from langgraph.types import Command
 
 from config.config import set_customer_info
-from config.init_model import init_model
 from graphs.customer_support.helpers.helpers import get_valid_email
 from graphs.customer_support.models.types import SupportWorkflowAgents
 from graphs.customer_support.prompts.prompts import create_prompts
@@ -25,6 +24,7 @@ from graphs.customer_support.tools.zendesk import (
     create_zendesk_ticket_for_unresolved_issues,
 )
 from session.session import SessionState
+from utils.init_model import init_model
 
 
 def create_support_workflow_agents(

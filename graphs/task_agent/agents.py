@@ -1,9 +1,9 @@
 # from langsmith import traceable
 
-from config.init_model import init_model
 from graphs.task_agent.prompts import create_task_agent_prompts
 from graphs.task_agent.tools.send_email import send_email
 from session.session import TaskSession
+from utils.init_model import init_model
 
 
 def create_task_agent(session: TaskSession):
