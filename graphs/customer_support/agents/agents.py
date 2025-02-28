@@ -4,7 +4,6 @@ from langchain_core.messages import AIMessage
 from langchain_core.runnables import RunnableConfig
 from langgraph.types import Command
 
-from config.config import set_customer_info
 from graphs.customer_support.helpers.helpers import get_valid_email
 from graphs.customer_support.models.types import SupportWorkflowAgents
 from graphs.customer_support.prompts.prompts import create_prompts
@@ -63,38 +62,30 @@ def create_support_workflow_agents(
         If the user is an internal user, get the customer info with the email from the config else ask for the email address.
         """
 
-        configurable = config.get("configurable", {})
-        internal_user = configurable["internal_user"]
+        last_human_message = cast(str, state["messages"][-1].content)
 
-        # Get customer_email based on the chat_type
-        ## If the user is not a internal user, ask for email address
-        if not internal_user:
-            last_human_message = cast(str, state["messages"][-1].content)
-
-            # Ask for email during initial conversation, if email is provided make sure its a valid email
-            ## Message asking user email initially
-            if "@" not in last_human_message:
+        # Ask for email during initial conversation, if email is provided make sure its a valid email
+        ## Message asking user email initially
+        if "@" not in last_human_message:
+            return Command(
+                update={
+                    "messages": AIMessage(
+                        content="Hi, Could you please provide your email address so that I can assist you better?"
+                    )
+                },
+                goto="__end__",
+            )
+        else:
+            customer_email = get_valid_email(last_human_message)
+            if not customer_email:
                 return Command(
                     update={
                         "messages": AIMessage(
-                            content="Hi, Could you please provide your email address so that I can assist you better?"
+                            "Please provide a valid email address so that I can assist you better."
                         )
                     },
                     goto="__end__",
                 )
-            else:
-                customer_email = get_valid_email(last_human_message)
-                if not customer_email:
-                    return Command(
-                        update={
-                            "messages": AIMessage(
-                                "Please provide a valid email address so that I can assist you better."
-                            )
-                        },
-                        goto="__end__",
-                    )
-        else:
-            customer_email = configurable["customer_email"]
 
         # Fetch customer info with the customer_email from the database
         try:
@@ -106,16 +97,13 @@ def create_support_workflow_agents(
             if response[0].result_set:
                 customer_info = response[0].result_set[0]
 
-                # Update global customer object
-                set_customer_info(
-                    {
-                        "customer_id": customer_info.get("company_id"),
-                        "customer_email": customer_email,
-                        # "company_name": customer_info.get("name"),
-                    }
+                session_state.set_customer_info(
+                    customer_id=customer_info.get("company_id"),
+                    customer_email=customer_email,
+                    company_name=customer_info.get("name"),
+                    start_date=customer_info.get("start_date"),
                 )
 
-                print(f"Customer Info: {customer_info}")
                 # Update customer info and internal user type in graph state
                 return Command(
                     goto="primary_assistant",
@@ -126,7 +114,6 @@ def create_support_workflow_agents(
                             customer_id=customer_info.get("company_id"),
                             start_date=customer_info.get("start_date"),
                         ),
-                        "internal_user": internal_user,
                     },
                 )
             else:
@@ -156,7 +143,7 @@ def create_support_workflow_agents(
             "primary_assistant_prompt"
         ] | llm.bind_tools(primary_assistant_tools)
 
-        response = primary_assistant_runnable.invoke(state)
+        response = cast(AIMessage, primary_assistant_runnable.invoke(state))
 
         # Add tool message for routing to the Solution Agent or Follow-up Agent
         if response.tool_calls:  # type: ignore
@@ -207,7 +194,7 @@ def create_support_workflow_agents(
         """
         solution_runnable = prompts["solution_prompt"] | llm.bind_tools(solution_tools)
 
-        response = solution_runnable.invoke(state)
+        response = cast(AIMessage, solution_runnable.invoke(state))
 
         if response.tool_calls:
             if response.tool_calls[0]["name"] == CompleteOrEscalate.name:
@@ -236,7 +223,7 @@ def create_support_workflow_agents(
         """
         followup_runnable = prompts["followup_prompt"] | llm.bind_tools(followup_tools)
 
-        response = followup_runnable.invoke(state)
+        response = cast(AIMessage, followup_runnable.invoke(state))
 
         if response.tool_calls:
             if response.tool_calls[0]["name"] == CompleteOrEscalate.name:

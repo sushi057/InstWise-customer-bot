@@ -4,7 +4,6 @@ from fastapi import Depends, FastAPI
 from langchain_core.runnables import RunnableConfig
 from pydantic import EmailStr
 
-from config.config import get_customer_info
 from routes import customer, outreach
 from session.cache import (
     get_private_session_state,
@@ -56,9 +55,6 @@ async def ask_support(
             config = RunnableConfig(
                 configurable={
                     "thread_id": session_id,
-                    "customer_email": user_email,
-                    "org_id": org_id,
-                    "internal_user": True,
                     "session_state": session_state,
                 }
             )
@@ -76,7 +72,7 @@ async def ask_support(
             return {
                 "message": messages[-1],
                 "session_id": session_id,
-                "customer_id": get_customer_info().get("customer_id"),
+                "customer_id": customer_id,
             }
 
     except Exception as e:
@@ -95,7 +91,6 @@ async def ask_public_chat(
     """
 
     session_id = session_state.session_id
-    org_id = session_state.org_id
 
     try:
         graph = session_state.support_graph
@@ -104,8 +99,6 @@ async def ask_public_chat(
             configurable={
                 "thread_id": session_id,
                 "user_email": user_email,
-                "org_id": org_id,
-                "internal_user": False,
                 "session_state": session_state,
             }
         )
@@ -124,8 +117,8 @@ async def ask_public_chat(
         return {
             "message": messages[-1],
             "session_id": session_id,
-            "customer_id": get_customer_info().get("customer_id"),
-            "user_email": get_customer_info().get("customer_email"),
+            "customer_id": session_state.customer_info.customer_id,
+            "user_email": session_state.customer_info.customer_email,
         }
 
     except Exception as e:

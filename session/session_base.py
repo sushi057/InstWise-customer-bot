@@ -2,6 +2,7 @@ from graphs.customer_insights.tools.nltosql_tool import (
     create_execute_sql_query_function,
     create_nltosql_tool,
 )
+from graphs.customer_support.models.customer_info import CustomerInfo
 from models.organization import OrganizationDetail
 from utils.helpers import fetch_organization_details
 
@@ -13,8 +14,7 @@ class SessionState:
         self.org_id = org_id
         self.session_id = session_id
         self.org_details: OrganizationDetail = fetch_organization_details(org_id)
-
-        self.customer_info = None
+        self.customer_info: CustomerInfo = CustomerInfo()
 
         if self.org_details:
             """Create execute_sql_query_func and nlto_sql_tool based on the organization details."""
@@ -37,5 +37,17 @@ class SessionState:
 
             print("Created execute_sql_query_func and nlto_sql_tool")
 
-    def set_customer_info(self, *, customer_id: str, customer_email: str):
-        self.customer_info = {"id": customer_id, "email": customer_email}
+    def set_customer_info(
+        self,
+        *,
+        customer_id: str,
+        customer_email: str,
+        company_name: str,
+        start_date: str | None,
+    ):
+        self.customer_info = CustomerInfo(
+            customer_id=customer_id,
+            customer_email=customer_email,
+            company_name=company_name,
+            start_date=start_date,
+        )
