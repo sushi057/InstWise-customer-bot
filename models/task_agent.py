@@ -11,9 +11,6 @@ class AskTaskAgentRequest(BaseModel):
     query: str = Field(..., description="User query")
     org_id: str = Field(..., description="Organization ID to get details.")
     task_name: TaskName = Field(..., description="Task name to be performed.")
-    session_id: Optional[str] = Field(
-        None, description="Session ID for the current conversation"
-    )
 
 
 class AskTaskAgentResponse(BaseModel):

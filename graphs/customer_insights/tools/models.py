@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, TypedDict
 
 from pydantic import BaseModel, Field
 
@@ -42,3 +42,27 @@ class CreateNoteResponse(BaseModel):
     company_name: str = Field(..., description="Company name")
     created_at: str = Field(..., description="Note created at")
     body_preview: str = Field(..., description="Note body preview")
+
+
+class CreateNLTOSQLPromptsArgs(TypedDict):
+    """Organization specific prompts to create prompt templates for"""
+
+    schema_prompt: str
+    abstract_queries_prompt: str
+    nltosql_prompt: str
+    database_name: str
+
+
+class CreateNLTOSQLToolArgs(CreateNLTOSQLPromptsArgs):
+    """Prompts to create NLTOSQL tool."""
+
+    redshift_work_space: str
+    redshift_db: str
+
+
+class NLTOSQLPrompts(TypedDict):
+    """Prompts for NLTOSQL tool."""
+
+    schema_prompt: str
+    nltosql_prompt: str
+    abstract_queries_prompt: str

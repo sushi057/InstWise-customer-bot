@@ -17,10 +17,10 @@ rag_api_headers = {"X-API-KEY": f"{os.getenv('X_API_KEY')}"}
 
 def fetch_organization_details(org_id: str) -> OrganizationDetail:
     """Fetch latest organization details from the backend API."""
-    url = f"{instwise_backend_url}/api/v1/organization?organization={org_id}"
-    headers = {"accept": "*/*", "x-api-secret-key": instwise_secret_key}
-
     try:
+        url = f"{instwise_backend_url}/api/v1/organization?organization={org_id}"
+        headers = {"accept": "*/*", "x-api-secret-key": instwise_secret_key}
+
         response = requests.get(url, headers=headers)
         response.raise_for_status
         return OrganizationDetail(**response.json()["org"])
@@ -40,6 +40,7 @@ def call_rag_api(query: str, org_id: str) -> str:
     Returns:
         str: The response from the RAG API.
     """
+
     response = requests.get(
         rag_api_url,
         headers=rag_api_headers,

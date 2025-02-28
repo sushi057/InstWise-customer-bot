@@ -2,10 +2,11 @@ import uuid
 
 from langchain_core.runnables import RunnableConfig
 
-from graphs.customer_insights.graph import create_insights_graph
 from graphs.customer_insights.helpers import visualize_graph
+from session.session import PrivateSession
 
-graph = create_insights_graph(org_id="66158fe71bfe10b58cb23eea")
+session_state = PrivateSession("66158fe71bfe10b58cb23eea", "123")
+graph = session_state.insights_graph
 
 visualize_graph(graph)
 

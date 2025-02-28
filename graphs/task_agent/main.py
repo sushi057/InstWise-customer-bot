@@ -1,22 +1,11 @@
 import logging
-from graphs.task_agent.agents import create_task_agent
-from graphs.task_agent.models import Task
+
+from session.session import TaskSession
 
 logger = logging.getLogger(__name__)
+session_state = TaskSession("66158fe71bfe10b58cb23eea", "123", "Negative Sentiment")
 
-task_agent = create_task_agent(
-    Task(org_id="66158fe71bfe10b58cb23eea", task_name="Negative Sentiment")
-)
+task_agent = session_state.task_agent_graph
 
 logger.info(f"Task Agent created successfully {task_agent}")
 print(task_agent.invoke({}))
-
-
-#
-# /task_agent/feature_adoption
-# org_id: 66158fe71bfe10b58cb23eea
-#
-# Optional
-#     customer_id
-#     csm_owner_id
-#
