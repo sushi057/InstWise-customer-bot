@@ -15,7 +15,7 @@ from utils.helpers import fetch_organization_details
 load_dotenv()
 
 
-def create_execute_sql_query_function(workgroup_name: str, database_name: str):
+def create_execute_sql_query_function(workgroup_name: str, redshift_db: str):
     """Create execute_sql_query function to run SQL queries on given redshift database.
 
     Args:
@@ -36,7 +36,7 @@ def create_execute_sql_query_function(workgroup_name: str, database_name: str):
 
         try:
             WORKGROUP_NAME = workgroup_name
-            DATABASE_NAME = database_name
+            DATABASE_NAME = redshift_db
 
             query_parts = sql_query.strip().split("::")
             sql_query = query_parts[-1]
@@ -129,7 +129,7 @@ def create_nltosql_tool(
             )
 
         execute_sql_query = create_execute_sql_query_function(
-            workgroup_name=redshift_work_space, database_name=redshift_db
+            redshift_work_space, redshift_db
         )
 
         final_prompts = create_nltosql_prompts(
@@ -190,23 +190,31 @@ def create_nltosql_tool(
 
 if __name__ == "__main__":
     while True:
-        user_query = input("Enter your query: ")
+        user_query = input(
+            "Press 'd' for query_database tool, press 's' to run sql query or press 'q' to quit: "
+        )
         if user_query in ["q", "quit"]:
             break
 
+        user_query = input("Enter natural language query: ")
+
         prompts = fetch_organization_details("66158fe71bfe10b58cb23eea")
+        if user_query == "d":
+            query_database, _ = create_nltosql_tool(
+                database_name=prompts.database_name,
+                schema_prompt=prompts.schema_prompt,
+                nltosql_prompt=prompts.nltosql_prompt,
+                abstract_queries_prompt=prompts.abstract_queries_prompt,
+                redshift_db=prompts.redshift_db,
+                redshift_work_space=prompts.redshift_work_space,
+            )
 
-        query_database, _ = create_nltosql_tool(
-            args={
-                "schema_prompt": prompts.schema_prompt,  # type: ignore
-                "nltosql_prompt": prompts.nltosql_tool_prompts.nltosql_prompt,
-                "abstract_queries_prompt": prompts.nltosql_tool_prompts.abstract_refinement_prompt,
-                "database_name": prompts.redshift_workspace.database_name,
-                "redshift_work_space": prompts.redshift_workspace.redshift_work_space,
-                "redshift_db": prompts.redshift_workspace.redshift_db,
-            }
-        )
+            print(query_database.invoke(user_query))
 
-        print(query_database.invoke(user_query))
+        else:
+            execute_sql_query = create_execute_sql_query_function(
+                workgroup_name=prompts.redshift_work_space,
+                redshift_db=prompts.redshift_db,
+            )
 
-        # print(execute_sql_query(user_query))
+            print(execute_sql_query(user_query))

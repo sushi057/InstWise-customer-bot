@@ -20,14 +20,14 @@ class SessionState:
             """Create execute_sql_query_func and nlto_sql_tool based on the organization details."""
 
             workgroup_name = self.org_details.redshift_work_space
-            database_name = self.org_details.database_name
+            redshift_db = self.org_details.redshift_db
 
             self.execute_sql_query_func = create_execute_sql_query_function(
-                workgroup_name, database_name
+                workgroup_name, redshift_db
             )
 
             self.nltosql_tool, self.abstract_query_chain = create_nltosql_tool(
-                database_name=database_name,
+                database_name=self.org_details.database_name,
                 redshift_work_space=workgroup_name,
                 redshift_db=self.org_details.redshift_db,
                 schema_prompt=self.org_details.schema_prompt,
