@@ -1,7 +1,5 @@
 from typing import Literal, Optional, cast
 
-from fastapi import Header
-
 from graphs.customer_support.helpers.helpers import get_session_id
 from session.session import PrivateSession, PublicSession, TaskSession
 from session.session_base import SessionState
@@ -12,19 +10,19 @@ _session_state_cache: dict[
 
 
 async def get_session_state_core(
-    org_id_header: str = Header(..., alias="org_id"),
-    session_id_header: Optional[str] = Header(None, alias="session_id"),
+    org_id: str,
+    session_id: Optional[str] = None,
     session_type: Optional[Literal["private", "public", "task"]] = "private",
     *,
     task_name: Optional[str] = None,
 ) -> PrivateSession | PublicSession | TaskSession | SessionState:
     """Dependency to get or create a SessionState object for the current session."""
 
-    if not session_id_header:
-        session_id_header = get_session_id()
+    if not session_id:
+        session_id = get_session_id()
 
-    org_id = org_id_header
-    session_id = session_id_header
+    org_id = org_id
+    session_id = session_id
     cache_key = (org_id, session_id)
 
     if cache_key in _session_state_cache:
@@ -52,14 +50,14 @@ async def get_session_state_core(
 
 
 async def get_private_session_state(
-    org_id_header: str = Header(..., alias="org_id"),
-    session_id_header: Optional[str] = Header(None, alias="session_id"),
+    org_id: str,
+    session_id: Optional[str] = None,
 ) -> PrivateSession:
     """Dependency to get or create a PrivateSession object for the current session."""
 
     session_state = await get_session_state_core(
-        org_id_header=org_id_header,
-        session_id_header=session_id_header,
+        org_id=org_id,
+        session_id=session_id,
         session_type="private",
     )
 
@@ -67,14 +65,14 @@ async def get_private_session_state(
 
 
 async def get_public_session_state(
-    org_id_header: str = Header(..., alias="org_id"),
-    session_id_header: Optional[str] = Header(None, alias="session_id"),
+    org_id: str,
+    session_id: Optional[str] = None,
 ) -> PublicSession:
     """Dependency to get or create a PublicSession object for the current session."""
 
     session_state = await get_session_state_core(
-        org_id_header=org_id_header,
-        session_id_header=session_id_header,
+        org_id=org_id,
+        session_id=session_id,
         session_type="public",
     )
 
@@ -82,15 +80,15 @@ async def get_public_session_state(
 
 
 async def get_task_session_state(
-    org_id_header: str = Header(..., alias="org_id"),
-    session_id_header: Optional[str] = Header(None, alias="session_id"),
-    task_name: str = Header(..., alias="task_name"),
+    org_id: str,
+    task_name: str,
+    session_id: Optional[str] = None,
 ) -> TaskSession:
     """Dependency to get or create a TaskSession object for the current session."""
 
     session_state = await get_session_state_core(
-        org_id_header=org_id_header,
-        session_id_header=session_id_header,
+        org_id=org_id,
+        session_id=session_id,
         session_type="task",
         task_name=task_name,
     )
