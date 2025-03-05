@@ -1,10 +1,13 @@
 import os
+from typing import cast
 
 import requests
 from langchain_core.messages import AIMessage
 from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import tool
 from pydantic import BaseModel, Field
+
+from session.session import PublicSession
 
 # from langchain_core.tools.base import InjectedToolCallId
 # from langgraph.types import Command
@@ -52,9 +55,10 @@ def solution_rag_call(query: str, config: RunnableConfig) -> AIMessage:
     if rag_api_url is None:
         return AIMessage("RAG API URL is missing.")
 
-    company_id = config.get("configurable", {}).get("org_id")
-    if company_id is None:
-        return AIMessage("Company ID is missing in the configuration.")
+    session_state = cast(
+        PublicSession, config.get("configurable", {}).get("session_state")
+    )
+    company_id = session_state.org_id
 
     response = requests.get(
         rag_api_url,
@@ -116,9 +120,10 @@ def upsell_features(query: str, config: RunnableConfig) -> AIMessage:
     if rag_api_url is None:
         return AIMessage("RAG API URL is missing.")
 
-    org_id = config.get("configurable", {}).get("org_id")
-    if org_id is None:
-        return AIMessage("Company ID is missing in the configuration.")
+    session_state = cast(
+        PublicSession, config.get("configurable", {}).get("session_state")
+    )
+    org_id = session_state.org_id
 
     response = requests.get(
         rag_api_url,
@@ -153,7 +158,10 @@ def collect_feedback(
     Returns:
         AIMessage: A message confirming the feedback has been collected.
     """
-    organization_id = config.get("configurable", {}).get("org_id")
+    session_state = cast(
+        PublicSession, config.get("configurable", {}).get("session_state")
+    )
+    organization_id = session_state.org_id
 
     # Add customer_id
     feedback_data = {
