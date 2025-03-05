@@ -3,6 +3,7 @@ import os
 import requests
 from dotenv import load_dotenv
 from fastapi import HTTPException
+from langchain_core.tools import tool
 
 from models.organization import OrganizationDetail
 
@@ -29,6 +30,7 @@ def fetch_organization_details(org_id: str) -> OrganizationDetail:
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@tool
 def call_rag_api(query: str, org_id: str) -> str:
     """
     Placeholder function for calling the RAG API.

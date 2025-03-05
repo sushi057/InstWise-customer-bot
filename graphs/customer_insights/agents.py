@@ -71,8 +71,9 @@ def create_internal_workflow_agents(
 
     def product_knowledge_agent(state: AgentStateGraph):
         last_message = cast(str, state["messages"][-1].content)
-        response = call_rag_api(query=last_message, org_id=session_state.org_id)
-
+        response = call_rag_api.invoke(
+            {"query": last_message, "org_id": session_state.org_id}
+        )
         return {**state, "messages": AIMessage(content=response)}
 
     return {

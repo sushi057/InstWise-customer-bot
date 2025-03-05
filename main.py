@@ -42,7 +42,7 @@ async def ask_support(
 
     try:
         if api_type == "support":
-            rag_api_answer = call_rag_api(query=query, org_id=org_id)
+            rag_api_answer = call_rag_api.invoke({"query": query, "org_id": org_id})
 
             return {
                 "message": rag_api_answer,
