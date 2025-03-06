@@ -35,7 +35,7 @@ async def get_session_state_core(
             new_session_state = PrivateSession(org_id, session_id)
         elif session_type == "public":
             new_session_state = PublicSession(org_id, session_id)
-        elif task_name == "task":
+        elif session_type == "task":
             new_session_state = TaskSession(org_id, session_id, task_name)
         else:
             new_session_state = SessionState(org_id, session_id)

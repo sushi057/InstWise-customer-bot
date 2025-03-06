@@ -130,7 +130,8 @@ async def ask_task_agent(session_state: TaskSession = Depends(get_task_session_s
     """Task Agent API created based on the given task name."""
     task_agent = session_state.task_agent_graph
     response = task_agent.invoke({})
-    return response
+
+    return {"message": "success", "response": response}
 
 
 if __name__ == "__main__":
