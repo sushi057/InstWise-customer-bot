@@ -162,6 +162,7 @@ def collect_feedback(
         PublicSession, config.get("configurable", {}).get("session_state")
     )
     organization_id = session_state.org_id
+    customer_id = session_state.customer_info.customer_id
 
     # Add customer_id
     feedback_data = {
@@ -170,6 +171,7 @@ def collect_feedback(
         "feedback": feedback,
         "organization_id": organization_id,
         "user_email": user_email,
+        "customer_id": customer_id,
     }
 
     # API call to add feedback to the database
@@ -185,6 +187,8 @@ def collect_feedback(
 
 
 if __name__ == "__main__":
+    session_state = PublicSession(org_id="66158fe71bfe10b58cb23eea", session_id="1")
+    config = RunnableConfig(configurable={"session_state": session_state})
     print(
         collect_feedback.invoke(
             {
@@ -193,6 +197,7 @@ if __name__ == "__main__":
                 "feedback": "test feedback",
                 "organization_id": "test",
                 "user_email": "sarah@hilton.com",
-            }
+            },
+            config=config,
         )
     )
