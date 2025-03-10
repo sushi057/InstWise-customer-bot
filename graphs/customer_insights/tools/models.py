@@ -66,3 +66,14 @@ class NLTOSQLPrompts(TypedDict):
     schema_prompt: str
     nltosql_prompt: str
     abstract_queries_prompt: str
+
+
+class AddCustomerEngagementSummaryArgs(BaseModel):
+    """Arguments for add_customer_engagement_summary tool."""
+
+    tenant_id: str = Field(..., description="Tenant ID")
+    week_date: str = Field(..., description="Week date")
+    sentiment: str = Field(..., description="Sentiment")
+    opportunity: str = Field(..., description="Opportunity")
+    risk: str = Field(..., description="Risk")
+    followup: str = Field(..., description="Follow-up")
