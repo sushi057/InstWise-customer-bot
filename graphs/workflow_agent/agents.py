@@ -12,6 +12,7 @@ def create_agents(agent_details: dict):
     primary_assistant_prompt_template, workflow_prompts = create_workflow_prompts(
         agent_details
     )
+
     prompts = fetch_organization_details("66158fe71bfe10b58cb23eea")
     query_database, _ = create_nltosql_tool(
         database_name=prompts.database_name,
@@ -25,21 +26,22 @@ def create_agents(agent_details: dict):
     task_agents = {}
 
     for task in agent_details["tasks"]:
-        task_name = task["task_name"]
+        task_name = task["name"]
 
+        agent_task_name = task_name.replace(" ", "_")
         task_agents[f"{task_name}"] = create_react_agent(
             model=llm,
             tools=[query_database],
-            name=f"{task_name}",
+            name=f"{agent_task_name}",
             prompt=workflow_prompts[f"{task_name}"],
         )
 
     workflow_supervisor = create_supervisor(
         [agent for agent in task_agents.values()],
         model=llm,
+        add_handoff_back_messages=False,
         prompt=primary_assistant_prompt_template,
         output_mode="full_history",
-        supervisor_name="primary_assistant",
     )
 
     return workflow_supervisor

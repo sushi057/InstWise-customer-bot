@@ -11,7 +11,7 @@ def create_workflow_prompts(agent_details: dict):
 
     workflow_prompts = {}
     for task in agent_details["tasks"]:
-        task_name = task["task_name"]
+        task_name = task["name"]
         workflow_prompts[f"{task_name}"] = ChatPromptTemplate.from_messages(
             [
                 ("system", task["instruction"]),

@@ -1,12 +1,14 @@
-import json
-from pathlib import Path
+import os
 
+import requests
+from dotenv import load_dotenv
 from langgraph.checkpoint.memory import InMemorySaver
-from langgraph.store.memory import InMemoryStore
 
 from graphs.workflow_agent.agents import create_agents
 
-file_path = Path(__file__).parent / "data/onboarding_agent.json"
+load_dotenv()
+
+organization_token = os.getenv("ORGANIZATION_TOKEN")
 
 
 def create_graph():
@@ -14,13 +16,16 @@ def create_graph():
 
     The nodes for this graph will be a primary assistant with multiple tasks(task_agents).
     """
-    with open(file_path) as f:
-        agent_details = json.load(f)
+    # with open(file_path) as f:
+    #     agent_details = json.load(f)
 
-    primary_assistant = create_agents(agent_details)
+    agent_details_url = f"https://api-assistant.instwise.app/api/v1/organization/agent?token={organization_token}&email=bhattachas@hotmail.com"
+
+    agent_details = requests.get(agent_details_url).json()
+
+    primary_assistant = create_agents(agent_details["data"][-1])
 
     checkpointer = InMemorySaver()
-    store = InMemoryStore()
 
     graph = primary_assistant.compile(checkpointer=checkpointer)
 
