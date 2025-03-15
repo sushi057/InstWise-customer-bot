@@ -7,7 +7,9 @@ from session.session import CustomAgentSession
 
 graph = create_custom_agent_graph(
     CustomAgentSession(
-        org_id="66158fe71bfe10b58cb23eea", session_id="1", agent_name="SupportAgent"
+        org_id="66158fe71bfe10b58cb23eea",
+        session_id="1",
+        agent_name="Onboarding Coordinator",
     )
 )
 
@@ -23,16 +25,11 @@ while True:
     if user_input in ["q", "quit", "exit"]:
         break
 
-    results = graph.invoke(
-        {"messages": ("user", user_input)}, config, stream_mode="updates"
-    )
-    print(results)
 
-    # for event in graph.stream(
-    #     {"messages": ("user", user_input)}, config, stream_mode="updates"
-    # ):
-    #     print(event)
-    #     event["messages"][-1].pretty_print()
+    for event in graph.stream(
+        {"messages": ("user", user_input)}, config, stream_mode="values"
+    ):
+        event["messages"][-1].pretty_print()
 
 
 with open("graphs/custom_agent/graph.png", "wb") as f:

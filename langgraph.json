@@ -1,6 +1,6 @@
 {
   "graphs": {
-    "graph": "./graphs/workflow_agent/graph.py:create_graph"
+    "graph": "./graphs/custom_agent/graph.py:create_graph"
   },
   "env": ".env",
   "python_version": "3.12",

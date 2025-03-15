@@ -30,7 +30,6 @@ def create_agents(session_state: CustomAgentSession):
     workflow_supervisor = create_supervisor(
         [agent for agent in task_agents.values()],
         model=llm,
-        add_handoff_back_messages=False,
         prompt=primary_assistant_prompt_template + "",
         output_mode="full_history",
     )
