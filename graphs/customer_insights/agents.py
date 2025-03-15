@@ -1,7 +1,5 @@
-from typing import cast
-
 from dotenv import load_dotenv
-from langchain_core.messages import AIMessage, ToolMessage
+from langchain_core.messages import ToolMessage
 from langchain_openai import ChatOpenAI
 
 from graphs.customer_insights.models import InternalWorkflowAgents
@@ -18,7 +16,6 @@ from graphs.customer_support.tools.zendesk import (
     create_zendesk_ticket_for_unresolved_issues,
 )
 from session.session import SessionState
-from utils.helpers import call_rag_api
 
 load_dotenv()
 
@@ -69,17 +66,9 @@ def create_internal_workflow_agents(
 
         return {**state, "messages": response, "final_query": None}
 
-    def product_knowledge_agent(state: AgentStateGraph):
-        last_message = cast(str, state["messages"][-1].content)
-        response = call_rag_api.invoke(
-            {"query": last_message, "org_id": session_state.org_id}
-        )
-        return {**state, "messages": AIMessage(content=response)}
-
     return {
         "query_database": query_database,
         "action_agent": action_agent,
         "action_agent_tools": action_agent_tools,
         "data_agent": data_agent,
-        "product_knowledge_agent": product_knowledge_agent,
     }
