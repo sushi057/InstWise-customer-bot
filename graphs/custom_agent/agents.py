@@ -7,7 +7,7 @@ from utils.init_model import init_model
 
 
 def create_agents(session_state: CustomAgentSession):
-    llm = init_model("gpt-4o-mini")
+    llm = init_model("gpt-4o")
     agent_details = session_state.agent_details
     primary_assistant_prompt_template, workflow_prompts = create_workflow_prompts(
         agent_details

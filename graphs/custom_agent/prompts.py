@@ -13,11 +13,7 @@ def create_workflow_prompts(agent_details: AgentConfig):
 
     primary_assistant_prompt = ChatPromptTemplate.from_messages(
         [
-            (
-                "system",
-                agent_details.primary_instruction
-                + "Your final message should also include your child agents' messages.",
-            ),
+            ("system", agent_details.primary_instruction),
             ("placeholder", "{messages}"),
         ]
     )
