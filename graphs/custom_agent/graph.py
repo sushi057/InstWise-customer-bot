@@ -1,6 +1,4 @@
-import json
 import os
-from pathlib import Path
 
 from dotenv import load_dotenv
 from langgraph.checkpoint.memory import InMemorySaver
@@ -18,9 +16,6 @@ def create_custom_agent_graph(session_state: CustomAgentSession):
 
     The nodes for this graph will be a primary assistant with multiple tasks(task_agents).
     """
-
-    # with open(str(Path.cwd()) + "/graphs/custom_agent/data.json") as f:
-    #     data = json.load(f)
 
     primary_assistant = create_agents(session_state)
 
