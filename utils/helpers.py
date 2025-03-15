@@ -5,12 +5,14 @@ from dotenv import load_dotenv
 from fastapi import HTTPException
 from langchain_core.tools import tool
 
+from models.custom_agent import AgentConfig, AgentConfigList
 from models.organization import OrganizationDetail
 
 load_dotenv()
 
 instwise_backend_url = os.environ["INSTWISE_BACKEND_URL"]
 instwise_secret_key = os.environ["INSTWISE_SECRET_KEY"]
+organization_token = os.environ["ORGANIZATION_TOKEN"]
 
 rag_api_url = os.getenv("RAG_API_URL", "")
 rag_api_headers = {"X-API-KEY": f"{os.getenv('X_API_KEY')}"}
@@ -52,6 +54,25 @@ def call_rag_api(query: str, org_id: str) -> str:
         },
     )
     return response.json()["results"]["answer"]
+
+
+def get_custom_agent_details(agent_name: str, org_id: str) -> AgentConfig:
+    """Fetch the details of the custom agent from the backend API."""
+    try:
+        url = f"{instwise_backend_url}/api/v1/organization/agent?token={organization_token}&email=bhattachas@hotmail.com"
+
+        response = requests.get(url)
+        response.raise_for_status
+
+        agent_list = AgentConfigList(**response.json())
+        for agent in agent_list.data:
+            if agent.name == agent_name:
+                return agent
+
+        raise ValueError(f"Agent with name {agent_name} not found.")
+    except requests.exceptions.RequestException as e:
+        # Handle other possible exceptions (e.g., network issues, SSL errors)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 if __name__ == "__main__":

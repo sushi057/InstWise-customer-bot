@@ -41,10 +41,10 @@ def route_function(state: AgentStateGraph):
 
     if response.route == "action_agent":  # type: ignore
         return "action_agent"
-    elif response.route == "product_knowledge_agent":
-        return "product_knowledge_agent"
-    else:
+    elif response.route == "data_agent":
         return "data_agent"
+    else:
+        raise ValueError("Incorrect agent name: ", response.route)
 
 
 def create_insights_graph(session_state: SessionState) -> CompiledGraph:
@@ -65,7 +65,6 @@ def create_insights_graph(session_state: SessionState) -> CompiledGraph:
         "action_agent_tools",
         create_tool_node_with_fallback(action_agent_tools),
     )
-    graph_builder.add_node("product_knowledge_agent", agents["product_knowledge_agent"])
 
     # Define edges
     graph_builder.set_conditional_entry_point(
@@ -73,7 +72,6 @@ def create_insights_graph(session_state: SessionState) -> CompiledGraph:
         {
             "data_agent": "data_agent",
             "action_agent": "action_agent",
-            "product_knowledge_agent": "product_knowledge_agent",
         },
     )
     graph_builder.add_conditional_edges(
@@ -90,7 +88,6 @@ def create_insights_graph(session_state: SessionState) -> CompiledGraph:
         },
     )
     graph_builder.add_edge("action_agent_tools", "action_agent")
-    graph_builder.add_edge("product_knowledge_agent", "__end__")
 
     # Add persistence memory
     memory = MemorySaver()

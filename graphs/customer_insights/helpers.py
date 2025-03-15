@@ -1,5 +1,6 @@
 from langchain_core.messages import ToolMessage
 from langchain_core.runnables import RunnableLambda
+from langgraph.graph.graph import CompiledGraph
 from langgraph.prebuilt import ToolNode
 from pydantic import BaseModel
 
@@ -40,7 +41,7 @@ def handle_tool_error(state) -> dict:
 
 
 # Visualize graph
-def visualize_graph(graph):
+def visualize_graph(graph: CompiledGraph):
     with open("./graphs/customer_insights/graph.png", "wb") as f:
         f.write(graph.get_graph(xray=True).draw_mermaid_png())
 

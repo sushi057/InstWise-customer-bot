@@ -196,10 +196,9 @@ if __name__ == "__main__":
         if user_query in ["q", "quit"]:
             break
 
-        user_query = input("Enter natural language query: ")
-
         prompts = fetch_organization_details("66158fe71bfe10b58cb23eea")
         if user_query == "d":
+            user_query = input("Enter natural language query: ")
             query_database, _ = create_nltosql_tool(
                 database_name=prompts.database_name,
                 schema_prompt=prompts.schema_prompt,
@@ -212,6 +211,7 @@ if __name__ == "__main__":
             print(query_database.invoke(user_query))
 
         else:
+            user_query = input("Enter SQL query: ")
             execute_sql_query = create_execute_sql_query_function(
                 workgroup_name=prompts.redshift_work_space,
                 redshift_db=prompts.redshift_db,

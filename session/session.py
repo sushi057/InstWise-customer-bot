@@ -1,4 +1,5 @@
 from session.session_base import SessionState
+from utils.helpers import get_custom_agent_details
 
 
 class PublicSession(SessionState):
@@ -23,6 +24,18 @@ class PrivateSession(SessionState):
 
         self.insights_graph = create_insights_graph(self)
         print("Created insights graph")
+
+
+class CustomAgentSession(SessionState):
+    """Session state for the custom agent chat."""
+
+    def __init__(self, org_id: str, session_id: str, agent_name):
+        super().__init__(org_id, session_id)
+
+        from graphs.custom_agent.graph import create_custom_agent_graph
+
+        self.agent_details = get_custom_agent_details(agent_name, org_id)
+        self.graph = create_custom_agent_graph(self)
 
 
 class TaskSession(SessionState):

@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 
 class RouterAgentOutput(BaseModel):
     route: Annotated[
-        Literal["data_agent", "action_agent", "product_knowledge_agent"],
+        Literal["data_agent", "action_agent"],
         Field(description="The agent to route the user query to."),
     ]
 
@@ -17,7 +17,6 @@ class InternalWorkflowAgents(TypedDict):
     action_agent: Callable
     action_agent_tools: List[Callable]
     data_agent: Callable
-    product_knowledge_agent: Callable
 
 
 class InternalWorkflowPrompts(TypedDict):
