@@ -13,7 +13,11 @@ def create_workflow_prompts(agent_details: AgentConfig):
 
     primary_assistant_prompt = ChatPromptTemplate.from_messages(
         [
-            ("system", agent_details.primary_instruction),
+            (
+                "system",
+                agent_details.primary_instruction
+                + "\n\n**Do not call multiple agents. Call only one tool at one time.**",
+            ),
             ("placeholder", "{messages}"),
         ]
     )
