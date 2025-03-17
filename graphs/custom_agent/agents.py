@@ -32,6 +32,7 @@ def create_agents(session_state: CustomAgentSession):
         model=llm,
         prompt=primary_assistant_prompt_template + "",
         output_mode="full_history",
+        supervisor_name=agent_details.name,
     )
 
     return workflow_supervisor
