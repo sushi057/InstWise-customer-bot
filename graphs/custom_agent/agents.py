@@ -19,20 +19,20 @@ def create_agents(session_state: CustomAgentSession):
     for task in agent_details.tasks:
         task_name = task.name
 
-        agent_task_name = task_name.replace(" ", "_")
         task_agents[f"{task_name}"] = create_react_agent(
             model=llm,
             tools=[query_database],
-            name=f"{agent_task_name}",
+            name=f"{task_name}",
             prompt=workflow_prompts[f"{task_name}"],
         )
 
+    supervisor_name = agent_details.name.replace(" ", "_").lower()
     workflow_supervisor = create_supervisor(
         [agent for agent in task_agents.values()],
         model=llm,
         prompt=primary_assistant_prompt_template + "",
         output_mode="full_history",
-        supervisor_name=agent_details.name,
+        supervisor_name=supervisor_name,
     )
 
     return workflow_supervisor

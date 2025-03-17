@@ -12,6 +12,10 @@ class AgentTask(BaseModel):
     tools: Optional[str] = Field(None, description="Tools used for the task")
     instruction: str = Field(..., description="Instructions for the task")
 
+    def model_post_init(self, __context):
+        """Replace spaces in the task name with underscores."""
+        self.name = self.name.replace(" ", "_")
+
 
 class AgentConfig(BaseModel):
     """Model for agent configurations."""
