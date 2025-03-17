@@ -4,13 +4,19 @@ from fastapi import Depends, FastAPI
 from langchain_core.runnables import RunnableConfig
 from pydantic import EmailStr
 
-from graphs.custom_agent.graph import create_custom_agent_graph
 from routes import customer, outreach
-from session.cache import (get_custom_agent_session_state,
-                           get_private_session_state, get_public_session_state,
-                           get_task_session_state)
-from session.session import (CustomAgentSession, PrivateSession, PublicSession,
-                             TaskSession)
+from session.cache import (
+    get_custom_agent_session_state,
+    get_private_session_state,
+    get_public_session_state,
+    get_task_session_state,
+)
+from session.session import (
+    CustomAgentSession,
+    PrivateSession,
+    PublicSession,
+    TaskSession,
+)
 from utils.helpers import call_rag_api
 
 app = FastAPI()
@@ -132,26 +138,32 @@ async def ask_custom_agent(
     session_state: CustomAgentSession = Depends(get_custom_agent_session_state),
 ):
     """Custom Agent API created based on the given agent name."""
-
     session_id = session_state.session_id
     org_id = session_state.org_id
 
-    graph = session_state.graph
-    config = RunnableConfig(configurable={"thread_id": session_id})
+    try:
+        graph = session_state.graph
+        config = RunnableConfig(configurable={"thread_id": session_id})
 
-    messages = []
-    for event in graph.stream(
-        {"messages": [("user", query)]}, config, stream_mode="values"
-    ):
-        event["messages"][-1].pretty_print()
-        messages.append(event["messages"][-1].content)
+        messages = []
+        for event in graph.stream(
+            {"messages": [("user", query)]}, config, stream_mode="values"
+        ):
+            event["messages"][-1].pretty_print()
+            messages.append(event["messages"][-1].content)
 
-    return {
-        "message": messages[-1],
-        "session_id": session_id,
-        "org_id": org_id,
-        "custom_agent_name": agent_name,
-    }
+        return {
+            "message": messages[-1],
+            "session_id": session_id,
+            "org_id": org_id,
+            "custom_agent_name": agent_name,
+        }
+    except Exception as e:
+        return {
+            "message": f"Error: {str(e)}",
+            "session_id": session_id,
+            "org_id": org_id,
+        }
 
 
 @app.post("/task-agent")
