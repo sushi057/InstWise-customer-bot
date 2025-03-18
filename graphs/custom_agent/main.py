@@ -9,7 +9,7 @@ graph = create_custom_agent_graph(
     CustomAgentSession(
         org_id="66158fe71bfe10b58cb23eea",
         session_id="1",
-        agent_name="Onboarding Coordinator",
+        agent_name="Onboarding Agent",
     )
 )
 
@@ -25,7 +25,6 @@ while True:
     if user_input in ["q", "quit", "exit"]:
         break
 
-
     for event in graph.stream(
         {"messages": ("user", user_input)}, config, stream_mode="values"
     ):
@@ -33,9 +32,4 @@ while True:
 
 
 with open("graphs/custom_agent/graph.png", "wb") as f:
-    graph = create_custom_agent_graph(
-        CustomAgentSession(
-            org_id="66158fe71bfe10b58cb23eea", session_id="1", agent_name="SupportAgent"
-        )
-    )
-    f.write(graph.get_graph().draw_mermaid_png())
+    f.write(graph.get_graph(xray=True).draw_mermaid_png())

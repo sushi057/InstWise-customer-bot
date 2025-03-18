@@ -16,7 +16,11 @@ def create_workflow_prompts(agent_details: AgentConfig):
             (
                 "system",
                 agent_details.primary_instruction
-                + "\n\n**Do not call multiple agents. Call only one tool at one time.**",
+                + """
+IMPORTANT NOTES:
+**Response Handling:** When receiving a response from the child agent, ensure to capture and relay the exact full response back to the customer. Include all details provided by the child agent without omitting any information.
+**Do not call multiple agents. Call only one tool at one time.**
+                """,
             ),
             ("placeholder", "{messages}"),
         ]
@@ -26,7 +30,7 @@ def create_workflow_prompts(agent_details: AgentConfig):
     if agent_details.tasks:
         for task in agent_details.tasks:
             task_name = task.name
-            workflow_prompts[f"{task_name}"] = ChatPromptTemplate.from_messages(
+            workflow_prompts[task_name] = ChatPromptTemplate.from_messages(
                 [
                     ("system", task.instruction + tool_call_instructions),
                     ("placeholder", "{messages}"),
