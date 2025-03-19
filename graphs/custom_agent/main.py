@@ -5,17 +5,18 @@ from langchain_core.runnables import RunnableConfig
 from graphs.custom_agent.graph import create_custom_agent_graph
 from session.session import CustomAgentSession
 
-graph = create_custom_agent_graph(
-    CustomAgentSession(
-        org_id="66158fe71bfe10b58cb23eea",
-        session_id="1",
-        agent_name="Onboarding Agent",
-    )
+session_state = CustomAgentSession(
+    org_id="66158fe71bfe10b58cb23eea",
+    session_id="1",
+    agent_name="Onboarding Agent",
 )
+
+graph = create_custom_agent_graph(session_state)
 
 config = RunnableConfig(
     configurable={
         "thread_id": str(uuid.uuid4()),
+        "session_state": session_state,
     }
 )
 
@@ -26,7 +27,9 @@ while True:
         break
 
     for event in graph.stream(
-        {"messages": ("user", user_input)}, config, stream_mode="values"
+        {"messages": [("user", user_input)], "org_id": session_state.org_id},
+        config,
+        stream_mode="values",
     ):
         event["messages"][-1].pretty_print()
 

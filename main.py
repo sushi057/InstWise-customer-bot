@@ -141,13 +141,21 @@ async def ask_custom_agent(
     session_id = session_state.session_id
     org_id = session_state.org_id
 
+    config = RunnableConfig(
+        configurable={
+            "thread_id": session_id,
+            "session_state": session_state,
+        }
+    )
+
     try:
         graph = session_state.graph
-        config = RunnableConfig(configurable={"thread_id": session_id})
 
         messages = []
         for event in graph.stream(
-            {"messages": [("user", query)]}, config, stream_mode="values"
+            {"messages": [("user", query)], "org_id": org_id},
+            config,
+            stream_mode="values",
         ):
             event["messages"][-1].pretty_print()
             messages.append(event["messages"][-1].content)
@@ -169,6 +177,7 @@ async def ask_custom_agent(
 @app.post("/task-agent")
 async def ask_task_agent(session_state: TaskSession = Depends(get_task_session_state)):
     """Task Agent API created based on the given task name."""
+
     task_agent = session_state.task_agent_graph
     response = task_agent.invoke({})
 
