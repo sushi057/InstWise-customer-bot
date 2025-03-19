@@ -45,15 +45,20 @@ def call_rag_api(query: str, org_id: str) -> str:
         str: The response from the RAG API.
     """
 
-    response = requests.get(
-        rag_api_url,
-        headers=rag_api_headers,
-        params={
-            "query": query,
-            "company_id": org_id,
-        },
-    )
-    return response.json()["results"]["answer"]
+    try:
+        response = requests.get(
+            rag_api_url,
+            headers=rag_api_headers,
+            params={
+                "query": query,
+                "company_id": org_id,
+            },
+        )
+
+        response.raise_for_status()
+        return response.json()["results"]["answer"]
+    except requests.exceptions.RequestException as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 def get_custom_agent_details(agent_name: str, org_id: str) -> AgentConfig:
