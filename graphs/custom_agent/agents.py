@@ -11,6 +11,7 @@ from graphs.customer_insights.tools.hubspot import (
     create_note_hubspot,
     create_task_hubspot,
 )
+from graphs.task_agent.tools.email_api.gmail_outreach import send_personalized_emails
 from session.session import CustomAgentSession
 from utils.helpers import call_rag_api
 from utils.init_model import init_model
@@ -35,17 +36,22 @@ def create_agents(session_state: CustomAgentSession):
     query_database = session_state.nltosql_tool
     task_agents = {}
 
+    if agent_details.name == "Renewal Agent":
+        all_tools = [send_personalized_emails, query_database]
+    else:
+        all_tools = [
+            query_database,
+            call_rag_api,
+            create_note_hubspot,
+            create_task_hubspot,
+        ]
+
     for task in agent_details.tasks:
         task_name = task.name
         task_agents[task_name] = create_react_agent(
             model=llm,
             state_schema=AgentStateSchema,
-            tools=[
-                query_database,
-                call_rag_api,
-                create_note_hubspot,
-                create_task_hubspot,
-            ],
+            tools=all_tools,
             name=task_name,
             prompt=workflow_prompts[task_name],
         )

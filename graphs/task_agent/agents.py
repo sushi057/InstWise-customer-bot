@@ -1,9 +1,11 @@
-# from langsmith import traceable
+from dotenv import load_dotenv
 
 from graphs.task_agent.prompts import create_task_agent_prompts
-from graphs.task_agent.tools.send_email import send_email
+from graphs.task_agent.tools.email_api.gmail_outreach import send_personalized_emails
 from session.session import TaskSession
 from utils.init_model import init_model
+
+load_dotenv()
 
 
 def create_task_agent(session: TaskSession):
@@ -16,11 +18,11 @@ def create_task_agent(session: TaskSession):
     query_database = session.nltosql_tool
 
     current_task_data = query_database.invoke(
-        task_agent_prompts["current_task_data_prompt"]
+        session.task_details.taskAgents.data_source
     )
 
-    task_agent_runnable = task_agent_prompts["task_agent_main_prompt"].partial(
+    task_agent_runnable = task_agent_prompts.partial(
         task_data=current_task_data
-    ) | llm.bind_tools([send_email])
+    ) | llm.bind_tools([send_personalized_emails])
 
     return task_agent_runnable
