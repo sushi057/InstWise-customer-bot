@@ -19,7 +19,7 @@ class Organization(BaseModel):
 class TaskAgentDetails(BaseModel):
     """Task Agent details model"""
 
-    name: TaskName = Field(..., description="Task Agent name.")
+    name: str = Field(..., description="Task Agent name.")
     action: str = Field(..., description="Task Agent action.")
     objective: str = Field(..., description="Task Agent objective.")
     recipient: str = Field(..., description="Task Agent recipient.", alias="who")

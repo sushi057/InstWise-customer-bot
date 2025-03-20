@@ -32,7 +32,6 @@ def get_task_agent_details(
             raise Exception(
                 f"Task agent details not found for task_name: '{task.task_name}'",
             )
-        print(data)
 
         task_details_response = TaskDetails.model_validate(data)
         return task_details_response

@@ -6,7 +6,9 @@ import requests
 from langchain_core.tools import tool
 
 from graphs.task_agent.tools.email_api.models import (
-    GmailTokens, GoogleUserSessionResponse)
+    GmailTokens,
+    GoogleUserSessionResponse,
+)
 
 logger = getLogger(__name__)
 logger.setLevel("DEBUG")
