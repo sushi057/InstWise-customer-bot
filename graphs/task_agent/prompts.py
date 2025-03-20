@@ -1,23 +1,12 @@
-from typing import TypedDict
-
 from langchain_core.prompts import ChatPromptTemplate
 
 from session.session import TaskSession
 
 
-class TaskAgentPrompts(TypedDict):
-    """Task Agent prompts dictionary."""
-
-    task_agent_main_prompt: ChatPromptTemplate
-    current_task_data_prompt: str
-
-
-def create_task_agent_prompts(session: TaskSession) -> TaskAgentPrompts:
+def create_task_agent_prompts(session: TaskSession):
     """Create prompts for task agent details."""
 
     task_agent_details = session.task_details
-
-    current_task_data_prompt = task_agent_details.taskAgents.data_source
 
     task_agent_main_prompt = ChatPromptTemplate(
         [
@@ -53,7 +42,4 @@ Task name: {task_agent_details.taskAgents.name}
         ]
     )
 
-    return {
-        "task_agent_main_prompt": task_agent_main_prompt,
-        "current_task_data_prompt": current_task_data_prompt,
-    }
+    return task_agent_main_prompt
