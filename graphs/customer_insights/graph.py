@@ -1,50 +1,12 @@
-from typing import cast
-
-from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import MemorySaver
-from langgraph.graph import StateGraph
+from langgraph.graph import END, START, StateGraph
 from langgraph.graph.graph import CompiledGraph
 from langgraph.prebuilt import tools_condition
-from langsmith import traceable
 
-from graphs.customer_insights.agents import (
-    action_agent_tools,
-    create_internal_workflow_agents,
-)
+from graphs.customer_insights.agents import create_internal_workflow_agents
 from graphs.customer_insights.helpers import create_tool_node_with_fallback
-from graphs.customer_insights.models import RouterAgentOutput
-from graphs.customer_insights.prompts import router_prompt_template
 from graphs.customer_insights.state import AgentStateGraph
 from session.session import SessionState
-
-llm_mini = ChatOpenAI(model="gpt-4o-mini")
-
-
-# Define route function
-@traceable(run_type="tool", name="Router Function")
-def route_function(state: AgentStateGraph):
-    """Route the user query to the appropriate agent.
-
-    Only use the user's message for routing, when last agent isnt action or data agent
-    """
-
-    router_runnable = router_prompt_template | llm_mini.with_structured_output(
-        RouterAgentOutput
-    )
-    response = cast(
-        RouterAgentOutput, router_runnable.invoke({"messages": state["messages"]})
-    )
-
-    print(
-        f"""===========================================\n\nRouting to {response.route}\n"""
-    )
-
-    if response.route == "action_agent":  # type: ignore
-        return "action_agent"
-    elif response.route == "data_agent":
-        return "data_agent"
-    else:
-        raise ValueError("Incorrect agent name: ", response.route)
 
 
 def create_insights_graph(session_state: SessionState) -> CompiledGraph:
@@ -53,41 +15,20 @@ def create_insights_graph(session_state: SessionState) -> CompiledGraph:
     graph_builder = StateGraph(AgentStateGraph)
 
     # Load agents
-    agents = create_internal_workflow_agents(session_state)
+    data_agent, data_agent_tools = create_internal_workflow_agents(session_state)
 
     # Define nodes
-    graph_builder.add_node("data_agent", agents["data_agent"])
-    graph_builder.add_node(
-        "tools", create_tool_node_with_fallback([agents["query_database"]])
-    )
-    graph_builder.add_node("action_agent", agents["action_agent"])
-    graph_builder.add_node(
-        "action_agent_tools",
-        create_tool_node_with_fallback(action_agent_tools),
-    )
+    graph_builder.add_node("data_agent", data_agent)
+    graph_builder.add_node("tools", create_tool_node_with_fallback(data_agent_tools))
 
     # Define edges
-    graph_builder.set_conditional_entry_point(
-        route_function,
-        {
-            "data_agent": "data_agent",
-            "action_agent": "action_agent",
-        },
-    )
+    graph_builder.add_edge(START, "data_agent")
     graph_builder.add_conditional_edges(
         "data_agent",
         tools_condition,
     )
     graph_builder.add_edge("tools", "data_agent")
-    graph_builder.add_conditional_edges(
-        "action_agent",
-        tools_condition,
-        {
-            "tools": "action_agent_tools",
-            "__end__": "__end__",
-        },
-    )
-    graph_builder.add_edge("action_agent_tools", "action_agent")
+    graph_builder.add_edge("data_agent", END)
 
     # Add persistence memory
     memory = MemorySaver()
