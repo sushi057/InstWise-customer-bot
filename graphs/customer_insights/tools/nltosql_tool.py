@@ -10,7 +10,6 @@ from langsmith import traceable
 
 from graphs.customer_insights.tools.helpers import create_nltosql_prompts
 from graphs.customer_insights.tools.models import AbstractQueryResponse, QueryResponse
-from utils.helpers import fetch_organization_details
 
 load_dotenv()
 
@@ -186,35 +185,3 @@ def create_nltosql_tool(
 
     except Exception as e:
         raise Exception(f"Error creating NLTOSQL tool: {e}")
-
-
-if __name__ == "__main__":
-    while True:
-        user_query = input(
-            "Press 'd' for query_database tool, press 's' to run sql query or press 'q' to quit: "
-        )
-        if user_query in ["q", "quit"]:
-            break
-
-        prompts = fetch_organization_details("66158fe71bfe10b58cb23eea")
-        if user_query == "d":
-            user_query = input("Enter natural language query: ")
-            query_database, _ = create_nltosql_tool(
-                database_name=prompts.database_name,
-                schema_prompt=prompts.schema_prompt,
-                nltosql_prompt=prompts.nltosql_prompt,
-                abstract_queries_prompt=prompts.abstract_queries_prompt,
-                redshift_db=prompts.redshift_db,
-                redshift_work_space=prompts.redshift_work_space,
-            )
-
-            print(query_database.invoke(user_query))
-
-        else:
-            user_query = input("Enter SQL query: ")
-            execute_sql_query = create_execute_sql_query_function(
-                workgroup_name=prompts.redshift_work_space,
-                redshift_db=prompts.redshift_db,
-            )
-
-            print(execute_sql_query(user_query))
