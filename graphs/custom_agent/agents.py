@@ -7,6 +7,7 @@ from langgraph_supervisor import create_supervisor
 from langgraph_supervisor.supervisor import create_react_agent
 
 from graphs.custom_agent.prompts import create_workflow_prompts
+from graphs.customer_insights.tools import insert_ces_tool
 from graphs.customer_insights.tools.hubspot import (
     create_note_hubspot,
     create_task_hubspot,
@@ -40,6 +41,7 @@ def create_agents(session_state: CustomAgentSession):
         all_tools = [send_personalized_emails, query_database]
     else:
         all_tools = [
+            insert_ces_tool,
             query_database,
             call_rag_api,
             create_note_hubspot,
