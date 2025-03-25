@@ -27,9 +27,7 @@ hubspot_headers = {
 def create_task_hubspot(
     request: CreateTaskRequest, config: RunnableConfig
 ) -> CreateTaskResponse:
-    """
-    Creates task in hubspot.
-    """
+    """Creates task in hubspot."""
     try:
         # Fetch organization details for the company name
         organization_details = fetch_organization_details_by_name(
@@ -82,9 +80,7 @@ def create_task_hubspot(
 def create_note_hubspot(
     request: CreateNoteRequest, config: RunnableConfig
 ) -> CreateNoteResponse:
-    """
-    Creates note in hubspot.
-    """
+    """Creates note in hubspot."""
     try:
         # Fetch organiztaion details for the company name
         organization_details = fetch_organization_details_by_name(
