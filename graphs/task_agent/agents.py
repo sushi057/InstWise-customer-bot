@@ -1,5 +1,10 @@
 from dotenv import load_dotenv
 
+from graphs.customer_insights.tools import insert_ces_tool
+from graphs.customer_insights.tools.hubspot import (
+    create_note_hubspot,
+    create_task_hubspot,
+)
 from graphs.task_agent.prompts import create_task_agent_prompts
 from graphs.task_agent.tools.email_api.gmail_outreach import send_personalized_emails
 from session.session import TaskSession
@@ -23,6 +28,13 @@ def create_task_agent(session: TaskSession):
 
     task_agent_runnable = task_agent_prompts.partial(
         task_data=current_task_data
-    ) | llm.bind_tools([send_personalized_emails])
+    ) | llm.bind_tools(
+        [
+            send_personalized_emails,
+            insert_ces_tool,
+            create_note_hubspot,
+            create_task_hubspot,
+        ]
+    )
 
     return task_agent_runnable

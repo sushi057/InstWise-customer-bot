@@ -10,7 +10,7 @@ load_dotenv()
 
 
 @tool
-def add_summary_to_redshift(data_dict: AddCustomerEngagementSummaryArgs):
+def add_summary_to_redshift(data: AddCustomerEngagementSummaryArgs):
     """
     Insert customer engagement summary data into Redshift.
     """
@@ -27,8 +27,8 @@ def add_summary_to_redshift(data_dict: AddCustomerEngagementSummaryArgs):
         insert_query = f"""
             INSERT INTO {os.getenv("DATABASE_NAME")}.REPORTING.Customer_Engagement_Summary 
             (tenant_id, week_date, sentiment, opportunity, risk, followup) 
-            VALUES ('{data_dict.tenant_id}', '{data_dict.week_date}', '{data_dict.sentiment}', 
-                    '{data_dict.opportunity}', '{data_dict.risk}', '{data_dict.followup}')
+            VALUES ('{data.tenant_id}', '{data.week_date}', '{data.sentiment}', 
+                    '{data.opportunity}', '{data.risk}', '{data.followup}')
         """
 
         # Execute the query
