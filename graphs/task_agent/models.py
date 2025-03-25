@@ -34,7 +34,7 @@ class Task(BaseModel):
     """Request model for the task agent details endpoint."""
 
     org_id: str = Field(..., description="Organization ID to get details.")
-    task_name: TaskName = Field(
+    task_name: str = Field(
         description="Name of the task to get details.",
     )
 
