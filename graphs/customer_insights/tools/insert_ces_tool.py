@@ -11,10 +11,8 @@ load_dotenv()
 
 
 @tool
-def insert_into_redshift(data: AddCustomerEngagementSummaryArgs):
-    """
-    Insert customer engagement summary data into Redshift.
-    """
+def insert_summary_in_redshift(data: AddCustomerEngagementSummaryArgs):
+    """Insert customer engagement summary data into Redshift."""
     try:
         # Initialize Redshift Data API client
         db_client = boto3.client(
@@ -50,10 +48,10 @@ def insert_into_redshift(data: AddCustomerEngagementSummaryArgs):
                 break
 
             time.sleep(2)  # Wait before checking again
-            return desc
 
         if status == "FAILED":
             print("Error:", desc["Error"])
 
+        return desc
     except Exception as e:
         print(f"Error inserting data: {e}")

@@ -1,4 +1,4 @@
-from typing import Literal, TypeAlias
+from typing import Literal, Optional, TypeAlias
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -23,10 +23,10 @@ class TaskAgentDetails(BaseModel):
     action: str = Field(..., description="Task Agent action.")
     objective: str = Field(..., description="Task Agent objective.")
     recipient: str = Field(..., description="Task Agent recipient.", alias="who")
+    active: bool = Field(..., description="Task Agent active status.")
     data_source: str = Field(..., description="Task Agent trigger.", alias="trigger")
     task_outcome: str = Field(..., description="Task Agent output.", alias="output")
-    tools: str = Field(..., description="Task Agent tools.")
-    active: bool = Field(..., description="Task Agent active status.")
+    tools: Optional[str] = Field(None, description="Task Agent tools.")
     frequency: str = Field(..., description="Task Agent frequency.")
 
 

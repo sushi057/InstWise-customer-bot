@@ -2,21 +2,15 @@ from typing import Literal, Optional
 
 from fastapi import Depends, FastAPI
 from langchain_core.runnables import RunnableConfig
+from langsmith import traceable
 from pydantic import EmailStr
 
 from routes import customer, outreach
-from session.cache import (
-    get_custom_agent_session_state,
-    get_private_session_state,
-    get_public_session_state,
-    get_task_session_state,
-)
-from session.session import (
-    CustomAgentSession,
-    PrivateSession,
-    PublicSession,
-    TaskSession,
-)
+from session.cache import (get_custom_agent_session_state,
+                           get_private_session_state, get_public_session_state,
+                           get_task_session_state)
+from session.session import (CustomAgentSession, PrivateSession, PublicSession,
+                             TaskSession)
 from utils.helpers import call_rag_api
 
 app = FastAPI()
@@ -179,7 +173,7 @@ async def ask_task_agent(session_state: TaskSession = Depends(get_task_session_s
     """Task Agent API created based on the given task name."""
 
     task_agent = session_state.task_agent_graph
-    response = task_agent.invoke({})
+    response = task_agent.invoke({}, {"run_name": session_state.task.task_name})
 
     return {"message": "success", "response": response}
 
