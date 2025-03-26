@@ -1,11 +1,14 @@
-import boto3
 import os
-from dotenv import load_dotenv
 import time
-from models import AddCustomerEngagementSummaryArgs
+
+import boto3
+from dotenv import load_dotenv
 from langchain_core.tools import tool
 
+from .models import AddCustomerEngagementSummaryArgs
+
 load_dotenv()
+
 
 @tool
 def insert_into_redshift(data: AddCustomerEngagementSummaryArgs):
@@ -16,11 +19,11 @@ def insert_into_redshift(data: AddCustomerEngagementSummaryArgs):
         # Initialize Redshift Data API client
         db_client = boto3.client(
             "redshift-data",
-            aws_access_key_id= os.getenv("AWS_ACCESS_KEY_ID"),
-            aws_secret_access_key= os.getenv("AWS_SECRET_ACCESS_KEY"),
-            region_name= os.getenv("AWS_REGION_NAME"),
+            aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+            aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+            region_name=os.getenv("AWS_REGION_NAME"),
         )
-        
+
         # Define SQL insert query
         insert_query = f"""
             INSERT INTO {os.getenv("REDSHIFT_DB")}.{os.getenv("DATABASE_NAME")}.Customer_Engagement_Summary 
@@ -32,11 +35,10 @@ def insert_into_redshift(data: AddCustomerEngagementSummaryArgs):
         response = db_client.execute_statement(
             Database=os.getenv("REDSHIFT_DB"),
             WorkgroupName=os.getenv("REDSHIFT_WORK_GROUP"),
-            Sql=insert_query
+            Sql=insert_query,
         )
-        
-        statement_id = response['Id']
-        #print(f"Query submitted. Statement ID: {statement_id}")
+
+        statement_id = response["Id"]
 
         # Wait for execution to complete
         while True:
@@ -48,9 +50,10 @@ def insert_into_redshift(data: AddCustomerEngagementSummaryArgs):
                 break
 
             time.sleep(2)  # Wait before checking again
-        
+            return desc
+
         if status == "FAILED":
             print("Error:", desc["Error"])
-        
+
     except Exception as e:
         print(f"Error inserting data: {e}")
