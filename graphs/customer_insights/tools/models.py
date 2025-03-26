@@ -72,6 +72,7 @@ class AddCustomerEngagementSummaryArgs(BaseModel):
     """Arguments for add_customer_engagement_summary tool."""
 
     tenant_id: str = Field(..., description="Tenant ID")
+    customer_id: str = Field(..., description="Customer ID")
     week_date: str = Field(..., description="Week date")
     sentiment: str = Field(..., description="Sentiment")
     opportunity: str = Field(..., description="Opportunity")

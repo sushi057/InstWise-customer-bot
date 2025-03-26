@@ -1,12 +1,16 @@
 import boto3
 import os
 from dotenv import load_dotenv
+import time
+from models import AddCustomerEngagementSummaryArgs
+from langchain_core.tools import tool
 
 load_dotenv()
 
-def insert_into_redshift(data_dict):
+@tool
+def insert_into_redshift(data: AddCustomerEngagementSummaryArgs):
     """
-    Accepts Dictionary of data to be inserted into customer_engagement_summary
+    Insert customer engagement summary data into Redshift.
     """
     try:
         # Initialize Redshift Data API client
@@ -20,12 +24,10 @@ def insert_into_redshift(data_dict):
         # Define SQL insert query
         insert_query = f"""
             INSERT INTO {os.getenv("REDSHIFT_DB")}.{os.getenv("DATABASE_NAME")}.Customer_Engagement_Summary 
-            (tenant_id, week_date, sentiment, opportunity, risk, followup) 
-            VALUES ('{data_dict["tenant_id"]}', '{data_dict["week_date"]}', '{data_dict["sentiment"]}', 
-                    '{data_dict["opportunity"]}', '{data_dict["risk"]}', '{data_dict["followup"]}')
+            (tenant_id, customer_id, week_date, sentiment, opportunity, risk, followup) 
+            VALUES ('{data.tenant_id}', '{data.customer_id}', '{data.week_date}', '{data.sentiment}', 
+                    '{data.opportunity}', '{data.risk}', '{data.followup}')
         """
-
-        print("Data insertion initiated for the CES data")
         # Execute the query
         response = db_client.execute_statement(
             Database=os.getenv("REDSHIFT_DB"),
@@ -33,6 +35,22 @@ def insert_into_redshift(data_dict):
             Sql=insert_query
         )
         
-        print("Response:", response)
+        statement_id = response['Id']
+        #print(f"Query submitted. Statement ID: {statement_id}")
+
+        # Wait for execution to complete
+        while True:
+            desc = db_client.describe_statement(Id=statement_id)
+            status = desc["Status"]
+            print(f"Query Status: {status}")
+
+            if status in ["FAILED", "FINISHED"]:
+                break
+
+            time.sleep(2)  # Wait before checking again
+        
+        if status == "FAILED":
+            print("Error:", desc["Error"])
+        
     except Exception as e:
         print(f"Error inserting data: {e}")
