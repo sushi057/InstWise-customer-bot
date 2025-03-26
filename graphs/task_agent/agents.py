@@ -1,12 +1,12 @@
 from dotenv import load_dotenv
 
-from graphs.customer_insights.tools import insert_ces_tool
-from graphs.customer_insights.tools.hubspot import (
-    create_note_hubspot,
-    create_task_hubspot,
-)
+from graphs.customer_insights.tools.hubspot import (create_note_hubspot,
+                                                    create_task_hubspot)
+from graphs.customer_insights.tools.insert_ces_tool import \
+    insert_summary_in_redshift
 from graphs.task_agent.prompts import create_task_agent_prompts
-from graphs.task_agent.tools.email_api.gmail_outreach import send_personalized_emails
+from graphs.task_agent.tools.email_api.gmail_outreach import \
+    send_personalized_emails
 from session.session import TaskSession
 from utils.init_model import init_model
 
@@ -31,7 +31,7 @@ def create_task_agent(session: TaskSession):
     ) | llm.bind_tools(
         [
             send_personalized_emails,
-            insert_ces_tool,
+            insert_summary_in_redshift,
             create_note_hubspot,
             create_task_hubspot,
         ]

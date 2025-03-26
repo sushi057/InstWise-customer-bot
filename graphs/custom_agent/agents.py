@@ -7,12 +7,12 @@ from langgraph_supervisor import create_supervisor
 from langgraph_supervisor.supervisor import create_react_agent
 
 from graphs.custom_agent.prompts import create_workflow_prompts
-from graphs.customer_insights.tools import insert_ces_tool
-from graphs.customer_insights.tools.hubspot import (
-    create_note_hubspot,
-    create_task_hubspot,
-)
-from graphs.task_agent.tools.email_api.gmail_outreach import send_personalized_emails
+from graphs.customer_insights.tools.hubspot import (create_note_hubspot,
+                                                    create_task_hubspot)
+from graphs.customer_insights.tools.insert_ces_tool import \
+    insert_summary_in_redshift
+from graphs.task_agent.tools.email_api.gmail_outreach import \
+    send_personalized_emails
 from session.session import CustomAgentSession
 from utils.helpers import call_rag_api
 from utils.init_model import init_model
@@ -41,7 +41,7 @@ def create_agents(session_state: CustomAgentSession):
         all_tools = [send_personalized_emails, query_database]
     else:
         all_tools = [
-            insert_ces_tool,
+            insert_summary_in_redshift,
             query_database,
             call_rag_api,
             create_note_hubspot,
