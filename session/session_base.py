@@ -1,3 +1,6 @@
+import json
+import os
+
 from graphs.customer_insights.tools.nltosql_tool import (
     create_execute_sql_query_function,
     create_nltosql_tool,
@@ -13,7 +16,15 @@ class SessionState:
     def __init__(self, org_id: str, session_id: str):
         self.org_id = org_id
         self.session_id = session_id
-        self.org_details: OrganizationDetail = fetch_organization_details(org_id)
+
+        if os.getenv("ENV") == "dev":
+            with open("org_details_local.json") as f:
+                self.org_details: OrganizationDetail = OrganizationDetail(
+                    **json.load(f)
+                )
+        else:
+            self.org_details: OrganizationDetail = fetch_organization_details(org_id)
+
         self.customer_info: CustomerInfo = CustomerInfo()
 
         if self.org_details:

@@ -1,7 +1,5 @@
-from graphs.customer_insights.tools.insert_ces_tool import \
-    insert_summary_in_redshift
-from graphs.customer_insights.tools.models import \
-    AddCustomerEngagementSummaryArgs
+from graphs.customer_insights.tools.insert_ces_tool import insert_summary_in_redshift
+from graphs.customer_insights.tools.models import AddCustomerEngagementSummaryArgs
 
 data = AddCustomerEngagementSummaryArgs(
     tenant_id="66158fe71bfe10b58cb23eea",
