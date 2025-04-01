@@ -2,7 +2,9 @@ import json
 import os
 
 from graphs.customer_insights.tools.nltosql_tool import (
-    create_execute_sql_query_function, create_nltosql_tool)
+    create_execute_sql_query_function,
+    create_nltosql_tool,
+)
 from graphs.customer_support.models.customer_info import CustomerInfo
 from models.organization import OrganizationDetail
 from utils.helpers import fetch_organization_details
