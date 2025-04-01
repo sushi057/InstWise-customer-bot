@@ -20,9 +20,16 @@ while True:
         print("goodbye")
         break
 
-    for event in graph.stream(
-        {"messages": ("user", user_input)},
-        config,
-        stream_mode="values",
+    for stream_mode, chunk in graph.stream(
+        {"messages": ("user", user_input)}, config, stream_mode=["messages", "custom"]
     ):
-        event["messages"][-1].pretty_print()
+        if stream_mode == "messages":
+            message, metadata = chunk
+            if metadata["langgraph_node"] != "tools":  # type: ignore
+                if message.tool_calls:
+                    print("Analyzing query")
+                else:
+                    print("Generating response")
+                print(message.content, end="")
+        else:
+            print(chunk["status"])
