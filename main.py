@@ -1,16 +1,24 @@
+import json
 from typing import Literal, Optional
 
 from fastapi import Depends, FastAPI
+from fastapi.responses import StreamingResponse
 from langchain_core.runnables import RunnableConfig
-from langsmith import traceable
 from pydantic import EmailStr
 
 from routes import customer, outreach
-from session.cache import (get_custom_agent_session_state,
-                           get_private_session_state, get_public_session_state,
-                           get_task_session_state)
-from session.session import (CustomAgentSession, PrivateSession, PublicSession,
-                             TaskSession)
+from session.cache import (
+    get_custom_agent_session_state,
+    get_private_session_state,
+    get_public_session_state,
+    get_task_session_state,
+)
+from session.session import (
+    CustomAgentSession,
+    PrivateSession,
+    PublicSession,
+    TaskSession,
+)
 from utils.helpers import call_rag_api
 
 app = FastAPI()
@@ -59,21 +67,38 @@ async def ask_private_chat(
                 }
             )
 
-            messages = []
-
             # Compile all messages from the graph and send the last message
-            # TODO: Implement streaming
-            async for event in graph.astream(
-                {"messages": [("user", query)]}, config, stream_mode="values"
-            ):
-                event["messages"][-1].pretty_print()
-                messages.append(event["messages"][-1].content)
+            async def event_stream():
+                async for stream_mode, chunk in graph.astream(
+                    {"messages": [("user", query)]},
+                    config,
+                    stream_mode=["messages", "custom"],
+                ):
+                    content = None
+                    status = "Generating insights"
 
-            return {
-                "message": messages[-1],
-                "session_id": session_id,
-                "customer_id": customer_id,
-            }
+                    if stream_mode == "messages":
+                        message, metadata = chunk
+                        if metadata["langgraph_node"] != "tools":  # type: ignore
+                            if message.tool_calls:  # type: ignore
+                                content = None
+                                status = "Analyzing query"
+                            elif message.content != "":  # type: ignore
+                                content = message.content  # type: ignore
+                                status = None
+                    else:
+                        content = None
+                        status = chunk["status"]  # type: ignore
+
+                    data = {
+                        "message": content,
+                        "status": status,
+                        "session_id": session_id,
+                        "customer_id": customer_id,
+                    }
+                    yield f"data: {json.dumps(data)}\n\n"
+
+            return StreamingResponse(event_stream(), media_type="text/event-stream")
 
     except Exception as e:
         return {"message": f"Error: {str(e)}", "session_id": session_id}
