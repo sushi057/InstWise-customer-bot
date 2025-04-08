@@ -6,7 +6,6 @@ from dotenv import load_dotenv
 from langchain_core.prompts import PromptTemplate
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
-from langgraph.config import get_stream_writer
 from langsmith import traceable
 
 from graphs.customer_insights.tools.helpers import create_nltosql_prompts
@@ -164,7 +163,6 @@ def create_nltosql_tool(
             param_type nl_query: str
             """
 
-            writer = get_stream_writer()
             abstract_query_response = cast(
                 AbstractQueryResponse,
                 abstract_query_chain.invoke({"nl_query": nl_query}),
@@ -179,13 +177,7 @@ def create_nltosql_tool(
             for query in sql_query:
                 query = query.strip()
                 if len(query.lower()) > 0:
-                    res = execute_sql_query(query)
-                    responses.append(res)
-                    writer(
-                        {
-                            "status": f"Fetching information {res.table_sources.replace('```sql ', '').replace('```', '')}"  # type: ignore
-                        }
-                    )
+                    responses.append(execute_sql_query(query))
 
             return responses
 
