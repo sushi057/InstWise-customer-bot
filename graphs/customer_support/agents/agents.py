@@ -3,6 +3,7 @@ from typing import Literal, cast
 from langchain_core.messages import AIMessage
 from langchain_core.runnables import RunnableConfig
 from langgraph.types import Command
+from langgraph.config import get_stream_writer
 
 from graphs.customer_support.helpers.helpers import get_valid_email
 from graphs.customer_support.models.types import SupportWorkflowAgents
@@ -62,6 +63,12 @@ def create_support_workflow_agents(
         If the user is an internal user, get the customer info with the email from the config else ask for the email address.
         """
 
+        writer = get_stream_writer()
+        writer(
+            {
+                "status": "Fetching user info",
+            }
+        )
         last_human_message = cast(str, state["messages"][-1].content)
 
         # Ask for email during initial conversation, if email is provided make sure its a valid email

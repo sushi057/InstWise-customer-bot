@@ -3,6 +3,7 @@ import os
 from logging import getLogger
 
 import requests
+from dotenv import load_dotenv
 from langchain_core.tools import tool
 
 from graphs.task_agent.tools.email_api.models import (
@@ -12,6 +13,8 @@ from graphs.task_agent.tools.email_api.models import (
 
 logger = getLogger(__name__)
 logger.setLevel("DEBUG")
+
+load_dotenv()
 
 
 def fetch_credentials():
@@ -23,22 +26,26 @@ def fetch_credentials():
 
         response = GoogleUserSessionResponse.model_validate(response.json())
 
-        user_session = response.data[-1]
+        user_session = response.data[1]
+
+        if not user_session.emailCredential:
+            raise Exception("User session does not have email credentials")
+
         return GmailTokens(
-            refresh_token=user_session.emailCredential.refresh_token,
-            token_uri="https://oauth2.googleapis.com/token",
-            universe_domain="googleapis.com",
+            account="",
+            client_id=user_session.orgGoogleCredential.client_id,
             client_secret=user_session.orgGoogleCredential.client_secret,
+            refresh_token=user_session.emailCredential.refresh_token,
             scopes=[
                 "https://www.googleapis.com/auth/gmail.modify",
                 "https://www.googleapis.com/auth/gmail.compose",
+                "https://www.googleapis.com/auth/gmail.write",
             ],
-            expiry="2025-03-21T03:47:17.429615",
-            client_id=user_session.orgGoogleCredential.client_id,
-            account="",
+            expiry="2525-04-03T03:47:17.429615",
             token=user_session.emailCredential.access_token,
+            token_uri="https://oauth2.googleapis.com/token",
+            universe_domain="googleapis.com",
         )
-
     except requests.exceptions.RequestException as e:
         logger.error(f"Error fetching credentials: {e}")
         raise e
@@ -55,22 +62,7 @@ def send_personalized_emails(emails: str, subject: str, body: str):
         body (str): Body of the email.
     """
 
-    # credentials = fetch_credentials()
-
-    credentials = {
-        "account": "",
-        "client_id": os.getenv("GOOGLE_CLIENT_ID"),
-        "client_secret": os.getenv("GOOGLE_CLIENT_SECRET"),
-        "expiry": "2025-03-20T13:46:02.556659",
-        "refresh_token": os.getenv("GOOGLE_REFRESH_TOKEN"),
-        "scopes": [
-            "https://www.googleapis.com/auth/gmail.modify",
-            "https://www.googleapis.com/auth/gmail.compose",
-        ],
-        "token": os.getenv("GOOGLE_ACCESS_TOKEN"),
-        "token_uri": "https://oauth2.googleapis.com/token",
-        "universe_domain": "googleapis.com",
-    }
+    credentials = fetch_credentials()
 
     org_data = {
         "org_id": "66158fe71bfe10b58cb23eea",
@@ -82,7 +74,7 @@ def send_personalized_emails(emails: str, subject: str, body: str):
     # Prepare the payload
     payload = {
         "email_address": "sushilbhattachan@gmail.com",
-        "user_tokens": credentials,
+        "user_tokens": credentials.model_dump(),
         "org_data": org_data,
         "email_to_recipients": [emails],
         "email_cc_recipients": [],
@@ -119,8 +111,6 @@ def send_personalized_emails(emails: str, subject: str, body: str):
 
 if __name__ == "__main__":
     # print(fetch_credentials())
-    print(
-        send_personalized_emails.invoke(
-            {"emails": "suvash2077@gmail.com", "subject": "Test", "body": "Test"}
-        )
+    send_personalized_emails.invoke(
+        {"emails": "suvash2077@gmail.com", "subject": "Test", "body": "Test"}
     )

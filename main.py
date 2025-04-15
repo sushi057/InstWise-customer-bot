@@ -127,7 +127,6 @@ async def ask_public_chat(
                 "session_state": session_state,
             }
         )
-
         messages = []
         async for event in graph.astream(
             {
@@ -145,6 +144,43 @@ async def ask_public_chat(
             "customer_id": session_state.customer_info.customer_id,
             "user_email": session_state.customer_info.customer_email,
         }
+        # async def event_stream():
+        #     async for stream_mode, chunk in graph.astream(
+        #         {
+        #             "messages": [("user", query)],
+        #         },
+        #         config,
+        #         stream_mode=["messages"],
+        #     ):
+        #         content = None
+        #         status = "Analyzing query"
+
+        #         message, metadata = chunk
+        #         if "tools" not in metadata["langgraph_node"] :  # type: ignore
+        #             if message.tool_calls:  # type: ignore
+        #                 content = None
+        #                 status = "Analyzing query"
+        #             elif message.content != "":  # type: ignore
+        #                 content = message.content  # type: ignore
+        #                 status = None
+        #         elif metadata['langgraph_node'] == 'fetch_user_info': # type: ignore
+        #             content = message.content # type: ignore
+        #             status = None
+
+
+        #         data = {
+        #             "message": content,
+        #             "status": status,
+        #             "session_id": session_id,
+        #             "customer_id": session_state.customer_info.customer_id,
+        #             "user_email": session_state.customer_info.customer_email,
+        #         }
+        #         print(data)
+        #         yield f"data: {json.dumps(data)}\n\n"
+
+        # return StreamingResponse(
+        #     event_stream(),
+        #     media_type="text/event-stream")
 
     except Exception as e:
         return {"message": f"Error {str(e)}", "session_id": session_id}

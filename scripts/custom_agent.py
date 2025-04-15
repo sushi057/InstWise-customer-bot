@@ -6,9 +6,7 @@ from graphs.custom_agent.graph import create_custom_agent_graph
 from session.session import CustomAgentSession
 
 session_state = CustomAgentSession(
-    org_id="66158fe71bfe10b58cb23eea",
-    session_id="1",
-    agent_name="Onboarding Agent",
+    org_id="66158fe71bfe10b58cb23eea", session_id="1", agent_name="RAG Agent"
 )
 
 graph = create_custom_agent_graph(session_state)
