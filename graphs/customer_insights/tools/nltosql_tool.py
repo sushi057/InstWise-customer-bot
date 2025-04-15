@@ -177,7 +177,14 @@ def create_nltosql_tool(
             for query in sql_query:
                 query = query.strip()
                 if len(query.lower()) > 0:
-                    responses.append(execute_sql_query(query))
+                    information_source = query.split("::")[0]
+                    writer(
+                        {
+                            "status": f"Fetching information {information_source.replace('```sql', '').replace('```', '').replace('\n', '')}"  # type: ignore
+                        }
+                    )
+                    res = execute_sql_query(query)
+                    responses.append(res)
 
             return responses
 

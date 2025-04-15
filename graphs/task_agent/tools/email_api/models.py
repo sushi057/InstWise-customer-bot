@@ -80,6 +80,9 @@ class GoogleUserSession(BaseModel):
 
     id: str = Field(..., alias="_id", description="Unique identifier for the session.")
     email: str = Field(..., description="User's email address.")
+    emailCredential: EmailCredential | None = Field(
+        None, description="User's Gmail credentials.", alias="credentials"
+    )
     googleId: str = Field(..., description="User's Google ID.")
     isGoogleUser: bool = Field(
         ..., description="Indicates if the user logged in with Google."
@@ -88,9 +91,6 @@ class GoogleUserSession(BaseModel):
         ..., description="Identifier for the user's organization."
     )
     user: str | None = Field(..., description="Identifier for the user.")
-    emailCredential: EmailCredential = Field(
-        ..., description="User's Gmail credentials."
-    )
     orgGoogleCredential: OrgGoogleCredential = Field(
         ..., description="Organization's Gmail credentials."
     )
