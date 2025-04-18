@@ -14,6 +14,7 @@ from session.cache import (get_custom_agent_session_state,
 from session.session import (CustomAgentSession, PrivateSession, PublicSession,
                              TaskSession)
 from utils.helpers import call_rag_api
+from utils.stream_response import create_streaming_response
 
 app = FastAPI()
 
@@ -61,38 +62,22 @@ async def ask_private_chat(
                 }
             )
 
-            # Compile all messages from the graph and send the last message
-            async def event_stream():
-                async for stream_mode, chunk in graph.astream(
-                    {"messages": [("user", query)]},
-                    config,
-                    stream_mode=["messages", "custom"],
-                ):
-                    content = None
-                    status = "Generating insights"
-
-                    if stream_mode == "messages":
-                        message, metadata = chunk
-                        if metadata["langgraph_node"] != "tools":  # type: ignore
-                            if message.tool_calls:  # type: ignore
-                                content = None
-                                status = "Analyzing query"
-                            elif message.content != "":  # type: ignore
-                                content = message.content  # type: ignore
-                                status = None
-                    else:
-                        content = None
-                        status = chunk["status"]  # type: ignore
-
-                    data = {
-                        "message": content,
-                        "status": status,
-                        "session_id": session_id,
-                        "customer_id": customer_id,
-                    }
-                    yield f"data: {json.dumps(data)}\n\n"
-
-            return StreamingResponse(event_stream(), media_type="text/event-stream")
+            # Define the data formatter for insights
+            def insights_formatter(content, status, _):
+                return {
+                    "message": content,
+                    "status": status,
+                    "session_id": session_id,
+                    "customer_id": customer_id,
+                }
+            
+            return create_streaming_response(
+                graph,
+                query,
+                config,
+                ["messages", "custom"],
+                insights_formatter
+            )
 
     except Exception as e:
         return {"message": f"Error: {str(e)}", "session_id": session_id}
@@ -138,43 +123,23 @@ async def ask_public_chat(
             "customer_id": session_state.customer_info.customer_id,
             "user_email": session_state.customer_info.customer_email,
         }
-        # async def event_stream():
-        #     async for stream_mode, chunk in graph.astream(
-        #         {
-        #             "messages": [("user", query)],
-        #         },
-        #         config,
-        #         stream_mode=["messages"],
-        #     ):
-        #         content = None
-        #         status = "Analyzing query"
-
-        #         message, metadata = chunk
-        #         if "tools" not in metadata["langgraph_node"] :  # type: ignore
-        #             if message.tool_calls:  # type: ignore
-        #                 content = None
-        #                 status = "Analyzing query"
-        #             elif message.content != "":  # type: ignore
-        #                 content = message.content  # type: ignore
-        #                 status = None
-        #         elif metadata['langgraph_node'] == 'fetch_user_info': # type: ignore
-        #             content = message.content # type: ignore
-        #             status = None
-
-
-        #         data = {
-        #             "message": content,
-        #             "status": status,
-        #             "session_id": session_id,
-        #             "customer_id": session_state.customer_info.customer_id,
-        #             "user_email": session_state.customer_info.customer_email,
-        #         }
-        #         print(data)
-        #         yield f"data: {json.dumps(data)}\n\n"
-
-        # return StreamingResponse(
-        #     event_stream(),
-        #     media_type="text/event-stream")
+        # To use streaming instead, uncomment and replace the above code with:
+        # def public_chat_formatter(content, status, _):
+        #     return {
+        #         "message": content,
+        #         "status": status,
+        #         "session_id": session_id,
+        #         "customer_id": session_state.customer_info.customer_id,
+        #         "user_email": session_state.customer_info.customer_email,
+        #     }
+        # 
+        # return create_streaming_response(
+        #     graph,
+        #     query,
+        #     config,
+        #     ["messages"],
+        #     public_chat_formatter
+        # )
 
     except Exception as e:
         return {"message": f"Error {str(e)}", "session_id": session_id}
@@ -199,6 +164,25 @@ async def ask_custom_agent(
 
     try:
         graph = session_state.graph
+        
+        # You can also update this to use streaming if needed:
+        def agent_formatter(content, status, _):
+            return {
+                "message": content,
+                "status": status,
+                "session_id": session_id,
+                "org_id": org_id,
+                "custom_agent_name": agent_name,
+            }
+        
+        return create_streaming_response(
+            graph,
+            query,
+            config,
+            ["messages", "custom"],
+            agent_formatter,
+            {"org_id": org_id}
+        )
 
         messages = []
         for event in graph.stream(
