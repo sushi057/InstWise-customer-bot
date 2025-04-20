@@ -1,6 +1,6 @@
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field
 
 
 class OrganizationDetail(BaseModel):
@@ -8,6 +8,12 @@ class OrganizationDetail(BaseModel):
 
     id: str = Field(description="Organization ID", alias="_id")
     name: str = Field(description="Organization name")
+    email: EmailStr = Field(description="Organization email")
+    organization_token: str = Field(
+        ...,
+        description="Organization token for authentication",
+        alias="organizationToken",
+    )
 
     primary_prompt: str = Field(description="Primary assistant prompt")
     solution_prompt: str = Field(description="Solution agent prompt")

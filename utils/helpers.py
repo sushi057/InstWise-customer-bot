@@ -12,7 +12,6 @@ load_dotenv()
 
 instwise_backend_url = os.environ["INSTWISE_BACKEND_URL"]
 instwise_secret_key = os.environ["INSTWISE_SECRET_KEY"]
-organization_token = os.environ["ORGANIZATION_TOKEN"]
 
 rag_api_url = os.getenv("RAG_API_URL", "")
 rag_api_headers = {"X-API-KEY": f"{os.getenv('X_API_KEY')}"}
@@ -61,10 +60,12 @@ def call_rag_api(query: str, org_id: str) -> str:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-def get_custom_agent_details(agent_name: str, org_id: str) -> AgentConfig:
+def get_custom_agent_details(
+    agent_name: str, email: str, organization_token: str
+) -> AgentConfig:
     """Fetch the details of the custom agent from the backend API."""
     try:
-        url = f"{instwise_backend_url}/api/v1/organization/agent?token={organization_token}&email=bhattachas@hotmail.com"
+        url = f"{instwise_backend_url}/api/v1/organization/agent?token={organization_token}&email={email}"
 
         response = requests.get(url)
         response.raise_for_status

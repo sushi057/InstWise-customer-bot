@@ -34,7 +34,9 @@ class CustomAgentSession(SessionState):
 
         from graphs.custom_agent.graph import create_custom_agent_graph
 
-        self.agent_details = get_custom_agent_details(agent_name, org_id)
+        self.agent_details = get_custom_agent_details(
+            agent_name, self.org_details.email, self.org_details.organization_token
+        )
         self.graph = create_custom_agent_graph(self)
 
 
