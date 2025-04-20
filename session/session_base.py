@@ -30,8 +30,6 @@ class SessionState:
                     f"Organization details not found for session_id: {session_id}"
                 )
             else:
-                """Create execute_sql_query_func and nltosql_tool based on the organization details."""
-
                 workgroup_name = self.org_details.redshift_work_space
                 redshift_db = self.org_details.redshift_db
 
