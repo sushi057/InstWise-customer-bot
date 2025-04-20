@@ -1,20 +1,29 @@
-import json
+import logging
+from utils.logging_config import setup_logging
 from typing import Literal, Optional
 
 from fastapi import Depends, FastAPI
-from fastapi.responses import StreamingResponse
 from langchain_core.runnables import RunnableConfig
-from langsmith import traceable
 from pydantic import EmailStr
 
 from routes import customer, outreach
-from session.cache import (get_custom_agent_session_state,
-                           get_private_session_state, get_public_session_state,
-                           get_task_session_state)
-from session.session import (CustomAgentSession, PrivateSession, PublicSession,
-                             TaskSession)
+from session.cache import (
+    get_custom_agent_session_state,
+    get_private_session_state,
+    get_public_session_state,
+    get_task_session_state,
+)
+from session.session import (
+    CustomAgentSession,
+    PrivateSession,
+    PublicSession,
+    TaskSession,
+)
 from utils.helpers import call_rag_api
 from utils.stream_response import create_streaming_response
+
+setup_logging()
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
@@ -27,6 +36,7 @@ customer_info = {"customer_info": None}
 
 @app.get("/", status_code=200)
 async def root():
+    logger.info("Root endpoint accessed.")
     return {"message": "Instwise Customer Support"}
 
 
@@ -47,6 +57,7 @@ async def ask_private_chat(
         if api_type == "support":
             rag_api_answer = call_rag_api.invoke({"query": query, "org_id": org_id})
 
+            logger.info(f"RAG API response: {rag_api_answer}")
             return {
                 "message": rag_api_answer,
                 "session_id": session_id,
@@ -70,16 +81,13 @@ async def ask_private_chat(
                     "session_id": session_id,
                     "customer_id": customer_id,
                 }
-            
+
             return create_streaming_response(
-                graph,
-                query,
-                config,
-                ["messages", "custom"],
-                insights_formatter
+                graph, query, config, ["messages", "custom"], insights_formatter
             )
 
     except Exception as e:
+        logger.error(f"Error in private chat: {str(e)}")
         return {"message": f"Error: {str(e)}", "session_id": session_id}
 
 
@@ -132,7 +140,7 @@ async def ask_public_chat(
         #         "customer_id": session_state.customer_info.customer_id,
         #         "user_email": session_state.customer_info.customer_email,
         #     }
-        # 
+        #
         # return create_streaming_response(
         #     graph,
         #     query,
@@ -142,6 +150,7 @@ async def ask_public_chat(
         # )
 
     except Exception as e:
+        logger.error(f"Error in public chat: {str(e)}")
         return {"message": f"Error {str(e)}", "session_id": session_id}
 
 
@@ -164,7 +173,7 @@ async def ask_custom_agent(
 
     try:
         graph = session_state.graph
-        
+
         # You can also update this to use streaming if needed:
         def agent_formatter(content, status, _):
             return {
@@ -174,32 +183,18 @@ async def ask_custom_agent(
                 "org_id": org_id,
                 "custom_agent_name": agent_name,
             }
-        
+
         return create_streaming_response(
             graph,
             query,
             config,
             ["messages", "custom"],
             agent_formatter,
-            {"org_id": org_id}
+            {"org_id": org_id},
         )
 
-        messages = []
-        for event in graph.stream(
-            {"messages": [("user", query)], "org_id": org_id},
-            config,
-            stream_mode="values",
-        ):
-            event["messages"][-1].pretty_print()
-            messages.append(event["messages"][-1].content)
-
-        return {
-            "message": messages[-1],
-            "session_id": session_id,
-            "org_id": org_id,
-            "custom_agent_name": agent_name,
-        }
     except Exception as e:
+        logger.error(f"Error in custom agent chat: {str(e)}")
         return {
             "message": f"Error: {str(e)}",
             "session_id": session_id,

@@ -1,3 +1,4 @@
+import logging
 from typing import Literal, Optional, cast
 
 from graphs.customer_support.helpers.helpers import get_session_id
@@ -8,6 +9,8 @@ from session.session import (
     TaskSession,
 )
 from session.session_base import SessionState
+
+logger = logging.getLogger(__name__)
 
 _session_state_cache: dict[
     tuple[str, str], SessionState | PrivateSession | PublicSession | TaskSession
@@ -34,7 +37,7 @@ async def get_session_state_core(
     cache_key = (org_id, session_id)
 
     if cache_key in _session_state_cache:
-        print(
+        logger.info(
             f"SessionState found in cache for session_id: {session_id}, org_id: {org_id}"
         )
         return _session_state_cache[cache_key]
@@ -54,7 +57,7 @@ async def get_session_state_core(
 
         _session_state_cache[cache_key] = new_session_state
 
-        print(
+        logger.info(
             f"New SessionState created for session_id: {session_id}, org_id: {org_id}"
         )
 
