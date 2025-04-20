@@ -1,18 +1,22 @@
-import json
 from typing import Literal, Optional
 
 from fastapi import Depends, FastAPI
-from fastapi.responses import StreamingResponse
 from langchain_core.runnables import RunnableConfig
-from langsmith import traceable
 from pydantic import EmailStr
 
 from routes import customer, outreach
-from session.cache import (get_custom_agent_session_state,
-                           get_private_session_state, get_public_session_state,
-                           get_task_session_state)
-from session.session import (CustomAgentSession, PrivateSession, PublicSession,
-                             TaskSession)
+from session.cache import (
+    get_custom_agent_session_state,
+    get_private_session_state,
+    get_public_session_state,
+    get_task_session_state,
+)
+from session.session import (
+    CustomAgentSession,
+    PrivateSession,
+    PublicSession,
+    TaskSession,
+)
 from utils.helpers import call_rag_api
 from utils.stream_response import create_streaming_response
 
@@ -70,13 +74,9 @@ async def ask_private_chat(
                     "session_id": session_id,
                     "customer_id": customer_id,
                 }
-            
+
             return create_streaming_response(
-                graph,
-                query,
-                config,
-                ["messages", "custom"],
-                insights_formatter
+                graph, query, config, ["messages", "custom"], insights_formatter
             )
 
     except Exception as e:
@@ -132,7 +132,7 @@ async def ask_public_chat(
         #         "customer_id": session_state.customer_info.customer_id,
         #         "user_email": session_state.customer_info.customer_email,
         #     }
-        # 
+        #
         # return create_streaming_response(
         #     graph,
         #     query,
@@ -164,7 +164,7 @@ async def ask_custom_agent(
 
     try:
         graph = session_state.graph
-        
+
         # You can also update this to use streaming if needed:
         def agent_formatter(content, status, _):
             return {
@@ -174,14 +174,14 @@ async def ask_custom_agent(
                 "org_id": org_id,
                 "custom_agent_name": agent_name,
             }
-        
+
         return create_streaming_response(
             graph,
             query,
             config,
             ["messages", "custom"],
             agent_formatter,
-            {"org_id": org_id}
+            {"org_id": org_id},
         )
 
         messages = []
