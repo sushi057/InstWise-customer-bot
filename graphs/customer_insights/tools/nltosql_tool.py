@@ -1,6 +1,6 @@
+import logging
 import os
 from typing import cast
-import logging
 
 import boto3
 from dotenv import load_dotenv
@@ -184,7 +184,7 @@ def create_nltosql_tool(
                 {"nl_query": abstract_query_response.abstract_query}
             )
             sql_query = sql_query.content.split(";")  # type: ignore
-            logger.info("Using query: ", sql_query)
+            logger.info(f"Using query: {sql_query}")
 
             responses = []
             for query in sql_query:
