@@ -1,5 +1,6 @@
 import os
 from typing import cast
+import logging
 
 import boto3
 from dotenv import load_dotenv
@@ -13,6 +14,8 @@ from graphs.customer_insights.tools.helpers import create_nltosql_prompts
 from graphs.customer_insights.tools.models import AbstractQueryResponse, QueryResponse
 
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 
 def create_execute_sql_query_function(workgroup_name: str, redshift_db: str):
@@ -48,18 +51,19 @@ def create_execute_sql_query_function(workgroup_name: str, redshift_db: str):
                 region_name=os.getenv("AWS_REGION_NAME"),
             )
 
+            logger.debug(f"Executing SQL query: {sql_query}")
             response = db_client.execute_statement(
                 Database=DATABASE_NAME, WorkgroupName=WORKGROUP_NAME, Sql=sql_query
             )
 
             query_id = response["Id"]
-            print(f"Query submitted. Query ID: {query_id}")
 
             while True:  # Busy wait until the query finishes
                 status_response = db_client.describe_statement(Id=query_id)
                 status = status_response["Status"]
                 if status in ["FINISHED", "FAILED", "ABORTED"]:
                     break
+
             # Check query status
             if status == "FINISHED":
                 # Fetch the query results
@@ -83,16 +87,23 @@ def create_execute_sql_query_function(workgroup_name: str, redshift_db: str):
                     metadata={"status": status, "executed_query": sql_query},
                 )
 
+                logger.info(
+                    f"Redshift query finished successfully. Query ID: {query_id}"
+                )
             else:
                 response = QueryResponse(
                     table_sources=query_parts[0] if len(query_parts) > 1 else None,
                     result_set=None,
                     metadata={"status": status, "executed_query": sql_query},
                 )
+                logger.warning(
+                    f"Redshift query failed. Query ID: {query_id}, Status: {status}"
+                )
 
             return response
 
         except Exception as e:
+            logger.exception(f"Error executing SQL query: {sql_query}, Error: {e}")
             raise Exception(f"Error executing query: {e}")
 
     return execute_sql_query
@@ -173,7 +184,7 @@ def create_nltosql_tool(
                 {"nl_query": abstract_query_response.abstract_query}
             )
             sql_query = sql_query.content.split(";")  # type: ignore
-            print("Using query: ", sql_query)
+            logger.info("Using query: ", sql_query)
 
             responses = []
             for query in sql_query:
@@ -193,4 +204,5 @@ def create_nltosql_tool(
         return query_database, abstract_query_chain
 
     except Exception as e:
+        logger.exception(f"Error creating NLTOSQL tool: {e}")
         raise Exception(f"Error creating NLTOSQL tool: {e}")
