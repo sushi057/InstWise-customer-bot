@@ -1,5 +1,4 @@
 import logging
-from utils.logging_config import setup_logging
 from typing import Literal, Optional
 
 from fastapi import Depends, FastAPI
@@ -20,10 +19,14 @@ from session.session import (
     TaskSession,
 )
 from utils.helpers import call_rag_api
+from utils.logging_config import setup_logging
 from utils.stream_response import create_streaming_response
 
 setup_logging()
 logger = logging.getLogger(__name__)
+logging.getLogger("httpx").setLevel(
+    logging.WARNING
+)  # Set httpx logging level to WARNING
 
 app = FastAPI()
 
