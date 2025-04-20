@@ -1,6 +1,6 @@
 import logging
-import sys
 import os
+import sys
 from logging.handlers import RotatingFileHandler
 
 LOG_FORMAT = "%(asctime)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s"
