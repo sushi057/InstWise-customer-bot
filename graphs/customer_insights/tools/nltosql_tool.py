@@ -189,16 +189,22 @@ def create_nltosql_tool(
                 {"nl_query": abstract_query_response.abstract_query}
             )
             sql_query = sql_query.content.split(";")  # type: ignore
+
+            # Clean up SQL query formatting if wrapped in code block
+            sql_query = [
+                q.replace("```sql", "").replace("```", "").strip()
+                for q in sql_query
+                if q.strip()
+            ]
             logger.info(f"Using query: {sql_query}")
 
             responses = []
             for query in sql_query:
-                query = query.strip()
                 if len(query.lower()) > 0:
                     information_source = query.split("::")[0]
                     writer(
                         {
-                            "status": f"Fetching information {information_source.replace('```sql', '').replace('```', '').replace('\n', '')}"  # type: ignore
+                            "status": f"Fetching information {information_source}",
                         }
                     )
                     res = execute_sql_query(query)
