@@ -1,9 +1,10 @@
 import logging
 import os
-from typing import cast
+from typing import Optional, cast
 
 import boto3
 from dotenv import load_dotenv
+from langchain_core.language_models import BaseChatModel
 from langchain_core.prompts import PromptTemplate
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
@@ -39,7 +40,7 @@ def create_execute_sql_query_function(workgroup_name: str, redshift_db: str):
 
         try:
             WORKGROUP_NAME = workgroup_name
-            DATABASE_NAME = redshift_db
+            REDSHIFT_DB = redshift_db
 
             query_parts = sql_query.strip().split("::")
             sql_query = query_parts[-1]
@@ -53,7 +54,7 @@ def create_execute_sql_query_function(workgroup_name: str, redshift_db: str):
 
             logger.debug(f"Executing SQL query: {sql_query}")
             response = db_client.execute_statement(
-                Database=DATABASE_NAME, WorkgroupName=WORKGROUP_NAME, Sql=sql_query
+                Database=REDSHIFT_DB, WorkgroupName=WORKGROUP_NAME, Sql=sql_query
             )
 
             query_id = response["Id"]
@@ -117,6 +118,7 @@ def create_nltosql_tool(
     schema_prompt: str,
     nltosql_prompt: str,
     abstract_queries_prompt: str,
+    chat_model: Optional[BaseChatModel] = None,
 ):
     """Create extract_database (nltosql) tool with latest prompts.
 
@@ -159,7 +161,10 @@ def create_nltosql_tool(
             final_prompts["nltosql_prompt"]
         )
 
-        llm = ChatOpenAI(model="gpt-4o", temperature=0.0, max_completion_tokens=512)
+        if not chat_model:
+            llm = ChatOpenAI(model="gpt-4o", temperature=0.0, max_completion_tokens=512)
+        else:
+            llm = chat_model
 
         # Create chains for abstract query and nltosql
         abstract_query_chain = abstract_query_handler | llm.with_structured_output(

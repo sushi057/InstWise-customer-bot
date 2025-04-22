@@ -15,7 +15,6 @@ from graphs.customer_insights.tools.insert_ces_tool import insert_summary_in_red
 from graphs.task_agent.tools.email_api.gmail_outreach import send_personalized_emails
 from session.session import CustomAgentSession
 from utils.helpers import call_rag_api
-from utils.init_model import init_model
 
 
 class AgentStateSchema(TypedDict):
@@ -28,7 +27,7 @@ class AgentStateSchema(TypedDict):
 
 
 def create_agents(session_state: CustomAgentSession):
-    llm = init_model("gpt-4o")
+    llm = session_state.chat_model
     agent_details = session_state.agent_details
     primary_assistant_prompt_template, workflow_prompts = create_workflow_prompts(
         agent_details

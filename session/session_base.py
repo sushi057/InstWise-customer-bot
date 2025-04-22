@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 
 from graphs.customer_insights.tools.nltosql_tool import (
     create_execute_sql_query_function,
@@ -6,6 +7,7 @@ from graphs.customer_insights.tools.nltosql_tool import (
 )
 from graphs.customer_support.models.customer_info import CustomerInfo
 from utils.helpers import fetch_organization_details
+from utils.init_model import init_model
 
 logger = logging.getLogger(__name__)
 
@@ -29,26 +31,33 @@ class SessionState:
                 raise ValueError(
                     f"Organization details not found for session_id: {session_id}"
                 )
-            else:
-                workgroup_name = self.org_details.redshift_work_space
-                redshift_db = self.org_details.redshift_db
 
-                self.execute_sql_query_func = create_execute_sql_query_function(
-                    workgroup_name, redshift_db
-                )
+            workgroup_name = self.org_details.redshift_work_space
+            redshift_db = self.org_details.redshift_db
 
-                self.nltosql_tool, self.abstract_query_chain = create_nltosql_tool(
-                    database_name=self.org_details.database_name,
-                    redshift_work_space=workgroup_name,
-                    redshift_db=self.org_details.redshift_db,
-                    schema_prompt=self.org_details.schema_prompt,
-                    nltosql_prompt=self.org_details.nltosql_prompt,
-                    abstract_queries_prompt=self.org_details.abstract_queries_prompt,
-                )
+            self.chat_model = init_model(
+                fully_specified_name=self.org_details.model,
+                temperature=self.org_details.temperature,
+                api_key=self.org_details.api_key,
+            )
 
-                logger.info(
-                    f"Session {session_id}: Successfully created tools for org_id: {org_id}"
-                )
+            self.execute_sql_query_func = create_execute_sql_query_function(
+                workgroup_name, redshift_db
+            )
+
+            self.nltosql_tool, self.abstract_query_chain = create_nltosql_tool(
+                database_name=self.org_details.database_name,
+                redshift_work_space=workgroup_name,
+                redshift_db=self.org_details.redshift_db,
+                schema_prompt=self.org_details.schema_prompt,
+                nltosql_prompt=self.org_details.nltosql_prompt,
+                abstract_queries_prompt=self.org_details.abstract_queries_prompt,
+                chat_model=self.chat_model,
+            )
+
+            logger.info(
+                f"Session {session_id}: Successfully created tools for org_id: {org_id}"
+            )
         except Exception as e:
             logger.error(f"Error fetching organization details: {e}")
             raise
@@ -59,8 +68,17 @@ class SessionState:
         customer_id: str,
         customer_email: str,
         company_name: str,
-        start_date: str | None,
+        start_date: Optional[str],
     ):
+        """
+        Set customer information for the session.
+
+        Args:
+            customer_id (str): The customer's ID.
+            customer_email (str): The customer's email address.
+            company_name (str): The company name.
+            start_date (Optional[str]): The start date for the customer, if any.
+        """
         self.customer_info = CustomerInfo(
             customer_id=customer_id,
             customer_email=customer_email,
@@ -70,3 +88,8 @@ class SessionState:
         logger.info(
             f"Setting customer info for session_id: {self.session_id}, customer_id: {customer_id}"
         )
+
+    @property
+    def organization_details(self):
+        """Safely access organization details."""
+        return self.org_details

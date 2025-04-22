@@ -8,7 +8,6 @@ from graphs.customer_insights.tools.insert_ces_tool import insert_summary_in_red
 from graphs.task_agent.prompts import create_task_agent_prompts
 from graphs.task_agent.tools.email_api.gmail_outreach import send_personalized_emails
 from session.session import TaskSession
-from utils.init_model import init_model
 
 load_dotenv()
 
@@ -16,7 +15,7 @@ load_dotenv()
 def create_task_agent(session: TaskSession):
     """Create task agents for given organization and task name."""
 
-    llm = init_model(fully_specified_name="gpt-4o")
+    llm = session.chat_model
 
     task_agent_prompts = create_task_agent_prompts(session)
 
