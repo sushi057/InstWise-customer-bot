@@ -61,7 +61,7 @@ Schema:
 Natural Language Query: {nl_query} separately
 SQL Query:
 """
-    )
+    ).replace("DATABASE_NAME", database_name)
 
     return {
         "schema_prompt": schema,
