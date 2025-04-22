@@ -11,16 +11,16 @@ while True:
     if user_query in ["q", "quit"]:
         break
 
-    prompts = fetch_organization_details("66158fe71bfe10b58cb23eea")
+    org_details = fetch_organization_details("66158fe71bfe10b58cb23eea")
     if user_query == "d":
         user_query = input("Enter natural language query: ")
         query_database, _ = create_nltosql_tool(
-            database_name=prompts.database_name,
-            schema_prompt=prompts.schema_prompt,
-            nltosql_prompt=prompts.nltosql_prompt,
-            abstract_queries_prompt=prompts.abstract_queries_prompt,
-            redshift_db=prompts.redshift_db,
-            redshift_work_space=prompts.redshift_work_space,
+            database_name=org_details.database_name,
+            schema_prompt=org_details.schema_prompt,
+            nltosql_prompt=org_details.nltosql_prompt,
+            abstract_queries_prompt=org_details.abstract_queries_prompt,
+            redshift_db=org_details.redshift_db,
+            redshift_work_space=org_details.redshift_work_space,
         )
 
         print(query_database.invoke(user_query))
@@ -28,8 +28,8 @@ while True:
     else:
         user_query = input("Enter SQL query: ")
         execute_sql_query = create_execute_sql_query_function(
-            workgroup_name=prompts.redshift_work_space,
-            redshift_db=prompts.redshift_db,
+            workgroup_name=org_details.redshift_work_space,
+            redshift_db=org_details.redshift_db,
         )
 
         print(execute_sql_query(user_query))
