@@ -41,13 +41,15 @@ class OrganizationDetail(BaseModel):
         description="Outreach customer list generation prompt"
     )
 
-    temperature: Optional[float] = Field(
-        default=0.5, description="Temperature for the model"
-    )
-    model: Optional[str] = Field(default="gpt-4o", description="Model name")
+    temperature: float = Field(default=0.5, description="Temperature for the model")
+    model: str = Field(default="gpt-4o", description="Model name")
+    api_key: Optional[str] = Field(..., description="API key for OpenAI", alias="api")
 
-    database_name: str = Field(..., description="Database name")
     redshift_work_space: str = Field(
         ..., description="Redshift work space", alias="redshit_work_space"
     )
     redshift_db: str = Field(..., description="Redshift database")
+
+    @property
+    def database_name(self) -> str:
+        return f"DB{self.id}"

@@ -2,8 +2,8 @@ from typing import Literal, cast
 
 from langchain_core.messages import AIMessage
 from langchain_core.runnables import RunnableConfig
-from langgraph.types import Command
 from langgraph.config import get_stream_writer
+from langgraph.types import Command
 
 from graphs.customer_support.helpers.helpers import get_valid_email
 from graphs.customer_support.models.types import SupportWorkflowAgents
@@ -24,7 +24,6 @@ from graphs.customer_support.tools.zendesk import (
     create_zendesk_ticket_for_unresolved_issues,
 )
 from session.session import SessionState
-from utils.init_model import init_model
 
 
 def create_support_workflow_agents(
@@ -32,7 +31,7 @@ def create_support_workflow_agents(
 ) -> SupportWorkflowAgents:
     """Create agents for the customer support graph"""
 
-    llm = init_model("gpt-4o")
+    llm = session_state.chat_model
 
     prompts = create_prompts(session_state)
     query_database = session_state.nltosql_tool

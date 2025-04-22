@@ -47,7 +47,7 @@ Final Query:
 """
     )
 
-    ######## nltosql_prompt_template
+    ######### nltosql_prompt_template
     nltosql_prompt_template = (
         f"""
 Given the following schema, convert the following natural language query to SQL

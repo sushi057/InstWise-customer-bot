@@ -1,6 +1,5 @@
 from dotenv import load_dotenv
 from langchain_core.messages import ToolMessage
-from langchain_openai import ChatOpenAI
 
 from graphs.customer_insights.prompts import data_agent_prompt_template
 from graphs.customer_insights.state import AgentStateGraph
@@ -15,13 +14,13 @@ from session.session import SessionState
 
 load_dotenv()
 
-llm = ChatOpenAI(model="gpt-4o", temperature=0.3)
-
 
 def create_internal_workflow_agents(
     session_state: SessionState,
 ):
     """Create agents and tools for the internal workflow."""
+
+    llm = session_state.chat_model
 
     query_database = session_state.nltosql_tool
     abstract_query_chain = session_state.abstract_query_chain
