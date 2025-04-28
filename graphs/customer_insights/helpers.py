@@ -1,3 +1,5 @@
+from logging import getLogger
+
 from langchain_core.messages import ToolMessage
 from langchain_core.runnables import RunnableLambda
 from langgraph.graph.graph import CompiledGraph
@@ -6,6 +8,8 @@ from pydantic import BaseModel
 
 from graphs.customer_insights.tools.models import QueryResponse
 from session.session import SessionState
+
+logger = getLogger(__name__)
 
 
 class OrganizationDetails(BaseModel):
@@ -71,7 +75,7 @@ def fetch_organization_details_by_name(customer_name: str, session_state: Sessio
         execute_sql_query = session_state.execute_sql_query_func
         response = execute_sql_query(sql_query)
 
-        print(response)
+        logger.info(f"SQL query response for customer '{customer_name}': {response}")
 
         if isinstance(response, QueryResponse) and response.result_set:
             return OrganizationDetails(
