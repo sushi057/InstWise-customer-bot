@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 
 
-class ZendesKCredentials(BaseModel):
+class ZendeskCredentials(BaseModel):
     """Zendesk credentials for API access."""
 
     subdomain: str = Field(..., description="Zendesk subdomain")

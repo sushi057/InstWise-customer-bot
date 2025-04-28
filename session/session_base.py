@@ -6,7 +6,7 @@ from graphs.customer_insights.tools.nltosql_tool import (
     create_nltosql_tool,
 )
 from graphs.customer_support.models.customer_info import CustomerInfo
-from models.zendesk import ZendesKCredentials
+from models.zendesk import ZendeskCredentials
 from utils.helpers import fetch_organization_details
 from utils.init_model import init_model
 
@@ -60,7 +60,7 @@ class SessionState:
                 )
 
                 # Create zendesk headers
-                self.zendesk_credentials = ZendesKCredentials(
+                self.zendesk_credentials = ZendeskCredentials(
                     subdomain=self.org_details.zendesk_subdomain,
                     user=self.org_details.zendesk_user,
                     token=self.org_details.zendesk_token,
