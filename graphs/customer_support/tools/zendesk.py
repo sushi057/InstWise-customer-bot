@@ -1,16 +1,15 @@
 import json
-import os
+from logging import getLogger
 
 import requests
-from dotenv import load_dotenv
-from fastapi import HTTPException, status
+from langchain_core.messages import AIMessage
 from langchain_core.runnables.config import RunnableConfig
 from langchain_core.tools import tool
 from pydantic import BaseModel, EmailStr, Field
 
 from graphs.customer_insights.helpers import fetch_organization_details_by_name
 
-load_dotenv()
+logger = getLogger(__name__)
 
 
 class TicketModel(BaseModel):
@@ -31,32 +30,22 @@ class TicketModel(BaseModel):
         }
 
 
-zendesk_domain = os.getenv("ZENDESK_SUBDOMAIN")
-user = f"{os.getenv('ZENDESK_USER', '')}/token"
-password = os.getenv("ZENDESK_TOKEN")
-headers = {"content-type": "application/json"}
-zendesk_url = f"https://{zendesk_domain}.zendesk.com/api/v2/tickets"
-
-
 @tool()
 def create_zendesk_ticket_for_unresolved_issues(
     ticket_input: TicketModel, config: RunnableConfig
 ):
     """Create a ticket in Zendesk for unresolved customer issues."""
-    if not zendesk_domain or not user or not password or password is None:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Zendesk credentials are missing. Please check the environment variables.",
-        )
-
     try:
+        session_state = config.get("configurable", {})["session_state"]  # type: ignore
+
         # Fetch organization details for the company name
         organization_details = fetch_organization_details_by_name(
             ticket_input.company_name,
-            config["configurable"]["session_state"],
+            session_state,
         )
+
         if not organization_details:
-            raise Exception("Organization not found")
+            return AIMessage(f"Organization not found for {ticket_input.company_name}")
 
         # Prepare the ticket data
         ticket_data = {
@@ -74,52 +63,38 @@ def create_zendesk_ticket_for_unresolved_issues(
             }
         }
 
+        zendesk_credentials = session_state.zendesk_credentials
+
+        zendesk_url = zendesk_credentials.zendesk_url
+        user = zendesk_credentials.user
+        password = zendesk_credentials.token
+        headers = zendesk_credentials.headers
+
         # Convert the ticket data into JSON
         payload = json.dumps(ticket_data)
         response = requests.post(
-            zendesk_url, data=payload, auth=(user, password), headers=headers
+            zendesk_url,
+            data=payload,
+            auth=(user, password),
+            headers=headers,
+            timeout=10,
         )
 
-        if response.status_code != 201:
-            print(
-                f"Response Code: {response.status_code}. There was a problem with the request. Exiting."
+        # Minimal error handling and concise logging
+        if not response.ok:
+            logger.warning(
+                f"Zendesk ticket creation failed: {response.status_code} - {response.text}"
             )
-            print(f"Response Body: {response.text}")
-            raise HTTPException(
-                status_code=response.status_code,
-                detail=f"Failed to create ticket: {response.text}",
+            return AIMessage(
+                f"Zendesk API error: {response.status_code} - {response.text}"
             )
         else:
-            print("Successfully created the ticket.")
-            print(f"Ticket ID: {response.json()['ticket']['id']}")
-            return ticket_input
+            ticket_id = response.json()["ticket"]["id"]
+
+            logger.info(f"Zendesk ticket created: {ticket_id}")
+            return AIMessage(
+                f"Zendesk ticket created successfully with ID: {ticket_id}"
+            )
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to create ticket: {str(e)}",
-        )
-
-
-@tool
-async def get_all_tickets():
-    """
-    Get all tickets from zendesk.
-    """
-    if not zendesk_domain or not user or not password or password is None:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Zendesk credentials are missing. Please check the environment variables.",
-        )
-
-    zendesk_url = f"https://{zendesk_domain}.zendesk.com/api/v2/tickets"
-    response = requests.get(zendesk_url, auth=(user, password))
-
-    if response.status_code == 200:
-        data = response.json()
-        tickets = data["tickets"]
-        return tickets
-    else:
-        raise HTTPException(
-            status_code=response.status_code,
-            detail=f"Failed to fetch tickets: {response.text}",
-        )
+        logger.error(f"Zendesk ticket creation unexpected error: {e}")
+        return AIMessage(f"An error occured while creating the ticket: {str(e)}")

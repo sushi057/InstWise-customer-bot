@@ -1,42 +1,31 @@
-import os
 from datetime import datetime
+from logging import getLogger
 
 import requests
-from dotenv import load_dotenv
+from langchain_core.messages import AIMessage
 from langchain_core.runnables.config import RunnableConfig
 from langchain_core.tools import tool
 
 from graphs.customer_insights.helpers import fetch_organization_details_by_name
-from graphs.customer_insights.tools.models import (
-    CreateNoteRequest,
-    CreateNoteResponse,
-    CreateTaskRequest,
-    CreateTaskResponse,
-)
+from graphs.customer_insights.tools.models import CreateNoteRequest, CreateTaskRequest
 
-# Load environment variables
-load_dotenv()
-
-hubspot_headers = {
-    "Authorization": "Bearer " + os.getenv("HUBSPOT_BEARER_TOKEN", ""),
-    "Content-Type": "application/json",
-}
+logger = getLogger(__name__)
 
 
 @tool
-def create_task_hubspot(
-    request: CreateTaskRequest, config: RunnableConfig
-) -> CreateTaskResponse:
+def create_task_hubspot(request: CreateTaskRequest, config: RunnableConfig):
     """Creates task in hubspot."""
     try:
+        session_state = config.get("configurable", {})["session_state"]
+
         # Fetch organization details for the company name
         organization_details = fetch_organization_details_by_name(
             customer_name=request.company_name,
-            session_state=config["configurable"]["session_state"],
+            session_state=session_state,
         )
 
         if not organization_details:
-            raise Exception("Organization not found")
+            return AIMessage(f"Organization not found for {request.company_name}")
 
         # Create task data
         json_data = {
@@ -59,37 +48,40 @@ def create_task_hubspot(
             ],
         }
 
+        hubspot_headers = session_state.hubspot_headers
+
         response = requests.post(
             "https://api.hubapi.com/crm/v3/objects/tasks",
             headers=hubspot_headers,
             json=json_data,
-        ).json()
-
-        return CreateTaskResponse(
-            id=response["id"],
-            company_name=request.company_name,
-            created_at=response["createdAt"],
-            body_preview=response["properties"]["hs_body_preview"],
         )
+        if not response.ok:
+            logger.warning(f"Hubspot task creation failed: {response.status_code}")
+            return AIMessage(
+                f"HubSpot API error: {response.status_code} - {response.text}"
+            )
+        response = response.json()
 
+        return AIMessage(
+            f"Successfully created the task in HubSpot with ID: {response['id']}"
+        )
     except Exception as e:
-        raise Exception(f"Error creating task in hubspot: {e}")
+        logger.error(f"Error creating task in HubSpot: {e}")
+        return AIMessage(f"Error creating task in HubSpot: {e}")
 
 
 @tool
-def create_note_hubspot(
-    request: CreateNoteRequest, config: RunnableConfig
-) -> CreateNoteResponse:
+def create_note_hubspot(request: CreateNoteRequest, config: RunnableConfig):
     """Creates note in hubspot."""
     try:
-        # Fetch organiztaion details for the company name
+        # Fetch organization details for the company name
         organization_details = fetch_organization_details_by_name(
             customer_name=request.company_name,
-            session_state=config["configurable"]["session_state"],
+            session_state=config.get("configurable", {})["session_state"],
         )
 
         if not organization_details:
-            raise Exception("Organization not found")
+            return AIMessage(f"Organization not found for {request.company_name}")
 
         # Create note data
         json_data = {
@@ -112,19 +104,27 @@ def create_note_hubspot(
             ],
         }
 
+        hubspot_headers = config.get("configurable", {})["hubspot_headers"]
+
         response = requests.post(
             "https://api.hubapi.com/crm/v3/objects/notes",
             headers=hubspot_headers,
             json=json_data,
-        ).json()
+        )
+        if not response.ok:
+            logger.warning(f"HubSpot note creation failed: {response.status_code}")
+            return AIMessage(
+                f"HubSpot API error: {response.status_code} - {response.text}"
+            )
+        response = response.json()
 
-        print(response)
+        logger.info(
+            f"Successfully created the note in HubSpot with ID: {(response['id'],)}",
+        )
 
-        return CreateNoteResponse(
-            id=response["id"],
-            company_name=request.company_name,
-            created_at=response["createdAt"],
-            body_preview=response["properties"]["hs_body_preview"],
+        return AIMessage(
+            f"Successfully created the note in HubSpot with ID: {response['id']}"
         )
     except Exception as e:
-        raise Exception(f"Error creating note in hubspot: {e}")
+        logger.error(f"Error creating note in HubSpot: {e}")
+        return AIMessage(f"Error creating note in HubSpot: {e}")
