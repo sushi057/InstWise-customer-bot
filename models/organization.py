@@ -50,6 +50,11 @@ class OrganizationDetail(BaseModel):
     )
     redshift_db: str = Field(..., description="Redshift database")
 
+    zendesk_token: str = Field(..., description="Zendesk token")
+    zendesk_user: str = Field(..., description="Zendesk organization ID")
+    zendesk_subdomain: str = Field(..., description="Zendesk subdomain")
+    hubspot_bearer_token: str = Field(..., description="Hubspot bearer token")
+
     @property
     def database_name(self) -> str:
         return f"DB{self.id}"

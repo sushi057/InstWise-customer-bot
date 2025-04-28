@@ -6,6 +6,7 @@ from graphs.customer_insights.tools.nltosql_tool import (
     create_nltosql_tool,
 )
 from graphs.customer_support.models.customer_info import CustomerInfo
+from models.zendesk import ZendeskCredentials
 from utils.helpers import fetch_organization_details
 from utils.init_model import init_model
 
@@ -31,33 +32,47 @@ class SessionState:
                 raise ValueError(
                     f"Organization details not found for session_id: {session_id}"
                 )
+            else:
+                workgroup_name = self.org_details.redshift_work_space
+                redshift_db = self.org_details.redshift_db
 
-            workgroup_name = self.org_details.redshift_work_space
-            redshift_db = self.org_details.redshift_db
+                # Initialize the chat model with the specified parameters
+                self.chat_model = init_model(
+                    fully_specified_name=self.org_details.model,
+                    temperature=self.org_details.temperature,
+                    api_key=self.org_details.api_key,
+                )
 
-            self.chat_model = init_model(
-                fully_specified_name=self.org_details.model,
-                temperature=self.org_details.temperature,
-                api_key=self.org_details.api_key,
-            )
+                # Create the execute SQL query function
+                self.execute_sql_query_func = create_execute_sql_query_function(
+                    workgroup_name, redshift_db
+                )
 
-            self.execute_sql_query_func = create_execute_sql_query_function(
-                workgroup_name, redshift_db
-            )
+                # Create the NLToSQL tool and abstract query chain
+                self.nltosql_tool, self.abstract_query_chain = create_nltosql_tool(
+                    database_name=self.org_details.database_name,
+                    redshift_work_space=workgroup_name,
+                    redshift_db=self.org_details.redshift_db,
+                    schema_prompt=self.org_details.schema_prompt,
+                    nltosql_prompt=self.org_details.nltosql_prompt,
+                    abstract_queries_prompt=self.org_details.abstract_queries_prompt,
+                    chat_model=self.chat_model,
+                )
 
-            self.nltosql_tool, self.abstract_query_chain = create_nltosql_tool(
-                database_name=self.org_details.database_name,
-                redshift_work_space=workgroup_name,
-                redshift_db=self.org_details.redshift_db,
-                schema_prompt=self.org_details.schema_prompt,
-                nltosql_prompt=self.org_details.nltosql_prompt,
-                abstract_queries_prompt=self.org_details.abstract_queries_prompt,
-                chat_model=self.chat_model,
-            )
+                # Create zendesk headers
+                self.zendesk_credentials = ZendeskCredentials(
+                    subdomain=self.org_details.zendesk_subdomain,
+                    user=self.org_details.zendesk_user,
+                    token=self.org_details.zendesk_token,
+                )
+                self.hubspot_headers = {
+                    "Authorization": f"Bearer {self.org_details.hubspot_bearer_token}",
+                    "Content-Type": "application/json",
+                }
 
-            logger.info(
-                f"Session {session_id}: Successfully created tools for org_id: {org_id}"
-            )
+                logger.info(
+                    f"Session {session_id}: Successfully created tools for org_id: {org_id}"
+                )
         except Exception as e:
             logger.error(f"Error fetching organization details: {e}")
             raise
