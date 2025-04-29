@@ -69,10 +69,6 @@ class SessionState:
                     "Authorization": f"Bearer {self.org_details.hubspot_bearer_token}",
                     "Content-Type": "application/json",
                 }
-
-                logger.info(
-                    f"Session {session_id}: Successfully created tools for org_id: {org_id}"
-                )
         except Exception as e:
             logger.error(f"Error fetching organization details: {e}")
             raise
