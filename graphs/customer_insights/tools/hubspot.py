@@ -62,6 +62,9 @@ def create_task_hubspot(request: CreateTaskRequest, config: RunnableConfig):
             )
         response = response.json()
 
+        logger.info(
+            f"Successfully created the task in HubSpot with ID: {(response['id'],)}",
+        )
         return AIMessage(
             f"Successfully created the task in HubSpot with ID: {response['id']}"
         )
@@ -122,11 +125,9 @@ def create_note_hubspot(request: CreateNoteRequest, config: RunnableConfig):
         logger.info(
             f"Successfully created the note in HubSpot with ID: {(response['id'],)}",
         )
-
         return AIMessage(
             f"Successfully created the note in HubSpot with ID: {response['id']}"
         )
     except Exception as e:
         logger.error(f"Error creating note in HubSpot: {e}")
-        return AIMessage(f"Error creating note in HubSpot: {e}")
         return AIMessage(f"Error creating note in HubSpot: {e}")
