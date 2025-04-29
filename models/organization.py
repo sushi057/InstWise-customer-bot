@@ -50,10 +50,12 @@ class OrganizationDetail(BaseModel):
     )
     redshift_db: str = Field(..., description="Redshift database")
 
-    zendesk_token: str = Field(..., description="Zendesk token")
-    zendesk_user: str = Field(..., description="Zendesk organization ID")
-    zendesk_subdomain: str = Field(..., description="Zendesk subdomain")
-    hubspot_bearer_token: str = Field(..., description="Hubspot bearer token")
+    zendesk_token: str = Field("zendesk_token", description="Zendesk token")
+    zendesk_user: str = Field("zendesk_user", description="Zendesk organization ID")
+    zendesk_subdomain: str = Field("zendesk_subdomain", description="Zendesk subdomain")
+    hubspot_bearer_token: str = Field(
+        "hubspot_bearer_token", description="Hubspot bearer token"
+    )
 
     @property
     def database_name(self) -> str:
