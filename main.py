@@ -207,8 +207,21 @@ async def ask_custom_agent(
 
                     if "tools" not in node_name and node_name == "agent":
                         if hasattr(message, "tool_calls") and message.tool_calls:
+                            # Extract child agent name from the tool call
+                            if message.tool_calls[0]["name"] and message.tool_calls[0][
+                                "name"
+                            ].startswith("transfer_to_"):
+                                child_agent = message.tool_calls[0]["name"].split(
+                                    "transfer_to_"
+                                )[-1]
+                            else:
+                                child_agent = None
+
                             content = None
-                            status = "Analyzing query"
+                            if child_agent:
+                                status = f"Moving to {child_agent}"
+                            else:
+                                status = "Analyzing query"
                         elif message.content != "":
                             # Append content to full_message
                             full_message += message.content  # type: ignore
