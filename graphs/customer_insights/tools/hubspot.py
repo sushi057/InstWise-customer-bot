@@ -74,10 +74,11 @@ def create_task_hubspot(request: CreateTaskRequest, config: RunnableConfig):
 def create_note_hubspot(request: CreateNoteRequest, config: RunnableConfig):
     """Creates note in hubspot."""
     try:
+        session_state = config.get("configurable", {})["session_state"]
         # Fetch organization details for the company name
         organization_details = fetch_organization_details_by_name(
             customer_name=request.company_name,
-            session_state=config.get("configurable", {})["session_state"],
+            session_state=session_state,
         )
 
         if not organization_details:
@@ -104,7 +105,7 @@ def create_note_hubspot(request: CreateNoteRequest, config: RunnableConfig):
             ],
         }
 
-        hubspot_headers = config.get("configurable", {})["hubspot_headers"]
+        hubspot_headers = session_state.hubspot_headers
 
         response = requests.post(
             "https://api.hubapi.com/crm/v3/objects/notes",
@@ -127,4 +128,5 @@ def create_note_hubspot(request: CreateNoteRequest, config: RunnableConfig):
         )
     except Exception as e:
         logger.error(f"Error creating note in HubSpot: {e}")
+        return AIMessage(f"Error creating note in HubSpot: {e}")
         return AIMessage(f"Error creating note in HubSpot: {e}")
