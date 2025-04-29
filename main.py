@@ -1,7 +1,10 @@
+import json
 import logging
-from typing import Literal, Optional
+from typing import Literal, Optional, cast
 
 from fastapi import Depends, FastAPI
+from fastapi.responses import StreamingResponse
+from langchain_core.messages import AIMessage
 from langchain_core.runnables import RunnableConfig
 from pydantic import EmailStr
 
@@ -20,7 +23,6 @@ from session.session import (
 )
 from utils.helpers import call_rag_api
 from utils.logging_config import setup_logging
-from utils.stream_response import create_streaming_response
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -76,19 +78,46 @@ async def ask_private_chat(
                 }
             )
 
-            # Define the data formatter for insights
-            def insights_formatter(content, status, _):
-                return {
-                    "message": content,
-                    "status": status,
-                    "session_id": session_id,
-                    "customer_id": customer_id,
-                }
+            # Compile all messages from the graph and send the last message
+            async def event_stream():
+                full_message = ""
+                async for stream_mode, chunk in graph.astream(
+                    {"messages": [("user", query)]},
+                    config,
+                    stream_mode=["messages", "custom"],
+                ):
+                    content = None
+                    status = "Generating insights"
 
-            return create_streaming_response(
-                graph, query, config, ["messages", "custom"], insights_formatter
-            )
+                    if stream_mode == "messages":
+                        message, metadata = chunk  # type: ignore
+                        message = cast(AIMessage, message)
+                        metadata = cast(dict, metadata)
 
+                        if metadata["langgraph_node"] != "tools":
+                            if message.tool_calls:
+                                content = None
+                                status = "Analyzing query"
+                            elif message.content != "":
+                                # Append content to full_message
+                                full_message += message.content  # type: ignore
+
+                                content = message.content
+                                status = None
+                    else:
+                        content = None
+                        status = chunk["status"]  # type: ignore
+
+                    data = {
+                        "message": content,
+                        "status": status,
+                        "session_id": session_id,
+                        "customer_id": customer_id,
+                    }
+                    yield f"data: {json.dumps(data)}\n\n"
+                logger.info(f"Insights agent full message: {full_message}")
+
+            return StreamingResponse(event_stream(), media_type="text/event-stream")
     except Exception as e:
         logger.error(f"Error in private chat: {str(e)}")
         return {"message": f"Error: {str(e)}", "session_id": session_id}
@@ -134,24 +163,6 @@ async def ask_public_chat(
             "customer_id": session_state.customer_info.customer_id,
             "user_email": session_state.customer_info.customer_email,
         }
-        # To use streaming instead, uncomment and replace the above code with:
-        # def public_chat_formatter(content, status, _):
-        #     return {
-        #         "message": content,
-        #         "status": status,
-        #         "session_id": session_id,
-        #         "customer_id": session_state.customer_info.customer_id,
-        #         "user_email": session_state.customer_info.customer_email,
-        #     }
-        #
-        # return create_streaming_response(
-        #     graph,
-        #     query,
-        #     config,
-        #     ["messages"],
-        #     public_chat_formatter
-        # )
-
     except Exception as e:
         logger.error(f"Error in public chat: {str(e)}")
         return {"message": f"Error {str(e)}", "session_id": session_id}
@@ -177,25 +188,48 @@ async def ask_custom_agent(
     try:
         graph = session_state.graph
 
-        # You can also update this to use streaming if needed:
-        def agent_formatter(content, status, _):
-            return {
-                "message": content,
-                "status": status,
-                "session_id": session_id,
-                "org_id": org_id,
-                "custom_agent_name": agent_name,
-            }
+        async def event_stream():
+            full_message = ""
+            async for stream_mode, chunk in graph.astream(
+                {"messages": [("user", query)], "org_id": org_id},
+                config,
+                stream_mode=["messages", "custom"],
+            ):
+                content = None
+                status = "Processing"
 
-        return create_streaming_response(
-            graph,
-            query,
-            config,
-            ["messages", "custom"],
-            agent_formatter,
-            {"org_id": org_id},
-        )
+                if stream_mode == "messages":
+                    message, metadata = chunk  # type: ignore
+                    message = cast(AIMessage, message)
+                    metadata = cast(dict, metadata)
 
+                    node_name = metadata.get("langgraph_node", "")
+
+                    if "tools" not in node_name and node_name == "agent":
+                        if hasattr(message, "tool_calls") and message.tool_calls:
+                            content = None
+                            status = "Analyzing query"
+                        elif message.content != "":
+                            # Append content to full_message
+                            full_message += message.content  # type: ignore
+
+                            content = message.content
+                            status = None
+                elif stream_mode == "custom" and isinstance(chunk, dict):
+                    content = None
+                    status = chunk.get("status", "Processing")
+
+                data = {
+                    "message": content,
+                    "status": status,
+                    "session_id": session_id,
+                    "org_id": org_id,
+                    "custom_agent_name": agent_name,
+                }
+                yield f"data: {json.dumps(data)}\n\n"
+            logger.info(f"Custom agent full message: {full_message}")
+
+        return StreamingResponse(event_stream(), media_type="text/event-stream")
     except Exception as e:
         logger.error(f"Error in custom agent chat: {str(e)}")
         return {

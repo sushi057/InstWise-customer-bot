@@ -52,7 +52,7 @@ def create_execute_sql_query_function(workgroup_name: str, redshift_db: str):
                 region_name=os.getenv("AWS_REGION_NAME"),
             )
 
-            logger.debug(f"Executing SQL query: {sql_query}")
+            logger.info(f"Executing SQL query: {sql_query}")
             response = db_client.execute_statement(
                 Database=REDSHIFT_DB, WorkgroupName=WORKGROUP_NAME, Sql=sql_query
             )
@@ -196,7 +196,6 @@ def create_nltosql_tool(
                 for q in sql_query
                 if q.strip()
             ]
-            logger.info(f"Using query: {sql_query}")
 
             responses = []
             for query in sql_query:
