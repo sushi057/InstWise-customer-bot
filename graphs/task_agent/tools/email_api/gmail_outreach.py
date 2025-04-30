@@ -21,7 +21,10 @@ def fetch_credentials():
     """Fetch credentials from the backend."""
 
     try:
-        credentials_url = f"{os.getenv('INSTWISE_BACKEND_URL')}/api/v1/organization/google-users?token={os.getenv('ORGANIZATION_TOKEN')}&email=bhattachas@hotmail.com"
+        base_url = os.getenv("INSTWISE_BACKEND_URL")
+        organization_token = os.getenv("ORGANIZATION_TOKEN")
+
+        credentials_url = f"{base_url}/api/v1/organization/google-users?token={organization_token}&email=bhattachas@hotmail.com"
         response = requests.get(credentials_url)
 
         response = GoogleUserSessionResponse.model_validate(response.json())
