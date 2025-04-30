@@ -24,21 +24,6 @@ class FeedbackInput(BaseModel):
 rag_api_url = os.getenv("RAG_API_URL")
 headers = {"X-API-KEY": f"{os.getenv('X_API_KEY')}"}
 
-# hubspot_api = "https://api.hubapi.com/crm/v3/objects"
-# hubspot_headers = {
-#     "Authorization": f"Bearer {os.getenv('HUBSPOT_BEARER_TOKEN')}",
-#     "Content-Type": "application/json",
-# }
-
-# zendesk_api = "https://instwisehelp.zendesk.com/api/v2"
-# encoded_credentials = base64.b64encode(
-#     (f"{os.getenv('ZENDESK_EMAIL')}/token:{os.getenv('ZENDESK_TOKEN')}").encode("utf-8")
-# ).decode("utf-8")
-# zendesk_headers = {
-#     "Authorization": f"Basic {encoded_credentials}",
-#     "Content-Type": "application/json",
-# }
-
 
 @tool
 def solution_rag_call(query: str, config: RunnableConfig) -> AIMessage:

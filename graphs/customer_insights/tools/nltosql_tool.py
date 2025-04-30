@@ -206,6 +206,10 @@ def create_nltosql_tool(
                             "status": f"Fetching information {information_source}",
                         }
                     )
+
+                    # Append database name to query
+                    query = query.replace("FROM ", f"FROM {database_name}.")
+
                     res = execute_sql_query(query)
                     responses.append(res)
 
