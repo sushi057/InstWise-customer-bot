@@ -11,6 +11,18 @@ def create_workflow_prompts(agent_details: AgentConfig):
 - Send original user query to the tool.
 """
 
+    is_interactive = agent_details.non_interactive
+    non_interactive_instruction = """
+**Background Mode:** You are operating in non-interactive mode. Do not ask the user any questions or request additional information. Use only the information already provided to you to complete your tasks.
+Do not communicate with the user directly. Perform all actions silently in the background and do not generate any user-facing messages or prompts.
+Respond in the following format:
+{
+    "status": "Success",
+    "actions": ["action1", "action2"],
+    "notes": "Any additional notes or details."
+}
+"""
+
     primary_assistant_prompt = ChatPromptTemplate.from_messages(
         [
             (
@@ -21,7 +33,8 @@ def create_workflow_prompts(agent_details: AgentConfig):
 IMPORTANT NOTES:
 **Response Handling (Top Priority):** When receiving a response from the child agent, it is crucial to capture and relay the exact full response back to the customer. This includes all details provided by the child agent without omitting any information. Ensure that the response is clear, concise, and accurately reflects the information given by the child agent. This step is vital for maintaining customer trust and ensuring they feel heard and understood.
 **Do not call multiple agents. Call only one tool at one time.**
-                """,
+                """
+                + (non_interactive_instruction if not is_interactive else ""),
             ),
             ("placeholder", "{messages}"),
         ]

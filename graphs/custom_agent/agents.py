@@ -1,10 +1,11 @@
-from typing import Annotated, TypedDict
+from typing import Annotated, List, Literal, TypedDict
 
 from langchain_core.messages import BaseMessage
 from langgraph.graph import add_messages
 from langgraph.managed import IsLastStep, RemainingSteps
 from langgraph_supervisor import create_supervisor
 from langgraph_supervisor.supervisor import create_react_agent
+from pydantic import BaseModel, Field
 
 from graphs.custom_agent.prompts import create_workflow_prompts
 from graphs.customer_insights.tools.hubspot import (
@@ -24,6 +25,23 @@ class AgentStateSchema(TypedDict):
     is_last_step: IsLastStep
     remaining_steps: RemainingSteps
     org_id: str
+
+
+# New response model for the non-interactive supervisor.
+
+
+class SupervisorResponse(BaseModel):
+    """Response model fo the non interactive custom agent supervisor."""
+
+    status: Literal["Success", "Failed"] = Field(
+        ..., description="Status of the response; must be 'success' or 'failed'"
+    )
+    actions: List[str] = Field(
+        default_factory=list, description="List of action identifiers"
+    )
+    notes: str = Field(
+        ..., description="Additional notes or details associated with the response"
+    )
 
 
 def create_agents(session_state: CustomAgentSession):
@@ -58,6 +76,10 @@ def create_agents(session_state: CustomAgentSession):
         )
 
     supervisor_name = agent_details.name.replace(" ", "_").lower()
+
+    # If session_state indicates non-interactive mode, pass the response model.
+    is_interactive = agent_details.non_interactive
+
     workflow_supervisor = create_supervisor(
         [agent for agent in task_agents.values()],
         state_schema=AgentStateSchema,
@@ -65,6 +87,7 @@ def create_agents(session_state: CustomAgentSession):
         tools=[],
         prompt=primary_assistant_prompt_template,
         supervisor_name=supervisor_name,
+        response_format=SupervisorResponse if not is_interactive else None,
     )
 
     return workflow_supervisor

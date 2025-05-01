@@ -187,62 +187,83 @@ async def ask_custom_agent(
 
     try:
         graph = session_state.graph
+        is_interactive = session_state.agent_details.interactive
 
-        async def event_stream():
-            full_message = ""
-            async for stream_mode, chunk in graph.astream(
+        if is_interactive:
+            # Stream response if the agent is interactive
+            async def event_stream():
+                full_message = ""
+                async for stream_mode, chunk in graph.astream(
+                    {"messages": [("user", query)], "org_id": org_id},
+                    config,
+                    stream_mode=["messages", "custom"],
+                ):
+                    content = None
+                    status = "Processing"
+
+                    if stream_mode == "messages":
+                        message, metadata = chunk  # type: ignore
+                        message = cast(AIMessage, message)
+                        metadata = cast(dict, metadata)
+
+                        node_name = metadata.get("langgraph_node", "")
+
+                        if "tools" not in node_name and node_name == "agent":
+                            if hasattr(message, "tool_calls") and message.tool_calls:
+                                # Extract child agent name from the tool call
+                                if message.tool_calls[0]["name"] and message.tool_calls[
+                                    0
+                                ]["name"].startswith("transfer_to_"):
+                                    child_agent = message.tool_calls[0]["name"].split(
+                                        "transfer_to_"
+                                    )[-1]
+                                else:
+                                    child_agent = None
+
+                                content = None
+                                if child_agent:
+                                    status = f"Moving to {child_agent}"
+                                else:
+                                    status = "Analyzing query"
+                            elif message.content != "":
+                                # Append content to full_message
+                                full_message += message.content  # type: ignore
+
+                                content = message.content
+                                status = None
+                    elif stream_mode == "custom" and isinstance(chunk, dict):
+                        content = None
+                        status = chunk.get("status", "Processing")
+
+                    data = {
+                        "message": content,
+                        "status": status,
+                        "session_id": session_id,
+                        "org_id": org_id,
+                        "custom_agent_name": agent_name,
+                    }
+                    yield f"data: {json.dumps(data)}\n\n"
+                logger.info(f"Custom agent full message: {full_message}")
+
+            return StreamingResponse(event_stream(), media_type="text/event-stream")
+        else:
+            # Return the final response if the agent is not interactive
+            messages = []
+            for event in graph.stream(
                 {"messages": [("user", query)], "org_id": org_id},
                 config,
                 stream_mode=["messages", "custom"],
             ):
-                content = None
-                status = "Processing"
+                event["messages"][-1].pretty_print()
+                messages.append(event["messages"][-1].content)
 
-                if stream_mode == "messages":
-                    message, metadata = chunk  # type: ignore
-                    message = cast(AIMessage, message)
-                    metadata = cast(dict, metadata)
+            return {
+                "message": messages[-1],
+                "session_id": session_id,
+                "org_id": org_id,
+                "custom_agent_name": agent_name,
+            }
 
-                    node_name = metadata.get("langgraph_node", "")
-
-                    if "tools" not in node_name and node_name == "agent":
-                        if hasattr(message, "tool_calls") and message.tool_calls:
-                            # Extract child agent name from the tool call
-                            if message.tool_calls[0]["name"] and message.tool_calls[0][
-                                "name"
-                            ].startswith("transfer_to_"):
-                                child_agent = message.tool_calls[0]["name"].split(
-                                    "transfer_to_"
-                                )[-1]
-                            else:
-                                child_agent = None
-
-                            content = None
-                            if child_agent:
-                                status = f"Moving to {child_agent}"
-                            else:
-                                status = "Analyzing query"
-                        elif message.content != "":
-                            # Append content to full_message
-                            full_message += message.content  # type: ignore
-
-                            content = message.content
-                            status = None
-                elif stream_mode == "custom" and isinstance(chunk, dict):
-                    content = None
-                    status = chunk.get("status", "Processing")
-
-                data = {
-                    "message": content,
-                    "status": status,
-                    "session_id": session_id,
-                    "org_id": org_id,
-                    "custom_agent_name": agent_name,
-                }
-                yield f"data: {json.dumps(data)}\n\n"
-            logger.info(f"Custom agent full message: {full_message}")
-
-        return StreamingResponse(event_stream(), media_type="text/event-stream")
     except Exception as e:
         logger.error(f"Error in custom agent chat: {str(e)}")
         return {

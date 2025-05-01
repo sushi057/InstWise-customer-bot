@@ -34,6 +34,9 @@ class AgentConfig(BaseModel):
     organization: str = Field(
         ..., description="ID of the organization this agent belongs to"
     )
+    non_interactive: bool = Field(
+        False, description="Whether the agent is interactive or for background runs"
+    )
     agentInstructions: List[str] = Field(
         [], description="List of agent-specific instructions"
     )
