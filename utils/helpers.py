@@ -68,7 +68,7 @@ def get_custom_agent_details(
         url = f"{instwise_backend_url}/api/v1/organization/agent?token={organization_token}&email={email}"
 
         response = requests.get(url)
-        response.raise_for_status
+        response.raise_for_status()
 
         agent_list = AgentConfigList(**response.json())
         for agent in agent_list.data:

@@ -58,6 +58,7 @@ def create_agents(session_state: CustomAgentSession):
         )
 
     supervisor_name = agent_details.name.replace(" ", "_").lower()
+
     workflow_supervisor = create_supervisor(
         [agent for agent in task_agents.values()],
         state_schema=AgentStateSchema,
