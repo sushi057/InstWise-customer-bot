@@ -190,6 +190,23 @@ async def ask_custom_agent(
         is_not_interactive = session_state.agent_details.non_Interactive
 
         if is_not_interactive:
+            # Return the final response if the agent is not interactive
+            messages = []
+            for event in graph.stream(
+                {"messages": [("user", query)], "org_id": org_id},
+                config,
+                stream_mode=["messages", "custom"],
+            ):
+                event["messages"][-1].pretty_print()
+                messages.append(event["messages"][-1].content)
+
+            return {
+                "message": messages[-1],
+                "session_id": session_id,
+                "org_id": org_id,
+                "custom_agent_name": agent_name,
+            }
+        else:
             # Stream response if the agent is interactive
             async def event_stream():
                 full_message = ""
@@ -246,24 +263,6 @@ async def ask_custom_agent(
                 logger.info(f"Custom agent full message: {full_message}")
 
             return StreamingResponse(event_stream(), media_type="text/event-stream")
-        else:
-            # Return the final response if the agent is not interactive
-            messages = []
-            for event in graph.stream(
-                {"messages": [("user", query)], "org_id": org_id},
-                config,
-                stream_mode=["messages", "custom"],
-            ):
-                event["messages"][-1].pretty_print()
-                messages.append(event["messages"][-1].content)
-
-            return {
-                "message": messages[-1],
-                "session_id": session_id,
-                "org_id": org_id,
-                "custom_agent_name": agent_name,
-            }
-
     except Exception as e:
         logger.error(f"Error in custom agent chat: {str(e)}")
         return {
