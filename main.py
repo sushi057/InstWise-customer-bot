@@ -196,7 +196,7 @@ async def ask_custom_agent(
             for event in graph.stream(
                 {"messages": [("user", query)], "org_id": org_id},
                 config,
-                stream_mode=["messages", "custom"],
+                stream_mode="values",
             ):
                 event["messages"][-1].pretty_print()
                 messages.append(event["messages"][-1].content)
