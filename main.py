@@ -187,9 +187,9 @@ async def ask_custom_agent(
 
     try:
         graph = session_state.graph
-        is_interactive = session_state.agent_details.interactive
+        is_not_interactive = session_state.agent_details.non_Interactive
 
-        if is_interactive:
+        if is_not_interactive:
             # Stream response if the agent is interactive
             async def event_stream():
                 full_message = ""
