@@ -187,6 +187,7 @@ async def ask_custom_agent(
 
     try:
         graph = session_state.graph
+        agent_name = session_state.agent_details.name.lower().replace(" ", "_")
         is_not_interactive = session_state.agent_details.non_Interactive
 
         if is_not_interactive:
@@ -227,27 +228,17 @@ async def ask_custom_agent(
 
                         if "tools" not in node_name and node_name == "agent":
                             if hasattr(message, "tool_calls") and message.tool_calls:
-                                # Extract child agent name from the tool call
-                                if message.tool_calls[0]["name"] and message.tool_calls[
-                                    0
-                                ]["name"].startswith("transfer_to_"):
-                                    child_agent = message.tool_calls[0]["name"].split(
-                                        "transfer_to_"
-                                    )[-1]
-                                else:
-                                    child_agent = None
-
                                 content = None
-                                if child_agent:
-                                    status = f"Moving to {child_agent}"
-                                else:
-                                    status = "Analyzing query"
-                            elif message.content != "":
-                                # Append content to full_message
-                                full_message += message.content  # type: ignore
+                                status = "Analyzing query"
+                            elif agent_name in metadata.get(
+                                "langgraph_checkpoint_ns", ""
+                            ):
+                                if message.content != "":
+                                    # Append content to full_message
+                                    full_message += message.content  # type: ignore
 
-                                content = message.content
-                                status = None
+                                    content = message.content
+                                    status = None
                     elif stream_mode == "custom" and isinstance(chunk, dict):
                         content = None
                         status = chunk.get("status", "Processing")
