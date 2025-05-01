@@ -26,26 +26,27 @@ def fetch_credentials():
 
         credentials_url = f"{base_url}/api/v1/organization/google-users?token={organization_token}&email=bhattachas@hotmail.com"
         response = requests.get(credentials_url)
+        response.raise_for_status()
 
-        response = GoogleUserSessionResponse.model_validate(response.json())
+        response = GoogleUserSessionResponse.model_validate(response.json()["data"])
 
-        user_session = response.data[1]
+        if not response.orgGoogleCredential:
+            logger.error("User session does not have Google credentials")
+            raise Exception("User session does not have Google credentials")
 
-        if not user_session.emailCredential:
-            raise Exception("User session does not have email credentials")
-
+        # TODO: Add respective refresh token and access token for specific user
         return GmailTokens(
             account="",
-            client_id=user_session.orgGoogleCredential.client_id,
-            client_secret=user_session.orgGoogleCredential.client_secret,
-            refresh_token=user_session.emailCredential.refresh_token,
+            client_id=response.orgGoogleCredential.client_id,
+            client_secret=response.orgGoogleCredential.client_secret,
+            refresh_token=response.connectedEmails[0].emailCredential.refresh_token,  # type: ignore
             scopes=[
                 "https://www.googleapis.com/auth/gmail.modify",
                 "https://www.googleapis.com/auth/gmail.compose",
                 "https://www.googleapis.com/auth/gmail.write",
             ],
             expiry="2525-04-03T03:47:17.429615",
-            token=user_session.emailCredential.access_token,
+            token=response.connectedEmails[0].emailCredential.access_token,  # type: ignore
             token_uri="https://oauth2.googleapis.com/token",
             universe_domain="googleapis.com",
         )

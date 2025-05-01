@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -44,6 +44,9 @@ class EmailCredential(BaseModel):
     scope: list[str] = Field(..., description="Scopes granted for the access token.")
     token_type: str = Field(..., description="Type of the token (e.g., Bearer).")
     id_token: str = Field(..., description="ID token for authentication.")
+    refresh_token_expires_in: int = Field(
+        ..., description="Expiration time of the refresh token in seconds."
+    )
 
     @field_validator("scope", mode="before")
     @classmethod
@@ -80,8 +83,8 @@ class GoogleUserSession(BaseModel):
 
     id: str = Field(..., alias="_id", description="Unique identifier for the session.")
     email: str = Field(..., description="User's email address.")
-    emailCredential: EmailCredential | None = Field(
-        None, description="User's Gmail credentials.", alias="credentials"
+    emailCredential: EmailCredential = Field(
+        ..., description="User's Gmail credentials."
     )
     googleId: str = Field(..., description="User's Google ID.")
     isGoogleUser: bool = Field(
@@ -90,14 +93,19 @@ class GoogleUserSession(BaseModel):
     organization: str = Field(
         ..., description="Identifier for the user's organization."
     )
-    user: str | None = Field(..., description="Identifier for the user.")
-    orgGoogleCredential: OrgGoogleCredential = Field(
-        ..., description="Organization's Gmail credentials."
-    )
+    user: Optional[str] = Field(..., description="Identifier for the user.")
 
 
 class GoogleUserSessionResponse(BaseModel):
-    data: List[GoogleUserSession]
+    """Pydantic model for the response containing user session data."""
+
+    user_email: str = Field(..., description="User's email address.")
+    orgGoogleCredential: OrgGoogleCredential = Field(
+        ..., description="Organization's Gmail credentials."
+    )
+    connectedEmails: List[GoogleUserSession] = Field(
+        ..., description="List of connected email sessions."
+    )
 
 
 class GmailResponseSchema(BaseModel):
