@@ -12,6 +12,9 @@ from graphs.customer_insights.tools.hubspot import (
     create_task_hubspot,
 )
 from graphs.customer_insights.tools.insert_ces_tool import insert_summary_in_redshift
+from graphs.customer_support.tools.tools import (
+    create_zendesk_ticket_for_unresolved_issues,
+)
 from graphs.task_agent.tools.email_api.gmail_outreach import send_personalized_emails
 from session.session import CustomAgentSession
 from utils.helpers import call_rag_api
@@ -36,16 +39,15 @@ def create_agents(session_state: CustomAgentSession):
     query_database = session_state.nltosql_tool
     task_agents = {}
 
-    if agent_details.name == "Renewal Agent":
-        all_tools = [send_personalized_emails, query_database]
-    else:
-        all_tools = [
-            insert_summary_in_redshift,
-            query_database,
-            call_rag_api,
-            create_note_hubspot,
-            create_task_hubspot,
-        ]
+    all_tools = [
+        insert_summary_in_redshift,
+        query_database,
+        call_rag_api,
+        create_note_hubspot,
+        create_task_hubspot,
+        send_personalized_emails,
+        create_zendesk_ticket_for_unresolved_issues,
+    ]
 
     for task in agent_details.tasks:
         task_name = task.name
