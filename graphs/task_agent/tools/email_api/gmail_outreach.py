@@ -57,7 +57,7 @@ def fetch_credentials():
 
 # Gmail Outreach
 @tool
-def send_personalized_emails(emails: str, subject: str, body: str):
+def send_personalized_emails(emails: str, subject: str, body: str,fromEmail:str):
     """Send personalized emails to the given list of emails.
 
     Args:
@@ -74,10 +74,10 @@ def send_personalized_emails(emails: str, subject: str, body: str):
     }
 
     host = os.getenv("GMAIL_OUTREACH_API_URL", "")
-
+    sender_email = fromEmail if fromEmail else "sushilbhattachan@gmail.com"
     # Prepare the payload
     payload = {
-        "email_address": "sushilbhattachan@gmail.com",
+        "email_address": sender_email,
         "user_tokens": credentials.model_dump(),
         "org_data": org_data,
         "email_to_recipients": [emails],
