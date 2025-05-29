@@ -16,6 +16,7 @@ from graphs.customer_support.tools.tools import (
     create_zendesk_ticket_for_unresolved_issues,
 )
 from graphs.task_agent.tools.email_api.gmail_outreach import send_personalized_emails
+from graphs.task_agent.tools.whatsapp.send_whatsapp_tool import send_whatsapp_message
 from session.session import CustomAgentSession
 from utils.helpers import call_rag_api
 
@@ -47,6 +48,7 @@ def create_agents(session_state: CustomAgentSession):
         create_task_hubspot,
         send_personalized_emails,
         create_zendesk_ticket_for_unresolved_issues,
+        send_whatsapp_tool
     ]
 
     for task in agent_details.tasks:
